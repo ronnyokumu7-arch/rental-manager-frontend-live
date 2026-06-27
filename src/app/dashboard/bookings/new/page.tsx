@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, X, User, Car, Calendar, MapPin, DollarSign } from "lucide-react";
 import toast from "react-hot-toast";
 import { bookingsApi } from "@/lib/api/bookings";
+import { invoicesApi } from "@/lib/api/invoices";
 import { clientsApi } from "@/lib/api/clients";
 import { vehiclesApi } from "@/lib/api/vehicles";
 import type { Client, Vehicle } from "@/lib/types";
@@ -52,7 +53,6 @@ export default function NewBookingPage() {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       setDuration(diffDays);
 
-      // Auto-calculate total amount if vehicle is selected
       if (formData.vehicle_id) {
         const vehicle = vehicles.find(v => v.id === parseInt(formData.vehicle_id));
         if (vehicle) {
@@ -72,7 +72,8 @@ export default function NewBookingPage() {
 
     setLoading(true);
     try {
-      await bookingsApi.create({
+      // 1. Create the Booking
+      const newBooking = await bookingsApi.create({
         client_id: parseInt(formData.client_id),
         vehicle_id: parseInt(formData.vehicle_id),
         start_date: formData.start_date,
@@ -84,7 +85,18 @@ export default function NewBookingPage() {
         currency_code: formData.currency_code,
       });
       
-      toast.success("Booking created successfully!");
+      // 2. ✅ Automatically Generate Draft Invoice
+      try {
+        await invoicesApi.create({
+          booking_id: newBooking.id,
+          due_date: formData.end_date, // Set due date to end of rental
+        });
+        toast.success("Booking and invoice created successfully!");
+      } catch (invoiceError) {
+        console.error("Invoice generation failed:", invoiceError);
+        toast.success("Booking created (invoice generation failed - you can create it manually)");
+      }
+
       router.push("/dashboard/bookings");
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Failed to create booking");
@@ -157,16 +169,15 @@ export default function NewBookingPage() {
             <h3 className="text-sm font-bold text-gray-900">Trip Details</h3>
           </div>
          
-          {/* Date Range Picker */}
-          <DateRangePicker
-            startDate={formData.start_date}
-            endDate={formData.end_date}
-            onStartDateChange={(value) => updateField("start_date", value)}
-            onEndDateChange={(value) => updateField("end_date", value)}
-            minDate={new Date().toISOString().split('T')[0]}
-            label="Rental Period"
-            required
-          />
+          {/* ✅ FIXED: Using DateRangePicker instead of DatePicker */}
+          <FormGroup label="Rental Period" required>
+            <DateRangePicker
+              startDate={formData.start_date}
+              endDate={formData.end_date}
+              onStartDateChange={(value) => updateField("start_date", value)}
+              onEndDateChange={(value) => updateField("end_date", value)}
+            />
+          </FormGroup>
 
           {duration > 0 && (
             <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-100 flex items-center gap-3">

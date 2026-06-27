@@ -3,13 +3,13 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Plus } from "lucide-react";
 import toast from "react-hot-toast";
-import apiClient from "@/lib/api-client"; // ✅ Added direct API client
+import apiClient from "@/lib/api-client";
 import { clientsApi } from "@/lib/api/clients";
-import { bookingsApi } from "@/lib/api/bookings";
-import type { Client, Booking } from "@/lib/types";
+import { invoicesApi } from "@/lib/api/invoices";
+import type { Client, Invoice } from "@/lib/types";
 import ClientProfileHeader from "@/components/client-profile/ClientProfileHeader";
 import ClientInfoPanel from "@/components/client-profile/ClientInfoPanel";
-import ClientBookingsPanel from "@/components/client-profile/ClientInvoicesPanel";
+import ClientInvoicesPanel from "@/components/client-profile/ClientInvoicesPanel";
 
 export default function ClientProfilePage() {
   const params = useParams();
@@ -24,13 +24,12 @@ export default function ClientProfilePage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [clientData, bookingsData] = await Promise.all([
+      const [clientData, invoicesData] = await Promise.all([
         clientsApi.get(clientId),
-        bookingsApi.list(),
+        invoicesApi.list(),
       ]);
       setClient(clientData);
-      const clientBookings = bookingsData.filter(b => b.client_id === clientId);
-      setBookings(clientBookings);
+      setInvoices(invoicesData);
     } catch (error) {
       console.error("Failed to load client data:", error);
     } finally {
@@ -42,21 +41,13 @@ export default function ClientProfilePage() {
     fetchData();
   }, [clientId]);
 
-  // ✅ NEW: Handle Status Changes using dedicated endpoints
   const handleStatusChange = async () => {
     if (!client) return;
     setActionLoading(true);
-    
     try {
-      // Determine which dedicated endpoint to call based on current status
       const endpoint = client.status === "active" ? "suspend" : "reactivate";
-      
-      // Call the dedicated POST endpoint (bypasses the PATCH restriction)
       await apiClient.post(`/clients/${client.id}/${endpoint}`);
-      
       toast.success(`Client successfully ${endpoint === "suspend" ? "suspended" : "reactivated/verified"}`);
-      
-      // Refresh client data to show new status
       const updatedClient = await clientsApi.get(clientId);
       setClient(updatedClient);
     } catch (error) {
@@ -89,7 +80,7 @@ export default function ClientProfilePage() {
         </button>
         <button
           onClick={() => router.push(`/dashboard/bookings/new?client_id=${client.id}`)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-dark text-slate text-sm font-semibold hover:bg-accent-darker transition-colors shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-dark text-white text-sm font-semibold hover:bg-accent-darker transition-colors shadow-sm"
         >
           <Plus size={16} />
           New Booking
@@ -101,7 +92,6 @@ export default function ClientProfilePage() {
         
         {/* LEFT COLUMN - 4/12 width */}
         <div className="lg:col-span-4 flex flex-col gap-4">
-          {/* ✅ Pass the new handler to the header */}
           <ClientProfileHeader 
             client={client} 
             onStatusAction={handleStatusChange}
@@ -112,7 +102,8 @@ export default function ClientProfilePage() {
 
         {/* RIGHT COLUMN - 8/12 width */}
         <div className="lg:col-span-8 flex flex-col h-full">
-          <ClientBookingsPanel client={client} bookings={bookings} />
+          {/* ✅ FIXED: Pass 'invoices' instead of 'bookings' */}
+          <ClientInvoicesPanel client={client} invoices={invoices} />
         </div>
       </div>
     </div>

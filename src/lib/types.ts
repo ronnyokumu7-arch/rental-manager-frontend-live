@@ -40,7 +40,8 @@ export interface MessageResponse {
 }
 
 // ─── Clients ─────────────────────────────────────────────────────────────────
-export type ClientStatus = "pending" | "active" | "inactive" | "suspended" | "neutral" | "success";
+// ✅ FIXED: Removed UI badge variants ("neutral", "success") to match backend exactly
+export type ClientStatus = "pending" | "active" | "inactive" | "suspended";
 
 export interface Client {
   id: number;
@@ -68,7 +69,16 @@ export interface Client {
 
 export type ClientCreatePayload = Omit<
   Client,
-  "id" | "tenant_id" | "created_at" | "updated_at" | "is_archived" | "archived_at" | "avatar_image" | "id_image_front" | "id_image_back" | "dl_image_front"
+  | "id"
+  | "tenant_id"
+  | "created_at"
+  | "updated_at"
+  | "is_archived"
+  | "archived_at"
+  | "avatar_image"
+  | "id_image_front"
+  | "id_image_back"
+  | "dl_image_front"
 >;
 
 export type ClientUpdatePayload = Partial<Omit<Client, "id" | "tenant_id" | "created_at" | "updated_at">>;
@@ -83,18 +93,18 @@ export interface Vehicle {
   model: string;
   year: number;
   plate_number: string;
-  vin?: string | null;
+  vin: string | null;
   status: VehicleStatus;
   daily_rate: number;
   current_mileage: number;
-  next_service_km?: number | null;
-  insurance_doc?: string | null;
-  registration_doc?: string | null;
-  inspection_doc?: string | null;
-  insurance_expiry?: string | null;
-  notes?: string | null;
-  is_archived?: boolean;
-  archived_at?: string | null;
+  next_service_km: number | null;
+  insurance_doc: string | null;
+  registration_doc: string | null;
+  inspection_doc: string | null;
+  insurance_expiry: string | null;
+  notes: string | null;
+  is_archived: boolean;
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -104,11 +114,11 @@ export interface VehicleCreatePayload {
   model: string;
   year: number;
   plate_number: string;
-  vin?: string;
+  vin?: string | null;
   daily_rate: number;
   current_mileage?: number;
-  next_service_km?: number;
-  notes?: string;
+  next_service_km?: number | null;
+  notes?: string | null;
 }
 
 export interface VehicleUpdatePayload {
@@ -138,14 +148,14 @@ export interface Booking {
   vehicle_id: number;
   start_date: string;
   end_date: string;
-  destination?: string | null;       // NEW: Area of use
-  pickup_location?: string | null;   // NEW: Where rental starts
-  return_location?: string | null;   // NEW: Where rental ends
+  destination: string | null;
+  pickup_location: string | null;
+  return_location: string | null;
   total_amount: number;
   currency_code: string;
   status: BookingStatus;
-  is_archived?: boolean;
-  archived_at?: string | null;
+  is_archived: boolean;
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -155,9 +165,9 @@ export interface BookingCreatePayload {
   vehicle_id: number;
   start_date: string;
   end_date: string;
-  destination?: string;
-  pickup_location?: string;
-  return_location?: string;
+  destination?: string | null;
+  pickup_location?: string | null;
+  return_location?: string | null;
   total_amount: number;
   currency_code?: string;
 }
@@ -182,12 +192,12 @@ export interface Contract {
   tenant_id: number;
   contract_number: string;
   status: ContractStatus;
-  pdf_path?: string | null;
-  signed_at?: string | null;
-  share_token?: string | null;
-  share_token_expires_at?: string | null;
+  pdf_path: string | null;
+  signed_at: string | null;
+  share_token: string | null;
+  share_token_expires_at: string | null;
   signed_by_client: boolean;
-  client_signed_at?: string | null;
+  client_signed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -215,17 +225,17 @@ export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "void";
 export interface Invoice {
   id: number;
   tenant_id: number;
-  booking_id?: number | null;
-  subscription_id?: number | null;
+  subscription_id: number | null;
+  booking_id: number | null;
   invoice_number: string;
   status: InvoiceStatus;
   amount_due: number;
   amount_paid: number;
   currency_code: string;
   due_date: string;
-  paid_at?: string | null;
-  pdf_path?: string | null;
-  notes?: string | null;
+  paid_at: string | null;
+  pdf_path: string | null;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -257,11 +267,11 @@ export interface Payment {
   amount: number;
   currency_code: string;
   method: PaymentMethod;
-  reference?: string | null;
+  reference: string | null;
   status: PaymentStatus;
-  paid_at?: string | null;
-  recorded_by?: number | null;
-  notes?: string | null;
+  paid_at: string | null;
+  recorded_by: number | null;
+  notes: string | null;
   created_at: string;
 }
 

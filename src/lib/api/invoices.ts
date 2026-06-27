@@ -1,25 +1,33 @@
+// src/lib/api/invoices.ts
 import apiClient from "@/lib/api-client";
-import type { Invoice, InvoiceCreatePayload, InvoiceUpdatePayload } from "@/lib/types";
+import type { Invoice } from "@/lib/types";
+
+export interface InvoiceCreatePayload {
+  booking_id: number;
+  due_date: string; // ISO string
+  notes?: string;
+}
 
 export const invoicesApi = {
-  list: (params?: { status?: string }) =>
-    apiClient.get<Invoice[]>("/invoices", { params }).then((r) => r.data),
+  list: async (status?: string): Promise<Invoice[]> => {
+    const params = status ? { status } : {};
+    const res = await apiClient.get<Invoice[]>("/invoices", { params });
+    return res.data;
+  },
 
-  get: (id: number) =>
-    apiClient.get<Invoice>(`/invoices/${id}`).then((r) => r.data),
+  getById: async (id: number): Promise<Invoice> => {
+    const res = await apiClient.get<Invoice>(`/invoices/${id}`);
+    return res.data;
+  },
 
-  create: (data: InvoiceCreatePayload) =>
-    apiClient.post<Invoice>("/invoices", data).then((r) => r.data),
+  // ✅ This is the endpoint we will call right after creating a booking
+  create: async (payload: InvoiceCreatePayload): Promise<Invoice> => {
+    const res = await apiClient.post<Invoice>("/invoices", payload);
+    return res.data;
+  },
 
-  update: (id: number, data: InvoiceUpdatePayload) =>
-    apiClient.patch<Invoice>(`/invoices/${id}`, data).then((r) => r.data),
-
-  send: (id: number) =>
-    apiClient.post<Invoice>(`/invoices/${id}/send`).then((r) => r.data),
-
-  void: (id: number) =>
-    apiClient.post<Invoice>(`/invoices/${id}/void`).then((r) => r.data),
-
-  downloadPdf: (id: number) =>
-    apiClient.get(`/invoices/${id}/pdf`, { responseType: "blob" }),
+  void: async (id: number): Promise<Invoice> => {
+    const res = await apiClient.post<Invoice>(`/invoices/${id}/void`);
+    return res.data;
+  },
 };
