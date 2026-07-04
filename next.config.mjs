@@ -8,10 +8,10 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'rental-manager-backend-sf4k.onrender.com',
-        port: '',
-        pathname: '/**',
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/api/v1/**',
       },
       {
         protocol: 'https',

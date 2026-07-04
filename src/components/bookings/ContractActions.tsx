@@ -1,6 +1,8 @@
+// src/components/bookings/ContractActions.tsx
 "use client";
+
 import { useState } from "react";
-import { Copy, Eye, Download, Share2, CheckCircle2 } from "lucide-react";
+import { Copy, CheckCircle2, Eye, Download, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
 import type { Contract } from "@/lib/types";
 
@@ -14,8 +16,9 @@ interface ContractActionsProps {
 export default function ContractActions({ contract, onView, onDownload, onShare }: ContractActionsProps) {
   const [isCopied, setIsCopied] = useState(false);
 
+  const url = `${window.location.origin}/contract/${contract.share_token}`;
+
   const handleCopy = async () => {
-    const url = `${window.location.origin}/contracts/view/${contract.share_token}`;
     try {
       await navigator.clipboard.writeText(url);
       setIsCopied(true);
@@ -30,28 +33,28 @@ export default function ContractActions({ contract, onView, onDownload, onShare 
     <div className="flex items-center gap-1">
       <button
         onClick={handleCopy}
-        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
+        className="p-1.5 rounded-lg hover:bg-surface-hover text-ink-muted hover:text-ink transition-colors"
         title="Copy Link"
       >
-        {isCopied ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Copy size={16} />}
+        {isCopied ? <CheckCircle2 size={16} className="text-success" /> : <Copy size={16} />}
       </button>
       <button
         onClick={onView}
-        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
+        className="p-1.5 rounded-lg hover:bg-surface-hover text-ink-muted hover:text-ink transition-colors"
         title="View Contract"
       >
         <Eye size={16} />
       </button>
       <button
         onClick={onDownload}
-        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
+        className="p-1.5 rounded-lg hover:bg-surface-hover text-ink-muted hover:text-ink transition-colors"
         title="Download PDF"
       >
         <Download size={16} />
       </button>
       <button
         onClick={onShare}
-        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
+        className="p-1.5 rounded-lg hover:bg-surface-hover text-ink-muted hover:text-ink transition-colors"
         title="Share Contract"
       >
         <Share2 size={16} />

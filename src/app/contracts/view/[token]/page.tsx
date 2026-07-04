@@ -1,24 +1,37 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import { 
-  FileText, 
-  Download, 
-  CheckCircle2, 
-  AlertCircle, 
-  Loader2, 
-  Calendar, 
-  Car, 
-  User, 
+import {
+  FileText,
+  Download,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Calendar,
+  Car,
+  User,
   Banknote,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { contractsApi } from "@/lib/api/contracts";
+// ✅ 1. IMPORT THE SIGNATURE PAD AND ITS REF TYPE
+import SignaturePad, { SignaturePadRef } from "@/components/public-docs/SignaturePad";
+
+// Helper to format dates exactly as: "01, Jan, 2026"
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "—";
+  const date = new Date(dateStr);
+  return date
+    .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+    .replace(/ /g, ", ");
+};
 
 export default function PublicContractPage() {
   const params = useParams();
   const token = params.token as string;
+
+  // ✅ 2. CREATE THE REF FOR THE SIGNATURE PAD
+  const signatureRef = useRef<SignaturePadRef>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,13 +55,23 @@ export default function PublicContractPage() {
     if (token) fetchContract();
   }, [token]);
 
+  // ✅ 3. UPDATE SIGN HANDLER TO CAPTURE THE SIGNATURE
   const handleSignContract = async () => {
+    // Validate that the user actually signed
+    const signatureData = signatureRef.current?.getSignature();
+    if (!signatureData) {
+      return toast.error("Please draw your signature before signing.");
+    }
+
     setSigning(true);
     try {
-      await contractsApi.publicSign(token);
+      // ✅ Send the base64 signature to the backend
+      await contractsApi.publicSign(token, signatureData);
       toast.success("Contract signed successfully!");
       setShowSuccess(true);
-      setContract((prev: any) => prev ? { ...prev, signed_by_client: true, status: "signed" } : null);
+      setContract((prev: any) =>
+        prev ? { ...prev, signed_by_client: true, status: "signed" } : null
+      );
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Failed to sign contract.");
     } finally {
@@ -60,9 +83,9 @@ export default function PublicContractPage() {
     try {
       toast.loading("Downloading...", { duration: 2000 });
       const response = await contractsApi.publicDownloadPdf(token);
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const blob = new Blob([response.data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `Contract-${contract?.contract_number}.pdf`;
       link.click();
@@ -92,7 +115,9 @@ export default function PublicContractPage() {
             <AlertCircle className="h-8 w-8 text-red-500" />
           </div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">Contract Unavailable</h1>
-          <p className="text-gray-500 text-sm mb-6">{error || "This contract link is invalid or has expired."}</p>
+          <p className="text-gray-500 text-sm mb-6">
+            {error || "This contract link is invalid or has expired."}
+          </p>
           <p className="text-xs text-gray-400">Please contact the rental agency for a new link.</p>
         </div>
       </div>
@@ -106,11 +131,13 @@ export default function PublicContractPage() {
         
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{contract.tenant_name}</h1>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            {contract.tenant_name}
+          </h1>
           <p className="mt-2 text-slate-500">Vehicle Rental Agreement</p>
           <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-xs font-semibold text-slate-600 uppercase tracking-wide">
             <FileText size={14} />
-            {contract.contract_number}
+            {contract.booking_number || `BK-${contract.booking_id}`}
           </div>
         </div>
 
@@ -132,7 +159,9 @@ export default function PublicContractPage() {
                   {showSuccess ? "Contract Signed & Executed" : "Pending Your Signature"}
                 </p>
                 <p className={`text-xs ${showSuccess ? "text-emerald-700" : "text-blue-700"}`}>
-                  {showSuccess ? "Thank you for completing your rental agreement." : "Please review the details below and sign to proceed."}
+                  {showSuccess
+                    ? "Thank you for completing your rental agreement."
+                    : "Please review the details below and sign to proceed."}
                 </p>
               </div>
             </div>
@@ -147,14 +176,11 @@ export default function PublicContractPage() {
           {/* Contract Details Grid */}
           <div className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              
               {/* Client Info */}
               <div className="space-y-4">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Client Details</h3>
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-slate-100 rounded-lg">
-                    <User size={18} className="text-slate-600" />
-                  </div>
+                  <div className="p-2 bg-slate-100 rounded-lg"><User size={18} className="text-slate-600" /></div>
                   <div>
                     <p className="text-sm font-bold text-slate-900">{contract.client_name}</p>
                     <p className="text-xs text-slate-500">Renter</p>
@@ -166,9 +192,7 @@ export default function PublicContractPage() {
               <div className="space-y-4">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Vehicle Details</h3>
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-slate-100 rounded-lg">
-                    <Car size={18} className="text-slate-600" />
-                  </div>
+                  <div className="p-2 bg-slate-100 rounded-lg"><Car size={18} className="text-slate-600" /></div>
                   <div>
                     <p className="text-sm font-bold text-slate-900">{contract.vehicle_make} {contract.vehicle_model}</p>
                     <p className="text-xs text-slate-500">Plate: {contract.vehicle_plate}</p>
@@ -180,12 +204,10 @@ export default function PublicContractPage() {
               <div className="space-y-4">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Rental Period</h3>
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-slate-100 rounded-lg">
-                    <Calendar size={18} className="text-slate-600" />
-                  </div>
+                  <div className="p-2 bg-slate-100 rounded-lg"><Calendar size={18} className="text-slate-600" /></div>
                   <div>
                     <p className="text-sm font-bold text-slate-900">
-                      {new Date(contract.start_date).toLocaleDateString()} — {new Date(contract.end_date).toLocaleDateString()}
+                      {formatDate(contract.start_date)} to {formatDate(contract.end_date)}
                     </p>
                     <p className="text-xs text-slate-500">Agreed rental duration</p>
                   </div>
@@ -196,9 +218,7 @@ export default function PublicContractPage() {
               <div className="space-y-4">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Amount</h3>
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-slate-100 rounded-lg">
-                    <Banknote size={18} className="text-slate-600" />
-                  </div>
+                  <div className="p-2 bg-slate-100 rounded-lg"><Banknote size={18} className="text-slate-600" /></div>
                   <div>
                     <p className="text-sm font-bold text-slate-900">
                       {contract.currency_code} {Number(contract.total_amount).toLocaleString()}
@@ -214,10 +234,23 @@ export default function PublicContractPage() {
               <h4 className="text-sm font-bold text-slate-900 mb-2">Terms & Conditions</h4>
               <p className="text-xs text-slate-500 leading-relaxed">
                 By signing this document, you agree to the rental terms and conditions provided by {contract.tenant_name}. 
-                This includes policies regarding fuel, damage, late returns, and security deposits as outlined in the full PDF agreement. 
-                Please ensure you have downloaded and read the complete contract before signing.
+                This includes policies regarding fuel, damage, late returns, and security deposits as outlined in the full PDF agreement.
               </p>
             </div>
+
+            {/* ✅ 4. SIGNATURE PAD SECTION */}
+            {!showSuccess && (
+              <div className="mt-10">
+                <h4 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <FileText size={16} className="text-slate-600" />
+                  Electronic Signature
+                </h4>
+                <p className="text-xs text-slate-500 mb-3">
+                  Please draw your signature in the box below. By signing, you confirm you have read and agree to the terms.
+                </p>
+                <SignaturePad ref={signatureRef} />
+              </div>
+            )}
           </div>
 
           {/* Action Footer */}
@@ -248,7 +281,7 @@ export default function PublicContractPage() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-400">
-            Secured by Rental Manager • Contract generated on {new Date(contract.created_at).toLocaleDateString()}
+            Secured by Rental Manager • Contract generated on {formatDate(contract.created_at)}
           </p>
         </div>
       </div>

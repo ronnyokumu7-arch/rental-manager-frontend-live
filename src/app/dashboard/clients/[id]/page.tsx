@@ -1,3 +1,4 @@
+// src/app/dashboard/clients/[id]/page.tsx
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -6,6 +7,7 @@ import toast from "react-hot-toast";
 import apiClient from "@/lib/api-client";
 import { clientsApi } from "@/lib/api/clients";
 import { invoicesApi } from "@/lib/api/invoices";
+import { bookingsApi } from "@/lib/api/bookings"; // ✅ Added to link invoices to client
 import type { Client, Invoice } from "@/lib/types";
 import ClientProfileHeader from "@/components/client-profile/ClientProfileHeader";
 import ClientInfoPanel from "@/components/client-profile/ClientInfoPanel";
@@ -24,14 +26,28 @@ export default function ClientProfilePage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [clientData, invoicesData] = await Promise.all([
+      // ✅ Fetch client, invoices, AND bookings to link them correctly
+      const [clientData, invoicesData, bookingsData] = await Promise.all([
         clientsApi.get(clientId),
         invoicesApi.list(),
+        bookingsApi.list(), 
       ]);
+      
       setClient(clientData);
-      setInvoices(invoicesData);
+
+      // ✅ Filter invoices to only show those belonging to this client's bookings
+      const clientBookingIds = bookingsData
+        .filter(b => b.client_id === clientId)
+        .map(b => b.id);
+
+      const clientInvoices = invoicesData.filter(inv => 
+        inv.booking_id && clientBookingIds.includes(inv.booking_id)
+      );
+      
+      setInvoices(clientInvoices);
     } catch (error) {
       console.error("Failed to load client data:", error);
+      toast.error("Failed to load client profile");
     } finally {
       setLoading(false);
     }
@@ -47,7 +63,7 @@ export default function ClientProfilePage() {
     try {
       const endpoint = client.status === "active" ? "suspend" : "reactivate";
       await apiClient.post(`/clients/${client.id}/${endpoint}`);
-      toast.success(`Client successfully ${endpoint === "suspend" ? "suspended" : "reactivated/verified"}`);
+      toast.success(`Client successfully ${endpoint === "suspend" ? "suspended" : "reactivated"}`);
       const updatedClient = await clientsApi.get(clientId);
       setClient(updatedClient);
     } catch (error) {
@@ -80,7 +96,7 @@ export default function ClientProfilePage() {
         </button>
         <button
           onClick={() => router.push(`/dashboard/bookings/new?client_id=${client.id}`)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-dark text-white text-sm font-semibold hover:bg-accent-darker transition-colors shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-dark text-slate text-sm font-semibold hover:bg-accent-darker transition-colors shadow-sm"
         >
           <Plus size={16} />
           New Booking
@@ -102,7 +118,6 @@ export default function ClientProfilePage() {
 
         {/* RIGHT COLUMN - 8/12 width */}
         <div className="lg:col-span-8 flex flex-col h-full">
-          {/* ✅ FIXED: Pass 'invoices' instead of 'bookings' */}
           <ClientInvoicesPanel client={client} invoices={invoices} />
         </div>
       </div>
