@@ -1,6 +1,5 @@
 // ─── Users & Auth ────────────────────────────────────────────────────────────
 export type UserRole = "super_admin" | "tenant_admin" | "tenant_staff";
-
 export interface User {
   id: number;
   email: string;
@@ -10,6 +9,15 @@ export interface User {
   is_active: boolean;
   is_suspended: boolean;
   suspension_reason?: string | null;
+  phone_number?: string | null;
+  department?: string | null;
+  job_title?: string | null;
+  permissions?: string[];
+  two_factor_enabled?: boolean;
+  last_login_at?: string | null;
+  id_number?: string | null;
+  dl_number?: string | null;
+  dl_expiry?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -40,7 +48,6 @@ export interface MessageResponse {
 }
 
 // ─── Clients ─────────────────────────────────────────────────────────────────
-// ✅ FIXED: Removed UI badge variants ("neutral", "success") to match backend exactly
 export type ClientStatus = "pending" | "active" | "inactive" | "suspended";
 
 export interface Client {
@@ -344,4 +351,53 @@ export interface InvoiceListItem extends Invoice {
 export interface ContractListItem extends Contract {
   client_name: string;
   booking_ref: string | null;
+}
+
+// ─── Roles & Permissions ─────────────────────────────────────────────────────
+export interface Permission {
+  key: string;
+  label: string;
+}
+
+export interface PermissionCategory {
+  name: string;
+  permissions: Permission[];
+}
+
+export interface RoleTemplate {
+  id: number;
+  tenant_id: number;
+  job_title: string;
+  permissions: string[];
+}
+
+// ─── Tasks & Action Center ─────────────────────────────────────────────────────
+export type TaskStatus = "unassigned" | "upcoming" | "pending" | "completed"; // ✅ Added unassigned
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
+export type TaskCategory = "fleet" | "finance" | "hr" | "booking" | "compliance";
+
+export interface Task {
+  id: number;
+  tenant_id: number;
+  user_id: number | null; // ✅ Changed to allow null for Unassigned Pool
+  title: string;
+  description: string | null;
+  category: TaskCategory;
+  status: TaskStatus;
+  priority: TaskPriority;
+  due_date: string | null;
+  completed_at: string | null;
+  is_system_generated: boolean;
+  is_archived: boolean;
+  requires_role: string | null; // ✅ Added for Unassigned Pool UI
+  target_type: string | null;
+  target_id: number | null;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskUpdatePayload {
+  status?: TaskStatus;
+  completed_at?: string;
 }

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "https://rental-manager-backend-071n.onrender.com/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "https://rental-manager-backend-live.onrender.com/api/v1",
   headers: { "Content-Type": "application/json" },
   timeout: 15000,
 });
@@ -10,7 +10,9 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("rm_token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });

@@ -1,124 +1,99 @@
-// src/app/dashboard/clients/[id]/page.tsx
 "use client";
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Plus } from "lucide-react";
-import toast from "react-hot-toast";
-import apiClient from "@/lib/api-client";
-import { clientsApi } from "@/lib/api/clients";
-import { invoicesApi } from "@/lib/api/invoices";
-import { bookingsApi } from "@/lib/api/bookings"; // ✅ Added to link invoices to client
-import type { Client, Invoice } from "@/lib/types";
-import ClientProfileHeader from "@/components/client-profile/ClientProfileHeader";
-import ClientInfoPanel from "@/components/client-profile/ClientInfoPanel";
-import ClientInvoicesPanel from "@/components/client-profile/ClientInvoicesPanel";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Users } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
+import { useClientProfile } from "@/hooks/useClientProfile";
+
+// Modular Profile Components
+import PersonalInfoCard from "@/components/profile/PersonalInfoCard";
+import AddressCard from "@/components/profile/AddressCard";
+import DocumentUploadCard from "@/components/profile/DocumentUploadCard";
+import ClientStatusCard from "@/components/profile/ClientStatusCard";
+import ClientStatsCard from "@/components/profile/ClientStatsCard";
+import FinancialOverviewCard from "@/components/profile/FinancialOverviewCard";
 
 export default function ClientProfilePage() {
-  const params = useParams();
   const router = useRouter();
-  const clientId = parseInt(params.id as string);
-  
-  const [client, setClient] = useState<Client | null>(null);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // ✅ Fetch client, invoices, AND bookings to link them correctly
-      const [clientData, invoicesData, bookingsData] = await Promise.all([
-        clientsApi.get(clientId),
-        invoicesApi.list(),
-        bookingsApi.list(), 
-      ]);
-      
-      setClient(clientData);
-
-      // ✅ Filter invoices to only show those belonging to this client's bookings
-      const clientBookingIds = bookingsData
-        .filter(b => b.client_id === clientId)
-        .map(b => b.id);
-
-      const clientInvoices = invoicesData.filter(inv => 
-        inv.booking_id && clientBookingIds.includes(inv.booking_id)
-      );
-      
-      setInvoices(clientInvoices);
-    } catch (error) {
-      console.error("Failed to load client data:", error);
-      toast.error("Failed to load client profile");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [clientId]);
-
-  const handleStatusChange = async () => {
-    if (!client) return;
-    setActionLoading(true);
-    try {
-      const endpoint = client.status === "active" ? "suspend" : "reactivate";
-      await apiClient.post(`/clients/${client.id}/${endpoint}`);
-      toast.success(`Client successfully ${endpoint === "suspend" ? "suspended" : "reactivated"}`);
-      const updatedClient = await clientsApi.get(clientId);
-      setClient(updatedClient);
-    } catch (error) {
-      toast.error("Failed to update client status");
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  const {
+    client, 
+    invoices, 
+    contracts, 
+    stats,
+    loading,
+    handleUpdateClient, 
+    handleUploadDocument, 
+    handleStatusAction, 
+    handleFinancialAction
+  } = useClientProfile();
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 rounded-full border-2 border-accent-dark border-t-transparent animate-spin" />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  if (!client) return null;
-
-  return (
-    <div className="space-y-4">
-      {/* Top Bar: Back Button & New Booking */}
-      <div className="flex items-center justify-between mb-2">
-        <button
-          onClick={() => router.push("/dashboard/clients")}
-          className="inline-flex items-center gap-2 text-sm text-ink-muted hover:text-ink transition-colors group"
-        >
-          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+  if (!client) {
+    return (
+      <div className="text-center py-20">
+        <h2 className="text-xl font-bold text-gray-900">Client not found</h2>
+        <button onClick={() => router.push("/dashboard/clients")} className="mt-4 text-blue-600 hover:underline">
           Back to Clients
         </button>
-        <button
-          onClick={() => router.push(`/dashboard/bookings/new?client_id=${client.id}`)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-dark text-slate text-sm font-semibold hover:bg-accent-darker transition-colors shadow-sm"
-        >
-          <Plus size={16} />
-          New Booking
-        </button>
       </div>
+    );
+  }
 
-      {/* TWO-COLUMN LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+  return (
+    <div className="space-y-6 pb-20">
+      {/* Header */}
+      <PageHeader
+        title="Client Profile"
+        subtitle="Manage client details, track invoices and contracts, and update verification documents."
+        icon={Users}
+        breadcrumb={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Clients", href: "/dashboard/clients" },
+          { label: client.full_name },
+        ]}
+        actions={[
+          {
+            label: "Back to Clients",
+            icon: ArrowLeft,
+            variant: "secondary",
+            onClick: () => router.push("/dashboard/clients"),
+          },
+        ]}
+      />
+
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* LEFT COLUMN - 4/12 width */}
-        <div className="lg:col-span-4 flex flex-col gap-4">
-          <ClientProfileHeader 
-            client={client} 
-            onStatusAction={handleStatusChange}
-            actionLoading={actionLoading}
+        {/* Left Column: Main Content (2/3 width) */}
+        <div className="lg:col-span-2 space-y-6">
+          <PersonalInfoCard client={client} onSave={handleUpdateClient} />
+          <FinancialOverviewCard 
+            invoices={invoices} 
+            contracts={contracts} 
+            onAction={handleFinancialAction} 
           />
-          <ClientInfoPanel client={client} />
+          <DocumentUploadCard client={client} onUpload={handleUploadDocument} />
         </div>
 
-        {/* RIGHT COLUMN - 8/12 width */}
-        <div className="lg:col-span-8 flex flex-col h-full">
-          <ClientInvoicesPanel client={client} invoices={invoices} />
+        {/* Right Column: Sidebar (1/3 width) */}
+        <div className="space-y-6">
+          {/* ✅ 1. Verification Container (Moved to Top) */}
+          <ClientStatusCard 
+            client={client} 
+            onStatusAction={handleStatusAction} 
+          />
+          
+          {/* ✅ 2. Stats Container (Moved to Second) */}
+          <ClientStatsCard stats={stats} />
+          
+          {/* 3. Address Container */}
+          <AddressCard client={client} onSave={handleUpdateClient} />
         </div>
       </div>
     </div>

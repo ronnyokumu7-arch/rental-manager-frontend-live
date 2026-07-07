@@ -204,11 +204,11 @@ export default function NewClientPage() {
         {currentStep === 2 && (
           <SectionCard className="!p-6 bg-white border-slate-200 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormGroup label="Driver's License Number">
+              <FormGroup label="Driving License Number">
                 <Input
                   value={formData.dl_number}
                   onChange={(e) => updateField("dl_number", e.target.value)}
-                  placeholder="DL Number"
+                  placeholder="ex: DL-01234"
                 />
               </FormGroup>
               <FormGroup label="DL Expiry Date">
@@ -242,14 +242,14 @@ export default function NewClientPage() {
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormGroup label="Next of Kin Name">
+              <FormGroup label="Emergency Contact">
                 <Input
                   value={formData.next_of_kin_name}
                   onChange={(e) => updateField("next_of_kin_name", e.target.value)}
-                  placeholder="Contact name"
+                  placeholder="Full Name"
                 />
               </FormGroup>
-              <FormGroup label="Next of Kin Phone">
+              <FormGroup label="Phone Number">
                 <Input
                   type="tel"
                   value={formData.next_of_kin_phone}

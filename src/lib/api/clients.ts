@@ -1,23 +1,10 @@
 import apiClient from "@/lib/api-client";
-import type {
-  Client,
-  ClientCreatePayload,
-  ClientUpdatePayload,
-  Booking,
-} from "@/lib/types";
+import type { Client, ClientCreatePayload, ClientUpdatePayload, Booking } from "@/lib/types";
 
-/**
- * Client API service — typed wrappers around all /clients endpoints.
- *
- * Usage:
- *   import { clientsApi } from "@/lib/api/clients";
- *   const clients = await clientsApi.list();
- *   await clientsApi.suspend(clientId);
- */
 export const clientsApi = {
-  // ── List ──────────────────────────────────────────────────────────────
-  list: () =>
-    apiClient.get<Client[]>("/clients").then((r) => r.data),
+  // ── List & Search ─────────────────────────────────────────────────────
+  list: (params?: { search?: string; status?: string }) =>
+    apiClient.get<Client[]>("/clients", { params }).then((r) => r.data),
 
   listArchived: () =>
     apiClient.get<Client[]>("/clients/archived").then((r) => r.data),
@@ -35,21 +22,21 @@ export const clientsApi = {
   delete: (id: number) =>
     apiClient.delete(`/clients/${id}`),
 
-  // ── Status transitions ────────────────────────────────────────────────
+  // ── Status Transitions ────────────────────────────────────────────────
   suspend: (id: number) =>
     apiClient.post<Client>(`/clients/${id}/suspend`).then((r) => r.data),
 
   reactivate: (id: number) =>
     apiClient.post<Client>(`/clients/${id}/reactivate`).then((r) => r.data),
 
-  // ── Archive workflow ──────────────────────────────────────────────────
+  // ── Archive Workflow ──────────────────────────────────────────────────
   archive: (id: number) =>
     apiClient.post<Client>(`/clients/${id}/archive`).then((r) => r.data),
 
   restore: (id: number) =>
     apiClient.post<Client>(`/clients/${id}/restore`).then((r) => r.data),
 
-  // ── File uploads ──────────────────────────────────────────────────────
+  // ── File Uploads (Mapped to specific backend endpoints) ───────────────
   uploadAvatar: (id: number, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -81,7 +68,7 @@ export const clientsApi = {
       .then((r) => r.data);
   },
 
-  // ── Related data (for profile page) ───────────────────────────────────
+  // ── Related Data ──────────────────────────────────────────────────────
   getBookings: (clientId: number) =>
     apiClient
       .get<Booking[]>("/bookings", { params: { client_id: clientId } })

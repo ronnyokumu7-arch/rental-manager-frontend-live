@@ -1,19 +1,7 @@
 "use client";
 import {
-  LayoutDashboard,
-  Building2,
-  CreditCard,
-  BarChart3,
-  Settings,
-  CalendarDays,
-  Contact,
-  Users,
-  Car,
-  Wallet,
-  Server,
-  FileText,      // ✅ Added for Quotations
-  Receipt,       // ✅ Added for Invoices
-  FileSignature, // ✅ Added for Contracts
+  LayoutDashboard, Building2, CreditCard, BarChart3, Settings,
+  CalendarDays, Contact, Users, Car, Wallet, Server,
 } from "lucide-react";
 
 export interface NavChild {
@@ -41,13 +29,7 @@ export const superAdminNav: NavItem[] = [
     ],
   },
   { label: "Reports", href: "/super-admin/reports", icon: BarChart3 },
-  {
-    label: "System",
-    icon: Server,
-    children: [
-      // Add system-level links here if needed
-    ],
-  },
+  { label: "System", icon: Server, children: [] },
 ];
 
 // ─── TENANT ADMIN NAVIGATION ──────────────────────────────────────────────────
@@ -59,5 +41,7 @@ export const tenantAdminNav: NavItem[] = [
   { label: "Users", href: "/dashboard/users", icon: Users },
   { label: "Financials", href: "/dashboard/financials", icon: Wallet },
   { label: "Reports", href: "/dashboard/reports", icon: BarChart3 },
+  
+  // ✅ CHANGED: Removed children. Now acts as a direct link to the Settings Hub.
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];

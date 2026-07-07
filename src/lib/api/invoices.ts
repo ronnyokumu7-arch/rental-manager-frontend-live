@@ -1,4 +1,3 @@
-// src/lib/api/invoices.ts
 import apiClient from "@/lib/api-client";
 import type { Invoice, InvoiceUpdatePayload } from "@/lib/types";
 
@@ -8,7 +7,6 @@ export interface InvoiceCreatePayload {
   notes?: string;
 }
 
-// ✅ NEW: Payload structure for recording offline payments
 export interface PublicPaymentPayload {
   amount: number;
   currency_code?: string;
@@ -18,62 +16,52 @@ export interface PublicPaymentPayload {
 }
 
 export const invoicesApi = {
-  // ── DASHBOARD / AUTHENTICATED ENDPOINTS ───────────────────────────────
-  list: async (status?: string): Promise<Invoice[]> => {
-    const params = status ? { status } : {};
-    const res = await apiClient.get<Invoice[]>("/invoices", { params });
-    return res.data;
-  },
+  // ── Dashboard / Authenticated Endpoints ───────────────────────────────
+  list: (params?: { status?: string; booking_id?: number }) =>
+    apiClient.get<Invoice[]>("/invoices", { params }).then((r) => r.data),
 
-  getById: async (id: number): Promise<Invoice> => {
-    const res = await apiClient.get<Invoice>(`/invoices/${id}`);
-    return res.data;
-  },
+  getById: (id: number) =>
+    apiClient.get<Invoice>(`/invoices/${id}`).then((r) => r.data),
 
-  create: async (payload: InvoiceCreatePayload): Promise<Invoice> => {
-    const res = await apiClient.post<Invoice>("/invoices", payload);
-    return res.data;
-  },
+  create: (payload: InvoiceCreatePayload) =>
+    apiClient.post<Invoice>("/invoices", payload).then((r) => r.data),
 
-  update: async (id: number, payload: InvoiceUpdatePayload): Promise<Invoice> => {
-    const res = await apiClient.patch<Invoice>(`/invoices/${id}`, payload);
-    return res.data;
-  },
+  update: (id: number, payload: InvoiceUpdatePayload) =>
+    apiClient.patch<Invoice>(`/invoices/${id}`, payload).then((r) => r.data),
 
-  void: async (id: number): Promise<Invoice> => {
-    const res = await apiClient.post<Invoice>(`/invoices/${id}/void`);
-    return res.data;
-  },
+  void: (id: number) =>
+    apiClient.post<Invoice>(`/invoices/${id}/void`).then((r) => r.data),
 
-  generateShareLink: async (id: number): Promise<{ share_url: string; share_token: string; expires_at: string }> => {
-    const res = await apiClient.post(`/invoices/${id}/share-link`);
-    return res.data;
-  },
+  // ── PDF & Sharing ─────────────────────────────────────────────────────
+  downloadPdf: (id: number) =>
+    apiClient.get(`/invoices/${id}/pdf`, { responseType: "blob" }),
 
-  downloadPdf: async (id: number): Promise<Blob> => {
-    const res = await apiClient.get(`/invoices/${id}/pdf`, { responseType: "blob" });
-    return res.data;
-  },
+  generateShareLink: (id: number) =>
+    apiClient
+      .post<{ share_token: string; share_url: string; expires_at: string }>(
+        `/invoices/${id}/share-link`
+      )
+      .then((r) => r.data),
 
-  // ── PUBLIC PORTAL ENDPOINTS (NO AUTH REQUIRED) ─────────────────────────
-  
-  // 1. Fetch invoice details via public share token
-  getByToken: async (token: string): Promise<any> => {
-    const res = await apiClient.get(`/invoices/public/${token}`);
-    return res.data;
-  },
+  // Alias for consistency
+  shareLink: (id: number) =>
+    apiClient
+      .post<{ share_token: string; share_url: string }>(
+        `/invoices/${id}/share-link`
+      )
+      .then((r) => r.data),
 
-  // 2. ✅ UPDATED: Record offline payment (M-Pesa/Bank) via public token
-  recordPaymentByToken: async (token: string, payload: PublicPaymentPayload): Promise<Invoice> => {
-    const res = await apiClient.post<Invoice>(`/invoices/public/${token}/pay`, payload);
-    return res.data;
-  },
+  // ── Public Portal Endpoints (No Auth Required) ────────────────────────
+  getByToken: (token: string) =>
+    apiClient.get(`/invoices/public/${token}`).then((r) => r.data),
 
-  // 3. Download PDF via public share token
-  downloadPdfByToken: async (token: string): Promise<Blob> => {
-    const res = await apiClient.get(`/invoices/public/${token}/pdf`, {
+  recordPaymentByToken: (token: string, payload: PublicPaymentPayload) =>
+    apiClient
+      .post<Invoice>(`/invoices/public/${token}/pay`, payload)
+      .then((r) => r.data),
+
+  downloadPdfByToken: (token: string) =>
+    apiClient.get(`/invoices/public/${token}/pdf`, {
       responseType: "blob",
-    });
-    return res.data;
-  },
+    }),
 };

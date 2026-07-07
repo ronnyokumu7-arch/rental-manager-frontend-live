@@ -49,27 +49,29 @@ export default function Topbar() {
 
   const isSuperAdmin = user?.role === "super_admin";
 
-  const menuItems = [
-    {
-      group: "account",
-      items: [
-        {
-          label: "View Profile",
-          icon: User,
-          href: isSuperAdmin ? "/super-admin/profile" : "/dashboard/profile",
-        },
-        ...(!isSuperAdmin
-          ? [{ label: "Upgrade Plan", icon: CreditCard, href: "/dashboard/settings/plan", accent: true }]
-          : []),
-        { label: "Language — EN", icon: Globe, href: null, disabled: true },
-        {
-          label: "Settings",
-          icon: Settings,
-          href: isSuperAdmin ? "/super-admin/settings" : "/dashboard/settings",
-        },
-      ],
-    },
-  ];
+const menuItems = [
+  {
+    group: "account",
+    items: [
+      {
+        label: "View Profile",
+        icon: User,
+        href: isSuperAdmin 
+          ? `/super-admin/users/${user?.id}` 
+          : `/dashboard/users/${user?.id}`,
+      },
+      ...(!isSuperAdmin
+        ? [{ label: "Upgrade Plan", icon: CreditCard, href: "/dashboard/settings/plan", accent: true }]
+        : []),
+      { label: "Language — EN", icon: Globe, href: null, disabled: true },
+      {
+        label: "Settings",
+        icon: Settings,
+        href: isSuperAdmin ? "/super-admin/settings" : "/dashboard/settings",
+      },
+    ],
+  },
+];
 
   return (
     <header
