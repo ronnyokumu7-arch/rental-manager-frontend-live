@@ -1,94 +1,74 @@
 export const brand = {
   name: "Rental Manager",
-
   colors: {
-    // Sidebar / dark surfaces
-    navy:         "#1e2a4a",
-    navyLight:    "#2a3654",
-    navyDark:     "#141d33",
-    navyDarker:   "#0d1325",
+    // ── Brand Identity (The "Billion Dollar" Indigo) ──────────────────
+    primary:       "#6366f1", // Indigo 500
+    primaryHover:  "#4f46e5", // Indigo 600
+    primaryMuted:  "#e0e7ff", // Indigo 100
+    primaryText:   "#3730a3", // Indigo 800
 
-    // Accent — use DEFAULT on dark, dark variant on light
-    accent:       "#64b5f6",   // on dark bg
-    accentLight:  "#90caf9",   // hover on dark bg
-    accentText:   "#1e6fba",   // text/icons on white (WCAG AA ✅ 4.8:1)
-    accentDarker: "#155a9c",   // hover for accentText
-    accentBg:     "#e8f4fd",   // badge bg on light
-    accentBgHover:"#d0e8f9",
+    // ── Backgrounds (Light Mode) ──────────────────────────────────────
+    bg:            "#fafafa", // Zinc 50 (App background)
+    surface:       "#ffffff", // Card background
+    surfaceHover:  "#f4f4f5", // Zinc 100 (Hover state)
+    surfaceBorder: "#e4e4e7", // Zinc 200 (Subtle divider)
+    surfaceBorderStrong: "#d4d4d8", // Zinc 300 (Active/Focus)
 
-    // Backgrounds (light)
-    bg:           "#f8f9fc",
-    card:         "#ffffff",
-    cardDark:     "#1a2235",   // dark mode card
-    hover:        "#f0f2f8",
-    border:       "#e2e6f0",
+    // ── Ink (Text Colors) ─────────────────────────────────────────────
+    ink:           "#09090b", // Zinc 950 (Primary text)
+    inkMuted:      "#52525b", // Zinc 600 (Secondary text)
+    inkSubtle:     "#a1a1aa", // Zinc 400 (Tertiary text)
+    inkInverse:    "#ffffff",
 
-    // Text
-    text:         "#1a1a2e",
-    textMuted:    "#6b7280",
-    textSubtle:   "#9ca3af",
+    // ── Semantic Colors (Light Mode) ──────────────────────────────────
+    success:       "#10b981", // Emerald 500
+    successBg:     "#d1fae5", // Emerald 100
+    successText:   "#065f46", // Emerald 800
+    
+    warning:       "#f59e0b", // Amber 500
+    warningBg:     "#fef3c7", // Amber 100
+    warningText:   "#92400e", // Amber 800
+    
+    danger:        "#ef4444", // Red 500
+    dangerBg:      "#fee2e2", // Red 100
+    dangerText:    "#991b1b", // Red 800
 
-    // Semantic
-    success:      "#22c55e",
-    successBg:    "#dcfce7",
-    successText:  "#15803d",
-    warning:      "#f59e0b",
-    warningBg:    "#fef3c7",
-    warningText:  "#b45309",
-    danger:       "#ef4444",
-    dangerBg:     "#fee2e2",
-    dangerText:   "#b91c1c",
-    critical:     "#dc2626",
-    criticalBg:   "#fef2f2",
-    criticalText: "#991b1b",
+    // ── Depth & Elevation (Shadows) ───────────────────────────────────
+    shadowSm:      "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+    shadowMd:      "0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)",
+    shadowLg:      "0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05)",
+    shadowXl:      "0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.05)",
+    
+    // Component Specific Shadows
+    shadowCard:    "0 0 0 1px var(--color-surface-border), var(--shadow-sm)",
+    shadowCardHover: "0 0 0 1px var(--color-surface-border-strong), var(--shadow-md)",
+    shadowModal:   "0 25px 50px -12px rgb(0 0 0 / 0.15), 0 0 0 1px var(--color-surface-border)",
+    shadowDropdown:"0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05), 0 0 0 1px var(--color-surface-border)",
+    shadowFocus:   "0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary)",
   },
-
   typography: {
-    font:    "Inter",
-    display: "text-display font-bold",
-    h1:      "text-h1 font-bold",
-    h2:      "text-h2 font-semibold",
-    h3:      "text-h3 font-semibold",
-    h4:      "text-h4 font-medium",
-    body:    "text-body",
-    small:   "text-small text-ink-muted",
-    xs:      "text-xs text-ink-subtle",
-    mono:    "font-mono",
+    font: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    display: "text-4xl font-bold tracking-tight",
+    h1: "text-3xl font-bold tracking-tight",
+    h2: "text-2xl font-semibold tracking-tight",
+    h3: "text-lg font-semibold",
+    h4: "text-base font-medium",
+    body: "text-sm leading-relaxed",
+    small: "text-xs text-ink-muted",
+    mono: "font-mono",
   },
-
   spacing: {
-    sidebar:          "260px",
+    sidebar: "260px",
     sidebarCollapsed: "72px",
-    cardPadding:      "p-6",
-    gap:              "gap-6",
-    pageX:            "px-6",
-    pageY:            "py-6",
+    cardPadding: "p-6",
+    gap: "gap-6",
+    pageX: "px-6",
+    pageY: "py-6",
   },
-
   radius: {
-    sm:  "rounded-lg",     // buttons, inputs
-    md:  "rounded-xl",     // cards, dropdowns
-    lg:  "rounded-2xl",    // modals, large cards
-    full:"rounded-full",   // badges, avatars
-  },
-
-  shadow: {
-    card:    "shadow-card",
-    hover:   "shadow-card-hover",
-    modal:   "shadow-modal",
-    nav:     "shadow-nav",
-  },
-
-  // WCAG AA audit log
-  wcag: {
-    "navy text on white":       "SKIP — never used",
-    "accentText on white":      "✅ 4.8:1",
-    "accent on navy":           "✅ 4.6:1",
-    "textMuted on white":       "✅ 4.6:1",
-    "white on navy":            "✅ 10:1",
-    "text on bg":               "✅ 18.8:1",
-    "successText on successBg": "✅ 4.7:1",
-    "warningText on warningBg": "✅ 4.5:1",
-    "dangerText on dangerBg":   "✅ 5.1:1",
+    sm: "rounded-lg",     // Buttons, inputs
+    md: "rounded-xl",     // Cards, dropdowns
+    lg: "rounded-2xl",    // Modals, large cards
+    full: "rounded-full", // Badges, avatars
   },
 } as const;

@@ -1,13 +1,17 @@
+// src/app/dashboard/settings/roles/page.tsx
 "use client";
+
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  Shield, Check, Loader2, ArrowLeft, Sparkles, 
-  LayoutDashboard, Users, Car, CalendarDays, Wallet, Settings 
+import {
+  Shield, Check, Loader2, ArrowLeft, Sparkles,
+  LayoutDashboard, Users, Car, CalendarDays, Wallet, Settings
 } from "lucide-react";
 import toast from "react-hot-toast";
+
 import { roleTemplatesApi } from "@/lib/api/roleTemplates";
 import type { PermissionCategory, RoleTemplate } from "@/lib/types";
+
 import PageHeader from "@/components/ui/PageHeader";
 import SectionCard from "@/components/ui/SectionCard";
 
@@ -23,12 +27,10 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
 
 export default function RolesPermissionsPage() {
   const router = useRouter();
-  
   const [matrix, setMatrix] = useState<Record<string, any[]>>({});
   const [templates, setTemplates] = useState<RoleTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [activePermissions, setActivePermissions] = useState<Set<string>>(new Set());
   const [hasChanges, setHasChanges] = useState(false);
@@ -44,7 +46,7 @@ export default function RolesPermissionsPage() {
         ]);
         setMatrix(matrixData);
         setTemplates(templatesData);
-        
+
         // Auto-select the first role if available
         if (templatesData.length > 0 && !selectedRole) {
           const firstRole = templatesData[0].job_title;
@@ -65,7 +67,6 @@ export default function RolesPermissionsPage() {
     if (hasChanges) {
       if (!confirm("You have unsaved changes. Are you sure you want to switch roles?")) return;
     }
-    
     setSelectedRole(jobTitle);
     const template = templates.find((t) => t.job_title === jobTitle);
     setActivePermissions(new Set(template?.permissions || []));
@@ -146,6 +147,7 @@ export default function RolesPermissionsPage() {
         ]}
         actions={[
           {
+            // ✅ FIXED: Removed trailing space from the URL
             label: "Back to Settings",
             icon: ArrowLeft,
             variant: "secondary",
@@ -155,7 +157,7 @@ export default function RolesPermissionsPage() {
       />
 
       <div className="grid grid-cols-12 gap-6">
-        {/* ── LEFT PANEL: Role Selector ─────────────────────────────────── */}
+        {/* ─ LEFT PANEL: Role Selector ─────────────────────────────────── */}
         <div className="col-span-12 lg:col-span-3">
           <SectionCard className="!p-0 overflow-hidden sticky top-20">
             <div className="px-5 py-4 border-b border-surface-border bg-surface-hover/50">
@@ -256,7 +258,6 @@ export default function RolesPermissionsPage() {
                                 {perm.label}
                               </p>
                             </label>
-                            
                             {/* Premium Toggle Switch */}
                             <button
                               type="button"
@@ -289,7 +290,7 @@ export default function RolesPermissionsPage() {
         </div>
       </div>
 
-      {/* ── STICKY SAVE BAR ─────────────────────────────────────────────── */}
+      {/* ─ STICKY SAVE BAR ─────────────────────────────────────────────── */}
       <div
         className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
           hasChanges ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"

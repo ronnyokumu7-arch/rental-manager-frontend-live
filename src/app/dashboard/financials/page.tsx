@@ -1,142 +1,233 @@
+// src/app/dashboard/financials/page.tsx
 "use client";
+
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Receipt, DollarSign, TrendingUp, Clock, CheckCircle, AlertCircle } from "lucide-react";
-import PageHeader from "@/components/ui/PageHeader";
+import {
+  FileText,
+  Receipt,
+  DollarSign,
+  TrendingUp,
+  Clock,
+  AlertCircle,
+  BarChart3,
+  LayoutDashboard,
+  Plus,
+  Download,
+} from "lucide-react";
+
+import StatCard from "@/components/ui/StatCard";
 import SectionCard from "@/components/ui/SectionCard";
+import Badge from "@/components/ui/Badge";
+
+// ✅ Import the modular tab components
+import InvoicesTab from "@/components/financials/InvoicesTab";
+import ContractsTab from "@/components/financials/ContractsTab";
+import PaymentsTab from "@/components/financials/PaymentsTab";
+
+// ✅ FIXED: Removed all trailing spaces from tab IDs and labels
+const TABS = [
+  { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "invoices", label: "Invoices", icon: Receipt },
+  { id: "contracts", label: "Contracts", icon: FileText },
+  { id: "payments", label: "Payments", icon: DollarSign },
+  { id: "reports", label: "Reports", icon: BarChart3 },
+];
 
 export default function FinancialsPage() {
   const router = useRouter();
-
-  const financialModules = [
-    {
-      title: "Contracts",
-      description: "Manage rental agreements and digital signatures",
-      icon: FileText,
-      color: "blue",
-      href: "/dashboard/financials/contracts",
-      stats: { total: "12", label: "Active Contracts", trend: "+2 this month" },
-      features: ["Generate contracts", "E-signatures", "Track status", "Download PDFs"],
-    },
-    {
-      title: "Invoices",
-      description: "Track billing, payments, and invoice lifecycle",
-      icon: Receipt,
-      color: "emerald",
-      href: "/dashboard/financials/invoices",
-      stats: { total: "KES 45.2K", label: "Unpaid Amount", trend: "5 overdue" },
-      features: ["Auto-generate", "Send invoices", "Track payments", "Void invoices"],
-    },
-    {
-      title: "Payments",
-      description: "Record and manage payment transactions",
-      icon: DollarSign,
-      color: "purple",
-      href: "/dashboard/financials/payments",
-      stats: { total: "KES 128.5K", label: "Revenue (This Month)", trend: "+12.5% from last month" },
-      features: ["Record payments", "M-Pesa integration", "Payment history", "Receipts"],
-    },
-  ];
-
-  const getColorClasses = (color: string) => {
-    const colors: Record<string, { bg: string; border: string; text: string; icon: string }> = {
-      blue: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-900", icon: "text-blue-600" },
-      emerald: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-900", icon: "text-emerald-600" },
-      purple: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-900", icon: "text-purple-600" },
-    };
-    return colors[color] || colors.blue;
-  };
+  const [activeTab, setActiveTab] = useState("overview");
 
   return (
-    <div>
-      <PageHeader
-        title="Financials"
-        subtitle="Manage contracts, invoices, and payments in one place"
-        icon={TrendingUp}
-        breadcrumb={[{ label: "Dashboard", href: "/dashboard" }, { label: "Financials" }]}
-      />
+    <div className="space-y-6">
+      {/* Unified Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            Financials
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Manage contracts, invoices, and payments in one place
+          </p>
+        </div>
 
-      {/* ✅ Financial Report Stat Cards (No outer container, placed at the top) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-          <p className="text-xs text-emerald-800 font-semibold mb-1">Total Revenue</p>
-          <p className="text-xl font-bold text-emerald-900">KES 128.5K</p>
-        </div>
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
-          <p className="text-xs text-amber-800 font-semibold mb-1">Pending Payments</p>
-          <p className="text-xl font-bold text-amber-900">KES 45.2K</p>
-        </div>
-        <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
-          <p className="text-xs text-blue-800 font-semibold mb-1">Active Contracts</p>
-          <p className="text-xl font-bold text-blue-900">12</p>
-        </div>
-        <div className="p-4 rounded-xl bg-purple-50 border border-purple-200">
-          <p className="text-xs text-purple-800 font-semibold mb-1">Overdue Invoices</p>
-          <p className="text-xl font-bold text-purple-900">5</p>
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-fit">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  isActive
+                    ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                }`}
+              >
+                <Icon size={14} />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Premium Tiles Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {financialModules.map((module) => {
-          const Icon = module.icon;
-          const colors = getColorClasses(module.color);
+      {/* Persistent Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Revenue"
+          value="KES 128.5K"
+          subtitle="This month"
+          icon={TrendingUp}
+          variant="success"
+          trend={{ value: "12.5%", isPositive: true }}
+        />
+        <StatCard
+          title="Pending Payments"
+          value="KES 45.2K"
+          subtitle="5 invoices"
+          icon={Clock}
+          variant="warning"
+        />
+        <StatCard
+          title="Overdue Invoices"
+          value="5"
+          subtitle="Requires action"
+          icon={AlertCircle}
+          variant="danger"
+        />
+        <StatCard
+          title="Active Contracts"
+          value="12"
+          subtitle="+2 this month"
+          icon={FileText}
+          variant="accent"
+          trend={{ value: "2", isPositive: true }}
+        />
+      </div>
 
-          return (
-            <SectionCard
-              key={module.title}
-              className="!p-0 overflow-hidden cursor-pointer group hover:shadow-lg transition-all duration-300 border-2 hover:border-opacity-50"
-              onClick={() => router.push(module.href)}
-            >
-              <div className={`${colors.bg} ${colors.border} border-b p-6`}>
-                <div className="flex items-start justify-between">
-                  <div className={`w-12 h-12 rounded-xl ${colors.bg} ${colors.icon} flex items-center justify-center`}>
-                    <Icon size={24} />
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-2xl font-bold ${colors.text}`}>{module.stats.total}</p>
-                    <p className="text-xs text-gray-600">{module.stats.label}</p>
-                  </div>
+      {/* Tab Content Area */}
+      <div className="animate-in fade-in duration-300">
+        {/* TAB 1: OVERVIEW */}
+        {activeTab === "overview" && (
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <SectionCard>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide">
+                    Recent Invoices
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab("invoices")}
+                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-semibold"
+                  >
+                    View all
+                  </button>
                 </div>
-              </div>
-
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{module.title}</h3>
-                <p className="text-sm text-gray-600 mb-4">{module.description}</p>
-
-                <div className="flex items-center gap-2 mb-4">
-                  {module.stats.trend.includes("+") ? (
-                    <TrendingUp size={14} className="text-emerald-600" />
-                  ) : module.stats.trend.includes("overdue") ? (
-                    <AlertCircle size={14} className="text-amber-600" />
-                  ) : (
-                    <Clock size={14} className="text-blue-600" />
-                  )}
-                  <span className="text-xs font-medium text-gray-700">{module.stats.trend}</span>
-                </div>
-
-                <div className="space-y-2">
-                  {module.features.map((feature) => (
-                    <div key={feature} className="flex items-center gap-2 text-xs text-gray-600">
-                      <CheckCircle size={12} className="text-gray-400" />
-                      <span>{feature}</span>
+                <div className="space-y-3">
+                  {[
+                    { id: "T1-001", client: "John Doe", amount: "KES 15,000", status: "paid", date: "Oct 24" },
+                    { id: "T1-002", client: "Jane Smith", amount: "KES 8,500", status: "pending", date: "Oct 23" },
+                    { id: "T1-003", client: "Acme Corp", amount: "KES 45,000", status: "overdue", date: "Oct 20" },
+                  ].map((inv) => (
+                    <div
+                      key={inv.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-500">
+                          <Receipt size={18} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{inv.id}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{inv.client} • {inv.date}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                          {inv.amount}
+                        </p>
+                        <Badge
+                          variant={
+                            inv.status === "paid"
+                              ? "success"
+                              : inv.status === "pending"
+                              ? "warning"
+                              : "danger"
+                          }
+                          size="sm"
+                        >
+                          {inv.status}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                 </div>
+              </SectionCard>
+            </div>
+            <div className="space-y-6">
+              <SectionCard>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide mb-4">
+                  Quick Actions
+                </h3>
+                <div className="space-y-2">
+                  <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors text-left">
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-indigo-600 shadow-sm">
+                      <Plus size={16} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">Create Invoice</p>
+                      <p className="text-xs text-indigo-700 dark:text-indigo-300">Bill a client instantly</p>
+                    </div>
+                  </button>
+                  <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors text-left">
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-emerald-600 shadow-sm">
+                      <DollarSign size={16} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Record Payment</p>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300">Log offline transactions</p>
+                    </div>
+                  </button>
+                </div>
+              </SectionCard>
+            </div>
+          </div>
+        )}
 
-                {/* ✅ CTA Button with explicit redirect */}
-                <button
-                  className={`w-full mt-6 py-2.5 rounded-lg ${colors.bg} ${colors.text} text-sm font-semibold hover:opacity-80 transition-opacity flex items-center justify-center gap-2`}
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevents double-navigation since the card is also clickable
-                    router.push(module.href);
-                  }}
-                >
-                  Manage {module.title}
-                </button>
-              </div>
-            </SectionCard>
-          );
-        })}
+        {/* ✅ TAB 2: INVOICES (PLUGGED IN) */}
+        {activeTab === "invoices" && <InvoicesTab />}
+
+        {/* ✅ TAB 3: CONTRACTS (PLUGGED IN) */}
+        {activeTab === "contracts" && <ContractsTab />}
+
+        {/* ✅ TAB 4: PAYMENTS (PLUGGED IN) */}
+        {activeTab === "payments" && <PaymentsTab />}
+
+        {/* TAB 5: REPORTS (Placeholder) */}
+        {activeTab === "reports" && (
+          <SectionCard>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                Financial Analytics
+              </h3>
+              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                <Download size={14} /> Export Report
+              </button>
+            </div>
+            <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+              <BarChart3 size={48} className="text-slate-300 dark:text-slate-600 mb-4" />
+              <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
+                Reports & Analytics Module
+              </h4>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">
+                Revenue charts, fleet utilization metrics, and client retention reports will be mounted here.
+              </p>
+            </div>
+          </SectionCard>
+        )}
       </div>
     </div>
   );

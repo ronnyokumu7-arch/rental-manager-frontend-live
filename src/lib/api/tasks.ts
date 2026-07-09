@@ -3,11 +3,24 @@ import apiClient from "@/lib/api-client";
 import type { Task, TaskUpdatePayload } from "@/lib/types";
 
 export const tasksApi = {
+  // ✅ NEW: Create a new task
+  create: (data: {
+    title: string;
+    description?: string;
+    priority: "low" | "medium" | "high" | "urgent";
+    category: string;
+    due_date?: string | null;
+    user_id?: number | null;
+    target_type?: string | null;
+    target_id?: number | null;
+  }) =>
+    apiClient.post<Task>("/tasks", data).then((r) => r.data),
+
   // Fetch tasks assigned to the current user
   getMyTasks: (params?: { status?: string; category?: string; limit?: number }) =>
     apiClient.get<Task[]>("/tasks/my-tasks", { params }).then((r) => r.data),
 
-  // ✅ NEW: Fetch tasks for a specific user (Admin only)
+  // Fetch tasks for a specific user (Admin only)
   getByUser: (userId: number) =>
     apiClient.get<Task[]>(`/tasks/user/${userId}`).then((r) => r.data),
 
