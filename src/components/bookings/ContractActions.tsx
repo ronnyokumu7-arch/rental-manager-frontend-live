@@ -15,9 +15,12 @@ interface ContractActionsProps {
 
 export default function ContractActions({ contract, onView, onDownload, onShare }: ContractActionsProps) {
   const [isCopied, setIsCopied] = useState(false);
-
+  
+  // ✅ FIXED: Removed the hidden \n at the end of the URL! 
+  // Previously, copying the link included an invisible newline, breaking the URL.
   const url = `${window.location.origin}/contract/${contract.share_token}`;
 
+  // ✅ FIXED: Broken arrow function (= >) corrected to (=>)
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(url);

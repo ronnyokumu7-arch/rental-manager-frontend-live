@@ -17,7 +17,6 @@ export default function BookingProfilePage() {
   const logic = useBookingProfile();
   const { booking, client, vehicle, contract, loading, router } = logic;
 
-  // 1. Loading State
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
@@ -26,7 +25,6 @@ export default function BookingProfilePage() {
     );
   }
 
-  // 2. Error / Not Found State
   if (!booking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
@@ -35,10 +33,8 @@ export default function BookingProfilePage() {
     );
   }
 
-  // 3. Main Render
   return (
     <div className="space-y-6 pb-24">
-      {/* ── Header ── */}
       <PageHeader
         title={`Booking ${booking.booking_number}`}
         subtitle={client ? `Managed for ${client.full_name}` : "Loading client details..."}
@@ -53,10 +49,8 @@ export default function BookingProfilePage() {
         ]}
       />
 
-      {/* ── 1. Lifecycle Timeline ── */}
       <BookingHeroSection booking={booking} contract={contract} />
 
-      {/* ── 2. Core Manifest (Client, Vehicle, Financials) ── */}
       <BookingManifestCards
         booking={booking}
         client={client}
@@ -66,7 +60,6 @@ export default function BookingProfilePage() {
         onChangeVehicle={() => logic.setShowVehicleModal(true)}
       />
 
-      {/* ── 3. Grid: Logistics & Contract ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TripLogisticsSection
           booking={booking}
@@ -85,7 +78,6 @@ export default function BookingProfilePage() {
         />
       </div>
 
-      {/* ── 4. Sticky Action Bar (Wired to Quotation & Mileage flows) ── */}
       <BookingActionBar
         status={booking.status}
         isActionLoading={logic.isActionLoading}
@@ -99,12 +91,9 @@ export default function BookingProfilePage() {
         onGenerateQuotation={logic.handleGenerateQuotation}
       />
 
-      {/* ── 5. Modals & Drawers ── */}
       <BookingModals
         booking={booking}
         client={client!}
-        
-        // Client & Vehicle Modals
         showClientModal={logic.showClientModal}
         showVehicleModal={logic.showVehicleModal}
         availableClients={logic.availableClients}
@@ -113,30 +102,22 @@ export default function BookingProfilePage() {
         onChangeVehicle={logic.handleChangeVehicle}
         onCloseClientModal={() => logic.setShowClientModal(false)}
         onCloseVehicleModal={() => logic.setShowVehicleModal(false)}
-
-        // Share Invoice Modal
         showShareModal={logic.showShareModal}
         shareMethod={logic.shareMethod}
         onSetShareMethod={logic.setShareMethod}
         onSendInvoice={logic.handleSendInvoice}
         onCloseShareModal={() => logic.setShowShareModal(false)}
-
-        // Confirm Status Dialog
         showConfirmDialog={!!logic.confirmAction}
         confirmAction={logic.confirmAction}
         onConfirmAction={logic.handleStatusTransition}
         onCloseConfirm={() => logic.setConfirmAction(null)}
         isActionLoading={logic.isActionLoading}
-
-        // Final Mileage Modal (2-Step Completion)
         showMileageModal={logic.showMileageModal}
         finalMileage={logic.finalMileage}
         setFinalMileage={logic.setFinalMileage}
         currentVehicleMileage={vehicle?.current_mileage || 0}
         onSaveFinalMileage={logic.handleSaveFinalMileage}
         onCloseMileageModal={() => logic.setShowMileageModal(false)}
-
-        // Quotation Share Modal
         showQuotationModal={logic.showQuotationModal}
         quotationUrl={logic.quotationUrl}
         onCopyQuotationLink={logic.handleCopyQuotationLink}

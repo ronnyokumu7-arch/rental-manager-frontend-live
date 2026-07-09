@@ -1,7 +1,10 @@
+// src/hooks/useClientProfile.ts
 "use client";
+
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
+
 import { clientsApi } from "@/lib/api/clients";
 import { invoicesApi } from "@/lib/api/invoices";
 import { contractsApi } from "@/lib/api/contracts";
@@ -29,10 +32,11 @@ export function useClientProfile() {
     outstandingBalance: 0,
     currencyCode: "KES",
   });
+  
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // ─── Initial Data Fetch (Only runs once on mount) ────────────────────────
+  // ─── Initial Data Fetch ────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     if (!clientId) return;
     setLoading(true);
@@ -52,18 +56,15 @@ export function useClientProfile() {
       const validContracts = allContracts.status === "fulfilled" ? allContracts.value : [];
 
       // Filter to only show invoices/contracts for this client's bookings
-      const clientInvoices = validInvoices.filter((inv) => clientBookingIds.includes(inv.booking_id));
+      const clientInvoices = validInvoices.filter((inv) => clientBookingIds.includes(inv.booking_id!));
       const clientContracts = validContracts.filter((c) => c.booking_id && clientBookingIds.includes(c.booking_id));
 
       // ─── Calculate Stats ─────────────────────────────────────────────────
       const totalBookings = bookings.length;
-      
       const totalRevenue = clientInvoices.reduce((sum, inv) => sum + Number(inv.amount_paid || 0), 0);
-      
-      const activeContracts = clientContracts.filter(c => c.status !== 'void').length;
-      
+      const activeContracts = clientContracts.filter((c) => c.status !== "void").length;
       const outstandingBalance = clientInvoices
-        .filter(inv => inv.status !== 'paid' && inv.status !== 'void')
+        .filter((inv) => inv.status !== "paid" && inv.status !== "void")
         .reduce((sum, inv) => sum + (Number(inv.amount_due || 0) - Number(inv.amount_paid || 0)), 0);
 
       setStats({
@@ -75,9 +76,16 @@ export function useClientProfile() {
       });
 
       // Sort by date (newest first) and slice to top 3 for the UI
-      setInvoices(clientInvoices.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3));
-      setContracts(clientContracts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3));
-
+      setInvoices(
+        clientInvoices
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 3)
+      );
+      setContracts(
+        clientContracts
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 3)
+      );
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Failed to load client profile");
     } finally {
@@ -103,7 +111,7 @@ export function useClientProfile() {
     }
   };
 
-  // ─── Document Upload (Instant Update) ────────────────────────────────────
+  // ─── Document Upload (✅ FIXED: Mapped to the new split API endpoints) ───
   const handleUploadDocument = async (
     type: "avatar" | "id_front" | "id_back" | "dl_front",
     file: File
@@ -111,15 +119,21 @@ export function useClientProfile() {
     setActionLoading(true);
     try {
       let updated: Client;
+      
       if (type === "avatar") {
         updated = await clientsApi.uploadAvatar(clientId, file);
+      } else if (type === "id_front") {
+        updated = await clientsApi.uploadIdFront(clientId, file);
+      } else if (type === "id_back") {
+        updated = await clientsApi.uploadIdBack(clientId, file);
       } else if (type === "dl_front") {
-        updated = await clientsApi.uploadDlDocument(clientId, file);
+        updated = await clientsApi.uploadDlFront(clientId, file);
       } else {
-        updated = await clientsApi.uploadIdDocument(clientId, file);
+        throw new Error("Invalid upload type");
       }
+
       setClient(updated);
-      toast.success(`${type.replace("_", " ")} uploaded successfully`);
+      toast.success(`${type.replace("_", " ")} uploaded successfully!`);
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Upload failed");
     } finally {
@@ -167,7 +181,7 @@ export function useClientProfile() {
         await navigator.clipboard.writeText(url);
         toast.success(`${docType} link copied to clipboard`);
       }
-
+      
       if (action === "download") {
         toast.loading(`Downloading ${docType}...`);
         const res = await api.downloadPdf(id);
@@ -188,7 +202,7 @@ export function useClientProfile() {
     client,
     invoices,
     contracts,
-    stats, // ✅ Return the new stats object
+    stats,
     loading,
     actionLoading,
     handleUpdateClient,

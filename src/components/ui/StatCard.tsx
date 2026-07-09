@@ -1,179 +1,97 @@
 "use client";
-import React from "react";
-import { LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
-export type StatCardVariant = "dark" | "light";
+import { type LucideIcon } from "lucide-react";
 
 interface StatCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
-  icon?: LucideIcon;
-  trend?: {
-    value: number;
-    label?: string;
-  };
-  variant?: StatCardVariant;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-  loading?: boolean;
-  className?: string;
+  icon: LucideIcon;
+  variant?: "default" | "accent" | "success" | "warning" | "danger";
+  trend?: { value: string; isPositive: boolean };
 }
 
-export default function StatCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  trend,
-  variant = "dark",
-  action,
-  loading = false,
-  className = "",
+export default function StatCard({ 
+  title, 
+  value, 
+  subtitle, 
+  icon: Icon, 
+  variant = "default",
+  trend 
 }: StatCardProps) {
-  const isDark = variant === "dark";
+  
+  // ✅ Premium Color Mapping with Hover Glow
+  const styles = {
+    accent: { 
+      bg: "bg-indigo-50 dark:bg-indigo-900/20", 
+      text: "text-indigo-600 dark:text-indigo-400",
+      glow: "bg-indigo-500"
+    },
+    success: { 
+      bg: "bg-emerald-50 dark:bg-emerald-900/20", 
+      text: "text-emerald-600 dark:text-emerald-400",
+      glow: "bg-emerald-500"
+    },
+    warning: { 
+      bg: "bg-amber-50 dark:bg-amber-900/20", 
+      text: "text-amber-600 dark:text-amber-400",
+      glow: "bg-amber-500"
+    },
+    danger: { 
+      bg: "bg-rose-50 dark:bg-rose-900/20", 
+      text: "text-rose-600 dark:text-rose-400",
+      glow: "bg-rose-500"
+    },
+    default: { 
+      bg: "bg-blue-50 dark:bg-blue-900/20", 
+      text: "text-blue-600 dark:text-blue-400",
+      glow: "bg-blue-500"
+    },
+  };
 
-  const TrendIcon =
-    trend?.value === 0
-      ? Minus
-      : trend && trend.value > 0
-      ? TrendingUp
-      : TrendingDown;
+  const currentStyle = styles[variant] || styles.default;
 
-  // Semantic trend colors
-  const trendColor =
-    trend?.value === 0
-      ? isDark ? "text-white/40" : "text-ink-muted"
-      : trend && trend.value > 0
-      ? "text-success-text"
-      : "text-danger-text";
-
-  const trendBg =
-    trend?.value === 0
-      ? isDark ? "bg-white/10" : "bg-surface-hover"
-      : trend && trend.value > 0
-      ? "bg-success-bg"
-      : "bg-danger-bg";
-
-  if (isDark) {
-    return (
-      <div
-        className={`relative overflow-hidden rounded-2xl p-6 card-dark ${className}`}
-      >
-        {/* Subtle background glow */}
-        <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-brand-500/10 blur-2xl" />
-        
-        {/* Header row */}
-        <div className="flex items-start justify-between mb-4">
-          <p className="text-brand-100/60 text-xs font-semibold uppercase tracking-widest">
-            {title}
-          </p>
-          {Icon && (
-            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-              <Icon size={18} className="text-brand-500" strokeWidth={1.8} />
-            </div>
-          )}
-        </div>
-
-        {/* Value */}
-        {loading ? (
-          <div className="h-9 w-24 rounded-lg bg-white/10 animate-pulse mb-2" />
-        ) : (
-          <p className="text-3xl font-bold text-white tracking-tight mb-1">
-            {value}
-          </p>
-        )}
-
-        {/* Subtitle */}
-        {subtitle && (
-          <p className="text-white/40 text-xs mb-3">{subtitle}</p>
-        )}
-
-        {/* Trend + Action row */}
-        <div className="flex items-center justify-between mt-3">
-          {trend !== undefined ? (
-            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg ${trendBg}`}>
-              <TrendIcon size={12} className={trendColor} strokeWidth={2.5} />
-              <span className={`text-xs font-semibold ${trendColor}`}>
-                {trend.value > 0 ? "+" : ""}
-                {trend.value}%
-              </span>
-              {trend.label && (
-                <span className="text-white/30 text-xs">{trend.label}</span>
-              )}
-            </div>
-          ) : (
-            <span />
-          )}
-          {action && (
-            <button
-              onClick={action.onClick}
-              className="text-xs text-brand-500 hover:text-brand-100 font-medium transition-colors"
-            >
-              {action.label} →
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Light variant
   return (
-    <div
-      className={`relative overflow-hidden rounded-2xl p-6 bg-surface-card border border-surface-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] transition-shadow duration-200 ${className}`}
-    >
-      {/* Header row */}
-      <div className="flex items-start justify-between mb-4">
-        <p className="text-ink-muted text-xs font-semibold uppercase tracking-widest">
+    <div className="relative group bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-5 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-600">
+      
+      {/* ✨ Billion-Dollar Hover Glow (Fades in on hover) */}
+      <div className={`absolute -right-6 -top-6 w-28 h-28 rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 ${currentStyle.glow}`} />
+
+      {/* Top Row: Title & Subtitle */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
           {title}
         </p>
-        {Icon && (
-          <div className="w-9 h-9 rounded-xl bg-accent-bg flex items-center justify-center flex-shrink-0">
-            <Icon size={18} className="text-accent-dark" strokeWidth={1.8} />
-          </div>
+        {subtitle && (
+          <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+            {subtitle}
+          </span>
         )}
       </div>
 
-      {/* Value */}
-      {loading ? (
-        <div className="h-9 w-24 rounded-lg bg-surface-hover animate-pulse mb-2" />
-      ) : (
-        <p className="text-3xl font-bold text-ink tracking-tight mb-1">
-          {value}
-        </p>
-      )}
-
-      {/* Subtitle */}
-      {subtitle && (
-        <p className="text-ink-subtle text-xs mb-3">{subtitle}</p>
-      )}
-
-      {/* Trend + Action */}
-      <div className="flex items-center justify-between mt-3">
-        {trend !== undefined ? (
-          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg ${trendBg}`}>
-            <TrendIcon size={12} className={trendColor} strokeWidth={2.5} />
-            <span className={`text-xs font-semibold ${trendColor}`}>
-              {trend.value > 0 ? "+" : ""}
-              {trend.value}%
-            </span>
-            {trend.label && (
-              <span className="text-ink-subtle text-xs ml-0.5">{trend.label}</span>
-            )}
+      {/* Bottom Row: Icon + Value + Trend (Compact & Horizontal) */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {/* Icon Pill with micro-interaction (scales and rotates slightly) */}
+          <div className={`p-2.5 rounded-xl ${currentStyle.bg} transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+            <Icon size={20} className={currentStyle.text} strokeWidth={2.2} />
           </div>
-        ) : (
-          <span />
-        )}
-        {action && (
-          <button
-            onClick={action.onClick}
-            className="text-xs text-accent-dark hover:text-accent-darker font-medium transition-colors"
-          >
-            {action.label} →
-          </button>
+          
+          {/* Value with tabular-nums for premium financial alignment */}
+          <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight tabular-nums">
+            {value}
+          </p>
+        </div>
+
+        {/* Trend Badge */}
+        {trend && (
+          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold shadow-sm ${
+            trend.isPositive 
+              ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" 
+              : "bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400"
+          }`}>
+            {trend.isPositive ? "↑" : "↓"} {trend.value}
+          </div>
         )}
       </div>
     </div>

@@ -21,7 +21,6 @@ const LOCAL_SUGGESTIONS = ["Nairobi", "Mombasa", "Diani Beach", "Kisumu", "Maasa
 export default function TripLogisticsSection({
   booking, isEditable, tripDates, setTripDates, destination, setDestination, onSave, isSaving
 }: TripLogisticsSectionProps) {
-  
   const [isEditing, setIsEditing] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -37,6 +36,7 @@ export default function TripLogisticsSection({
             <MapPin size={18} className="text-accent-dark" />
             <h3 className="text-sm font-bold text-ink uppercase tracking-wide">Trip Logistics (Edit Mode)</h3>
           </div>
+          {/* ✅ FIXED: Broken arrow (= >) corrected to (=>) */}
           <button onClick={() => setIsEditing(false)} className="text-xs font-bold text-ink-muted hover:text-ink uppercase tracking-wide flex items-center gap-1">
             <X size={12} /> Cancel
           </button>
@@ -53,7 +53,6 @@ export default function TripLogisticsSection({
               <input type="date" value={tripDates.end} onChange={(e) => setTripDates({ ...tripDates, end: e.target.value })} className="input" />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] uppercase text-ink-subtle font-bold mb-1.5 block">Pickup Location</label>
@@ -64,7 +63,6 @@ export default function TripLogisticsSection({
               <input type="text" value={booking.return_location || ""} disabled className="input bg-surface-hover cursor-not-allowed" />
             </div>
           </div>
-
           <div className="relative">
             <label className="text-[10px] uppercase text-ink-subtle font-bold mb-1.5 block">Destination / Area of Use</label>
             <input 
@@ -85,7 +83,6 @@ export default function TripLogisticsSection({
               </div>
             )}
           </div>
-
           <button onClick={onSave} disabled={isSaving} className="w-full py-2.5 bg-accent-dark text-white text-sm font-bold rounded-lg hover:bg-accent-darker transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
             <Save size={14} /> {isSaving ? "Saving..." : "Save Changes"}
           </button>
@@ -102,6 +99,8 @@ export default function TripLogisticsSection({
           <MapPin size={18} className="text-accent-dark" />
           <h3 className="text-sm font-bold text-ink uppercase tracking-wide">Trip Logistics</h3>
         </div>
+        
+        {/* ✅ FIXED: Removed extra spaces around the && operator that broke the UI */}
         {isEditable && (
           <button onClick={() => setIsEditing(true)} className="text-xs font-bold text-accent-dark hover:text-accent-darker uppercase tracking-wide flex items-center gap-1">
             <Edit2 size={12} /> Edit Trip

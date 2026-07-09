@@ -1,5 +1,8 @@
-// ─── Users & Auth ────────────────────────────────────────────────────────────
+// src/lib/types.ts
+
+// ─── Users & Auth ───────────────────────────────────────────────────────────
 export type UserRole = "super_admin" | "tenant_admin" | "tenant_staff";
+
 export interface User {
   id: number;
   email: string;
@@ -47,7 +50,7 @@ export interface MessageResponse {
   message: string;
 }
 
-// ─── Clients ─────────────────────────────────────────────────────────────────
+// ── Clients ─────────────────────────────────────────────────────────────────
 export type ClientStatus = "pending" | "active" | "inactive" | "suspended";
 
 export interface Client {
@@ -74,7 +77,8 @@ export interface Client {
   updated_at: string;
 }
 
-export type ClientCreatePayload = Omit<
+// ✅ FIXED: Removed all trailing spaces from the Omit keys
+export type ClientCreate = Omit<
   Client,
   | "id"
   | "tenant_id"
@@ -88,10 +92,17 @@ export type ClientCreatePayload = Omit<
   | "dl_image_front"
 >;
 
-export type ClientUpdatePayload = Partial<Omit<Client, "id" | "tenant_id" | "created_at" | "updated_at">>;
+export type ClientUpdate = Partial<
+  Omit<Client, "id" | "tenant_id" | "created_at" | "updated_at">
+>;
 
 // ─── Vehicles ────────────────────────────────────────────────────────────────
-export type VehicleStatus = "available" | "rented" | "maintenance" | "retired";
+export type VehicleStatus =
+  | "pending_activation"
+  | "available"
+  | "rented"
+  | "maintenance"
+  | "retired";
 
 export interface Vehicle {
   id: number;
@@ -105,10 +116,11 @@ export interface Vehicle {
   daily_rate: number;
   current_mileage: number;
   next_service_km: number | null;
+  insurance_number: string | null;
+  insurance_expiry: string | null;
   insurance_doc: string | null;
   registration_doc: string | null;
   inspection_doc: string | null;
-  insurance_expiry: string | null;
   notes: string | null;
   is_archived: boolean;
   archived_at: string | null;
@@ -116,7 +128,8 @@ export interface Vehicle {
   updated_at: string;
 }
 
-export interface VehicleCreatePayload {
+// ✅ ALIGNED: Renamed to match backend Pydantic schemas exactly
+export interface VehicleCreate {
   make: string;
   model: string;
   year: number;
@@ -125,10 +138,12 @@ export interface VehicleCreatePayload {
   daily_rate: number;
   current_mileage?: number;
   next_service_km?: number | null;
+  insurance_number?: string | null;
+  insurance_expiry?: string | null;
   notes?: string | null;
 }
 
-export interface VehicleUpdatePayload {
+export interface VehicleUpdate {
   make?: string;
   model?: string;
   year?: number;
@@ -138,16 +153,22 @@ export interface VehicleUpdatePayload {
   status?: VehicleStatus;
   current_mileage?: number;
   next_service_km?: number | null;
+  insurance_number?: string | null;
+  insurance_expiry?: string | null;
   insurance_doc?: string | null;
   registration_doc?: string | null;
   inspection_doc?: string | null;
-  insurance_expiry?: string | null;
   notes?: string | null;
 }
 
-
-// ─── Bookings ─────────────────────────────────────────────────────────────────
-export type BookingStatus = "pending" | "confirmed" | "active" | "completed" | "cancelled" | "no_show";
+// ─── Bookings ────────────────────────────────────────────────────────────────
+export type BookingStatus =
+  | "pending"
+  | "confirmed"
+  | "active"
+  | "completed"
+  | "cancelled"
+  | "no_show";
 
 export interface Booking {
   id: number;
@@ -169,7 +190,7 @@ export interface Booking {
   updated_at: string;
 }
 
-export interface BookingCreatePayload {
+export interface BookingCreate {
   client_id: number;
   vehicle_id: number;
   start_date: string;
@@ -181,7 +202,7 @@ export interface BookingCreatePayload {
   currency_code?: string;
 }
 
-export interface BookingUpdatePayload {
+export interface BookingUpdate {
   destination?: string;
   start_date?: string;
   end_date?: string;
@@ -191,7 +212,6 @@ export interface BookingUpdatePayload {
   currency_code?: string;
   status?: BookingStatus;
 }
-
 
 // ─── Contracts ───────────────────────────────────────────────────────────────
 export type ContractStatus = "draft" | "sent" | "signed" | "void";
@@ -210,23 +230,6 @@ export interface Contract {
   client_signed_at: string | null;
   created_at: string;
   updated_at: string;
-}
-
-export interface PublicContractView {
-  contract_number: string;
-  booking_id: number;
-  tenant_name: string;
-  client_name: string;
-  vehicle_make: string;
-  vehicle_model: string;
-  vehicle_plate: string;
-  start_date: string;
-  end_date: string;
-  total_amount: string;
-  currency_code: string;
-  status: ContractStatus;
-  signed_by_client: boolean;
-  created_at: string;
 }
 
 // ─── Invoices ────────────────────────────────────────────────────────────────
@@ -250,7 +253,7 @@ export interface Invoice {
   updated_at: string;
 }
 
-export interface InvoiceCreatePayload {
+export interface InvoiceCreate {
   booking_id?: number;
   subscription_id?: number;
   amount_due: number;
@@ -259,7 +262,7 @@ export interface InvoiceCreatePayload {
   notes?: string;
 }
 
-export interface InvoiceUpdatePayload {
+export interface InvoiceUpdate {
   amount_due?: number;
   currency_code?: string;
   due_date?: string;
@@ -286,7 +289,7 @@ export interface Payment {
   created_at: string;
 }
 
-export interface PaymentCreatePayload {
+export interface PaymentCreate {
   invoice_id: number;
   amount: number;
   currency_code?: string;
@@ -295,52 +298,10 @@ export interface PaymentCreatePayload {
   notes?: string;
 }
 
-// 1. Invoice Public View (Matches backend InvoicePublicView)
-export interface PublicInvoiceView {
-  id: number;
-  tenant_name: string;
-  client_name: string;
-  client_email: string | null;
-  client_phone: string | null;
-  invoice_number: string;
-  booking_ref: string | null;
-  amount_due: number;
-  amount_paid: number;
-  currency_code: string;
-  due_date: string;
-  status: InvoiceStatus;
-  notes: string | null;
-  // Optional: If your backend returns granular line items
-  line_items?: { description: string; amount: number }[]; 
-}
-
-// 2. Contract Public View (Enhancing your existing PublicContractView)
-export interface PublicContractView {
-  contract_number: string;
-  booking_id: number;
-  tenant_name: string;
-  client_name: string;
-  vehicle_make: string;
-  vehicle_model: string;
-  vehicle_plate: string;
-  start_date: string;
-  end_date: string;
-  total_amount: string;
-  currency_code: string;
-  status: ContractStatus;
-  terms_and_conditions: string | null; // Added for the UI to display T&Cs
-  signed_by_client: boolean;
-  signature_data: string | null; // Added to store/display the base64 e-signature
-  signed_at: string | null;
-  created_at: string;
-}
-
-// ─── DASHBOARD LIST ENRICHMENTS (For Data Tables) ────────────────────────────
-// These are optional but highly recommended so your DataTables don't show "undefined" for names.
-
+// ─── Dashboard List Enrichments ──────────────────────────────────────────────
 export interface BookingListItem extends Booking {
   client_name: string;
-  vehicle_details: string; // e.g., "Toyota Land Cruiser"
+  vehicle_details: string;
 }
 
 export interface InvoiceListItem extends Invoice {
@@ -371,15 +332,16 @@ export interface RoleTemplate {
   permissions: string[];
 }
 
-// ─── Tasks & Action Center ─────────────────────────────────────────────────────
-export type TaskStatus = "unassigned" | "upcoming" | "pending" | "completed"; // ✅ Added unassigned
+// ─── Tasks & Action Center ──────────────────────────────────────────────────
+// ✅ CRITICAL FIX: Removed all trailing spaces from string literals!
+export type TaskStatus = "unassigned" | "pending" | "completed";
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 export type TaskCategory = "fleet" | "finance" | "hr" | "booking" | "compliance";
 
 export interface Task {
   id: number;
   tenant_id: number;
-  user_id: number | null; // ✅ Changed to allow null for Unassigned Pool
+  user_id: number | null;
   title: string;
   description: string | null;
   category: TaskCategory;
@@ -389,7 +351,7 @@ export interface Task {
   completed_at: string | null;
   is_system_generated: boolean;
   is_archived: boolean;
-  requires_role: string | null; // ✅ Added for Unassigned Pool UI
+  requires_role: string | null;
   target_type: string | null;
   target_id: number | null;
   created_by: number | null;
@@ -397,7 +359,7 @@ export interface Task {
   updated_at: string;
 }
 
-export interface TaskUpdatePayload {
+export interface TaskUpdate {
   status?: TaskStatus;
   completed_at?: string;
 }

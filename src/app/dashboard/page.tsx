@@ -1,233 +1,210 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Car, Users, TrendingUp, AlertCircle, Clock, CheckCircle2, Wrench } from "lucide-react";
-import toast from "react-hot-toast";
+import {
+  LayoutDashboard, Activity, BarChart3,
+  Car, Users, TrendingUp, Clock, CheckCircle2, Wrench
+} from "lucide-react";
 
-// API Clients
-import { bookingsApi } from "@/lib/api/bookings";
-import { clientsApi } from "@/lib/api/clients";
-import { vehiclesApi } from "@/lib/api/vehicles";
-import type { Booking, Client, Vehicle } from "@/lib/types";
-
-// UI Components
+import { useDashboard } from "@/hooks/useDashboard";
 import StatCard from "@/components/ui/StatCard";
 import SectionCard from "@/components/ui/SectionCard";
-import Badge from "@/components/ui/Badge";
-import ActivityFeed from "@/components/ui/ActivityFeed";
+import ActionCenterWidget from "@/components/dashboard/ActionCenterWidget";
+
+// ✅ UPDATED: Removed the Calendar tab
+const TABS = [
+  { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "activity", label: "Activity & Bookings", icon: Activity },
+  { id: "reports", label: "Reports & Analytics", icon: BarChart3 },
+];
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
   
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-
-  // Fetch Data in Parallel
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [bookingsData, clientsData, vehiclesData] = await Promise.all([
-          bookingsApi.list(),
-          clientsApi.list(),
-          vehiclesApi.list(),
-        ]);
-        setBookings(bookingsData);
-        setClients(clientsData);
-        setVehicles(vehiclesData);
-      } catch {
-        toast.error("Failed to load dashboard data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  // ── Live Calculations ──────────────────────────────────────────────────────
-  const stats = useMemo(() => {
-    const activeBookings = bookings.filter(b => b.status === 'active' || b.status === 'confirmed').length;
-    const fleetSize = vehicles.filter(v => !v.is_archived).length;
-    const totalClients = clients.filter(c => !c.is_archived).length;
-    
-    // MTD Revenue (Current Month)
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const mtdRevenue = bookings
-      .filter(b => {
-        const d = new Date(b.created_at);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && b.status !== 'cancelled';
-      })
-      .reduce((sum, b) => sum + Number(b.total_amount), 0);
-
-    return { activeBookings, fleetSize, totalClients, mtdRevenue };
-  }, [bookings, vehicles, clients]);
-
-  const alerts = useMemo(() => {
-    const vehiclesDueService = vehicles.filter(v => 
-      v.next_service_km && (v.next_service_km - v.current_mileage) < 1000 && (v.next_service_km - v.current_mileage) >= 0
-    ).length;
-    
-    const dlsExpiring = clients.filter(c => {
-      if (!c.dl_expiry) return false;
-      const days = Math.ceil((new Date(c.dl_expiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-      return days >= 0 && days < 30;
-    }).length;
-
-    const overdueReturns = bookings.filter(b => 
-      b.status === 'active' && new Date(b.end_date) < new Date()
-    ).length;
-
-    return { vehiclesDueService, dlsExpiring, overdueReturns };
-  }, [vehicles, clients, bookings]);
-
-  const upcomingBookings = useMemo(() => {
-    return bookings
-      .filter(b => b.status === 'confirmed' || b.status === 'active')
-      .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
-      .slice(0, 5);
-  }, [bookings]);
-
-  const recentActivity = useMemo(() => {
-    return bookings.slice(0, 5).map((b, i) => ({
-      id: b.id,
-      icon: b.status === 'completed' ? CheckCircle2 : Calendar,
-      iconBg: b.status === 'completed' ? 'bg-success-bg' : 'bg-accent-bg',
-      iconColor: b.status === 'completed' ? 'text-success-text' : 'text-accent-dark',
-      title: `Booking #${b.id} ${b.status === 'completed' ? 'completed' : 'created'}`,
-      description: `Client ID: ${b.client_id} • Vehicle ID: ${b.vehicle_id}`,
-      time: `${i + 1}h ago`,
-    }));
-  }, [bookings]);
+  const { loading, stats, alerts, vehicles } = useDashboard();
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 rounded-full border-2 border-accent-dark border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-ink">Dashboard</h1>
-        <p className="text-sm text-ink-muted mt-1">Your rental operations at a glance</p>
+      {/* ─ Unified Header with Title & Tabs ── */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Dashboard</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Your rental operations at a glance</p>
+        </div>
+
+        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  isActive 
+                    ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm" 
+                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                }`}
+              >
+                <Icon size={14} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Active Bookings" value={stats.activeBookings} subtitle="Currently ongoing" icon={Calendar} variant="dark" />
-        <StatCard title="Fleet Size" value={stats.fleetSize} subtitle="Total vehicles" icon={Car} variant="dark" />
-        <StatCard title="Total Clients" value={stats.totalClients} subtitle="Registered users" icon={Users} variant="dark" />
-        <StatCard title="Revenue (MTD)" value={`KES ${stats.mtdRevenue.toLocaleString()}`} subtitle="This month" icon={TrendingUp} variant="dark" />
-      </div>
+      {/* ── TAB 1: OVERVIEW ── */}
+      {activeTab === "overview" && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* Premium Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard title="Active Bookings" value={stats.activeBookings} subtitle="Currently ongoing" icon={LayoutDashboard} variant="accent" />
+            <StatCard title="Fleet Size" value={stats.fleetSize} subtitle="Total vehicles" icon={Car} variant="default" />
+            <StatCard title="Total Clients" value={stats.totalClients} subtitle="Registered users" icon={Users} variant="success" />
+            <StatCard title="Revenue (MTD)" value={`KES ${stats.mtdRevenue.toLocaleString()}`} subtitle="This month" icon={TrendingUp} variant="warning" />
+          </div>
 
-      {/* Main Grid */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left Column (2/3) */}
-        <div className="lg:col-span-2 space-y-6">
-          <SectionCard>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-ink">Upcoming Bookings</h3>
-              <button onClick={() => router.push('/dashboard/bookings')} className="text-xs text-accent-dark hover:text-accent-darker font-medium">View all</button>
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Left Column (2/3): The New Action Center Widget */}
+            <div className="lg:col-span-2">
+              <ActionCenterWidget />
             </div>
-            {upcomingBookings.length === 0 ? (
-              <p className="text-sm text-ink-muted text-center py-8">No upcoming bookings</p>
-            ) : (
-              <div className="space-y-3">
-                {upcomingBookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between p-3 rounded-xl bg-surface border border-surface-border hover:border-accent/30 transition-colors">
+
+            {/* Right Column (1/3): Fleet Health & Alerts */}
+            <div className="space-y-6">
+              {/* 1. Fleet Health (Top) */}
+              <div className="relative group bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-5 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fleet Health</p>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Live</span>
+                  </div>
+                </div>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-accent-bg flex items-center justify-center text-accent-dark">
-                        <Car size={18} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-ink">Booking #{booking.id}</p>
-                        <p className="text-xs text-ink-muted">
-                          {new Date(booking.start_date).toLocaleDateString()} - {new Date(booking.end_date).toLocaleDateString()}
-                        </p>
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                      <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Available</span>
+                    </div>
+                    <span className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      {vehicles.filter((v) => v.status === "available").length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-800/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                      <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">Rented</span>
+                    </div>
+                    <span className="text-lg font-extrabold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                      {vehicles.filter((v) => v.status === "rented").length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+                      <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Maintenance</span>
+                    </div>
+                    <span className="text-lg font-extrabold text-amber-600 dark:text-amber-400 tabular-nums">
+                      {vehicles.filter((v) => v.status === "maintenance").length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Needs Attention (Bottom) */}
+              <div className="relative group bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-5 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Needs Attention</p>
+                  {(alerts.vehiclesDueService + alerts.overdueReturns) > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-900/20 text-[10px] font-bold text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50">
+                      {alerts.vehiclesDueService + alerts.overdueReturns} Alerts
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-2.5">
+                  {alerts.vehiclesDueService > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30">
+                      <div className="flex items-center gap-3">
+                        <Wrench size={16} className="text-amber-600 dark:text-amber-400" />
+                        <div>
+                          <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">{alerts.vehiclesDueService} due service</p>
+                          <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70">Within 1,000 km</p>
+                        </div>
                       </div>
                     </div>
-                    <Badge variant={booking.status === 'active' ? 'success' : 'accent'} size="sm">
-                      {booking.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionCard>
-
-          <SectionCard>
-            <h3 className="text-sm font-semibold text-ink mb-4">Recent Activity</h3>
-            <ActivityFeed items={recentActivity} />
-          </SectionCard>
-        </div>
-
-        {/* Right Column (1/3) */}
-        <div className="space-y-6">
-          <SectionCard>
-            <h3 className="text-sm font-semibold text-ink mb-4">Needs Attention</h3>
-            <div className="space-y-3">
-              {alerts.vehiclesDueService > 0 && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-warning-bg/50 border border-warning/20">
-                  <Wrench size={18} className="text-warning-text flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-warning-text">{alerts.vehiclesDueService} vehicles due service</p>
-                    <p className="text-xs text-warning-text/70 mt-0.5">Within 1,000 km</p>
-                  </div>
+                  )}
+                  {alerts.overdueReturns > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-800/30">
+                      <div className="flex items-center gap-3">
+                        <Clock size={16} className="text-rose-600 dark:text-rose-400" />
+                        <div>
+                          <p className="text-xs font-semibold text-rose-800 dark:text-rose-200">{alerts.overdueReturns} overdue</p>
+                          <p className="text-[10px] text-rose-600/70 dark:text-rose-400/70">Past end date</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {alerts.vehiclesDueService === 0 && alerts.overdueReturns === 0 && (
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <CheckCircle2 size={24} className="text-emerald-500 mb-2" />
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">All caught up!</p>
+                    </div>
+                  )}
                 </div>
-              )}
-              {alerts.dlsExpiring > 0 && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-warning-bg/50 border border-warning/20">
-                  <AlertCircle size={18} className="text-warning-text flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-warning-text">{alerts.dlsExpiring} DLs expiring</p>
-                    <p className="text-xs text-warning-text/70 mt-0.5">Within 30 days</p>
-                  </div>
-                </div>
-              )}
-              {alerts.overdueReturns > 0 && (
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-danger-bg/50 border border-danger/20">
-                  <Clock size={18} className="text-danger-text flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-danger-text">{alerts.overdueReturns} overdue returns</p>
-                    <p className="text-xs text-danger-text/70 mt-0.5">Past end date</p>
-                  </div>
-                </div>
-              )}
-              {alerts.vehiclesDueService === 0 && alerts.dlsExpiring === 0 && alerts.overdueReturns === 0 && (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <CheckCircle2 size={32} className="text-success mb-2" />
-                  <p className="text-sm text-ink-muted">All caught up!</p>
-                </div>
-              )}
-            </div>
-          </SectionCard>
-
-          <SectionCard>
-            <h3 className="text-sm font-semibold text-ink mb-4">Fleet Health</h3>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold text-success">{vehicles.filter(v => v.status === 'available').length}</p>
-                <p className="text-xs text-ink-muted mt-1">Available</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-accent-dark">{vehicles.filter(v => v.status === 'rented').length}</p>
-                <p className="text-xs text-ink-muted mt-1">Rented</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-warning-text">{vehicles.filter(v => v.status === 'maintenance').length}</p>
-                <p className="text-xs text-ink-muted mt-1">Maintenance</p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 2: ACTIVITY & BOOKINGS (Consolidated) ── */}
+      {activeTab === "activity" && (
+        <div className="animate-in fade-in duration-300">
+          <SectionCard className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-4">
+              <Activity size={32} className="text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+              Activity, Bookings & Calendar
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">
+              This unified tab will soon house your real-time activity feed, upcoming bookings list, and the interactive booking calendar.
+            </p>
           </SectionCard>
         </div>
-      </div>
+      )}
+
+      {/* ── TAB 3: REPORTS (Placeholder) ── */}
+      {activeTab === "reports" && (
+        <div className="animate-in fade-in duration-300">
+          <SectionCard className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center mb-4">
+              <BarChart3 size={32} className="text-purple-600 dark:text-purple-400" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+              Reports & Analytics
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">
+              Deep dive into your revenue, fleet utilization, and client retention metrics. This module is currently under development.
+            </p>
+          </SectionCard>
+        </div>
+      )}
     </div>
   );
 }

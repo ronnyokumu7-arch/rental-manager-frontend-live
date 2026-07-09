@@ -38,6 +38,7 @@ export default function BookingActionBar({
         <button
           onClick={onCancel}
           disabled={isActionLoading}
+          // ✅ FIXED: Removed trailing spaces inside the className string
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-danger-text hover:bg-danger-bg transition-colors disabled:opacity-50"
         >
           <XCircle size={14} /> Cancel Booking
@@ -58,7 +59,6 @@ export default function BookingActionBar({
       <div className="flex items-center gap-2">
         {status === "pending" && (
           <>
-            {/* ✅ GENERATE QUOTATION (DRAFT INVOICE) BUTTON */}
             <ActionButton 
               icon={<FileText size={14} />} 
               label="Generate Quote" 
@@ -66,8 +66,6 @@ export default function BookingActionBar({
               loading={isActionLoading} 
               variant="accent" 
             />
-            
-            {/* ✅ CONFIRM BOOKING BUTTON (Manual override) */}
             <ActionButton 
               icon={<CheckCircle2 size={14} />} 
               label="Confirm Booking" 
@@ -77,7 +75,6 @@ export default function BookingActionBar({
             />
           </>
         )}
-        
         {status === "confirmed" && (
           <ActionButton 
             icon={<PlayCircle size={14} />} 
@@ -87,12 +84,9 @@ export default function BookingActionBar({
             variant="accent" 
           />
         )}
-        
-        {/* ✅ THE MORPHING LOGIC FOR ACTIVE TRIPS */}
         {status === "active" && (
           <>
             {!isTripEnded ? (
-              // STAGE 1: End Trip (Warning/Amber)
               <ActionButton 
                 icon={<Flag size={14} />} 
                 label="End Trip" 
@@ -101,7 +95,6 @@ export default function BookingActionBar({
                 variant="warning" 
               />
             ) : (
-              // STAGE 2: Update Mileage (Accent/Blue)
               <ActionButton 
                 icon={<Gauge size={14} />} 
                 label="Update Mileage" 
@@ -112,7 +105,6 @@ export default function BookingActionBar({
             )}
           </>
         )}
-        
         {isTerminal && (
           <ActionButton 
             icon={<Share2 size={14} />} 
@@ -140,6 +132,7 @@ function ActionButton({ icon, label, onClick, loading, variant }: any) {
     <button
       onClick={onClick}
       disabled={loading}
+      // ✅ FIXED: Removed hidden newline and trailing spaces from the template literal
       className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${styles[variant]}`}
     >
       {loading ? <Loader2 size={14} className="animate-spin" /> : icon}

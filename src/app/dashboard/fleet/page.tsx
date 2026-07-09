@@ -13,26 +13,31 @@ import Pagination from "@/components/ui/Pagination";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import QuickGarageModal from "@/components/ui/QuickGarageModal";
-import TableToolbar from "@/components/ui/TableToolbar"; // ✅ Added for unified layout
+import TableToolbar from "@/components/ui/TableToolbar";
 
 type ViewMode = "active" | "vault";
 
-const statusColors: Record<VehicleStatus, "success" | "accent" | "warning" | "neutral"> = {
+// ✅ UPDATED: Added 'default' variant for pending_activation
+const statusColors: Record<VehicleStatus, "success" | "accent" | "warning" | "neutral" | "default"> = {
+  pending_activation: "default", // Highlights that it needs attention/compliance
   available: "success",
   rented: "accent",
   maintenance: "warning",
   retired: "neutral",
 };
 
+// ✅ UPDATED: Added label for pending_activation
 const statusLabels: Record<VehicleStatus, string> = {
+  pending_activation: "Pending Activation",
   available: "Available",
   rented: "Rented",
   maintenance: "Maintenance",
   retired: "Retired",
 };
 
-// ✅ Filter options for the TableToolbar
+// ✅ UPDATED: Filter options now include the new status
 const FLEET_FILTER_OPTIONS = [
+  { value: "pending_activation", label: "Pending Activation" },
   { value: "available", label: "Available" },
   { value: "rented", label: "Rented" },
   { value: "maintenance", label: "Maintenance" },
@@ -43,13 +48,12 @@ export default function FleetPage() {
   const router = useRouter();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
-  
   const [view, setView] = useState<ViewMode>("active");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  
+
   const [garageVehicle, setGarageVehicle] = useState<Vehicle | null>(null);
   const [garageModalOpen, setGarageModalOpen] = useState(false);
 
@@ -84,17 +88,14 @@ export default function FleetPage() {
 
   const filtered = useMemo(() => {
     let result = vehicles;
-    
     if (view === "vault") {
       result = result.filter((v) => v.is_archived === true);
     } else {
       result = result.filter((v) => v.is_archived !== true);
     }
-
     if (statusFilter) {
       result = result.filter((v) => v.status === statusFilter);
     }
-
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -104,7 +105,6 @@ export default function FleetPage() {
           v.plate_number.toLowerCase().includes(q)
       );
     }
-
     return result;
   }, [vehicles, view, statusFilter, search]);
 
@@ -134,7 +134,6 @@ export default function FleetPage() {
         );
       },
     },
-    // ✅ NEW: Plate Number Column
     {
       accessorKey: "plate_number",
       header: "Plate Number",
@@ -148,7 +147,6 @@ export default function FleetPage() {
       accessorKey: "daily_rate",
       header: "Daily Rate",
       cell: ({ row }) => (
-        // ✅ Removed Banknote icon
         <span className="text-sm font-semibold text-gray-900">
           KES {Number(row.original.daily_rate).toLocaleString()}
         </span>
@@ -218,11 +216,14 @@ export default function FleetPage() {
         subtitle="Manage your vehicles and maintenance"
         icon={Car}
         breadcrumb={[{ label: "Dashboard", href: "/dashboard" }, { label: "Fleet" }]}
-        actions={view === "active" ? [{ label: "Add Vehicle", icon: Plus, variant: "primary", onClick: () => router.push("/dashboard/fleet/new") }] : []}
+        actions={
+          view === "active"
+            ? [{ label: "Add Vehicle", icon: Plus, variant: "primary", onClick: () => router.push("/dashboard/fleet/new") }]
+            : []
+        }
       />
 
       <SectionCard padding={false}>
-        {/* ✅ Replaced manual toolbar with TableToolbar to match Clients page */}
         <TableToolbar
           viewMode={view}
           onViewModeChange={setView}
@@ -279,7 +280,10 @@ export default function FleetPage() {
       <QuickGarageModal
         vehicle={garageVehicle}
         open={garageModalOpen}
-        onClose={() => { setGarageModalOpen(false); setGarageVehicle(null); }}
+        onClose={() => {
+          setGarageModalOpen(false);
+          setGarageVehicle(null);
+        }}
         onSave={handleGarageSave}
       />
     </div>

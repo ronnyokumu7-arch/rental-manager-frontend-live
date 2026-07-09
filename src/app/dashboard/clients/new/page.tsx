@@ -1,10 +1,15 @@
+// src/app/dashboard/clients/new/page.tsx
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, User, Shield, Phone, CheckCircle, Mail, CreditCard, MapPin } from "lucide-react";
 import toast from "react-hot-toast";
+
 import { clientsApi } from "@/lib/api/clients";
-import type { ClientCreatePayload } from "@/lib/types";
+// ✅ FIXED: Renamed to ClientCreate to match the cleaned types.ts
+import type { ClientCreate } from "@/lib/types"; 
+
 import SectionCard from "@/components/ui/SectionCard";
 import FormGroup from "@/components/forms/FormGroup";
 import Input from "@/components/forms/Input";
@@ -21,7 +26,7 @@ export default function NewClientPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
-
+  
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -55,9 +60,8 @@ export default function NewClientPage() {
 
     setLoading(true);
     try {
-      // ✅ FIXED: Added 'status' and 'work_address' to satisfy ClientCreatePayload
-      // ✅ FIXED: Used 'null' instead of 'undefined' for optional string fields
-      const payload: ClientCreatePayload = {
+      // ✅ FIXED: Payload now perfectly matches the cleaned ClientCreate type
+      const payload: ClientCreate = {
         full_name: formData.full_name,
         email: formData.email,
         phone: formData.phone,
@@ -65,14 +69,14 @@ export default function NewClientPage() {
         dl_number: formData.dl_number || null,
         dl_expiry: formData.dl_expiry || null,
         residential_address: formData.residential_address || null,
-        work_address: null,       // ✅ Required by ClientCreatePayload
+        work_address: null, 
         next_of_kin_name: formData.next_of_kin_name || null,
         next_of_kin_phone: formData.next_of_kin_phone || null,
-        status: "pending",        // ✅ Required by ClientCreatePayload
+        status: "pending", 
       };
 
       await clientsApi.create(payload);
-      toast.success("Client created successfully!");
+      toast.success("Client created successfully! Compliance tasks generated.");
       router.push("/dashboard/clients");
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Failed to create client");

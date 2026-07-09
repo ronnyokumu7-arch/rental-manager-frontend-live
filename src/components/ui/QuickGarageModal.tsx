@@ -1,7 +1,9 @@
+// src/components/vehicle/QuickGarageModal.tsx
 "use client";
+
 import { useState, useEffect } from "react";
 import { Wrench } from "lucide-react";
-import type { Vehicle, VehicleUpdatePayload } from "@/lib/types";
+import type { Vehicle, VehicleUpdate } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
 import FormGroup from "@/components/forms/FormGroup";
 import Input from "@/components/forms/Input";
@@ -11,7 +13,8 @@ interface QuickGarageModalProps {
   vehicle: Vehicle | null;
   open: boolean;
   onClose: () => void;
-  onSave: (data: VehicleUpdatePayload) => void;
+  // ✅ FIXED: Changed VehicleUpdatePayload to VehicleUpdate
+  onSave: (data: VehicleUpdate) => void;
 }
 
 export default function QuickGarageModal({
@@ -39,6 +42,7 @@ export default function QuickGarageModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!vehicle) return;
+    
     onSave({
       status: formData.status as Vehicle["status"],
       current_mileage: formData.current_mileage,
@@ -75,9 +79,7 @@ export default function QuickGarageModal({
           <FormGroup label="Status">
             <Select
               value={formData.status}
-              onChange={(e) =>
-                setFormData({ ...formData, status: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               options={[
                 { value: "available", label: "Available" },
                 { value: "rented", label: "Rented" },
@@ -92,12 +94,7 @@ export default function QuickGarageModal({
             <Input
               type="number"
               value={formData.current_mileage}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  current_mileage: Number(e.target.value),
-                })
-              }
+              onChange={(e) => setFormData({ ...formData, current_mileage: Number(e.target.value) })}
               min={0}
             />
           </FormGroup>
@@ -107,12 +104,7 @@ export default function QuickGarageModal({
             <Input
               type="number"
               value={formData.next_service_km}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  next_service_km: Number(e.target.value),
-                })
-              }
+              onChange={(e) => setFormData({ ...formData, next_service_km: Number(e.target.value) })}
               min={0}
               placeholder="e.g. 15000"
             />
@@ -120,11 +112,7 @@ export default function QuickGarageModal({
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-surface-border">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-secondary"
-            >
+            <button type="button" onClick={onClose} className="btn btn-secondary">
               Cancel
             </button>
             <button type="submit" className="btn btn-primary">

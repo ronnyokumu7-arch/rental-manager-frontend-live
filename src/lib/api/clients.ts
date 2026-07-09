@@ -1,74 +1,91 @@
+// src/lib/api/clients.ts
 import apiClient from "@/lib/api-client";
-import type { Client, ClientCreatePayload, ClientUpdatePayload, Booking } from "@/lib/types";
+import type { Client, ClientCreate, ClientUpdate, Booking } from "@/lib/types";
 
 export const clientsApi = {
-  // ── List & Search ─────────────────────────────────────────────────────
+  // ── Core CRUD ──────────────────────────────────────────────────────────────
   list: (params?: { search?: string; status?: string }) =>
     apiClient.get<Client[]>("/clients", { params }).then((r) => r.data),
 
   listArchived: () =>
     apiClient.get<Client[]>("/clients/archived").then((r) => r.data),
 
-  // ── Single ────────────────────────────────────────────────────────────
   get: (id: number) =>
     apiClient.get<Client>(`/clients/${id}`).then((r) => r.data),
 
-  create: (data: ClientCreatePayload) =>
+  // ⚡ TRIGGERS: check_compliance_on_create (Checks for missing docs & pending verification)
+  create: (data: ClientCreate) =>
     apiClient.post<Client>("/clients", data).then((r) => r.data),
 
-  update: (id: number, data: ClientUpdatePayload) =>
+  // ⚡ TRIGGERS: check_dl_expiry (If dl_expiry is updated)
+  update: (id: number, data: ClientUpdate) =>
     apiClient.patch<Client>(`/clients/${id}`, data).then((r) => r.data),
 
   delete: (id: number) =>
     apiClient.delete(`/clients/${id}`),
 
-  // ── Status Transitions ────────────────────────────────────────────────
-  suspend: (id: number) =>
-    apiClient.post<Client>(`/clients/${id}/suspend`).then((r) => r.data),
+  // ── Status Transitions ─────────────────────────────────────────────────────
+  activate: (id: number) =>
+    apiClient.post<Client>(`/clients/${id}/activate`).then((r) => r.data),
+
+  suspend: (id: number, reason?: string) => {
+    const query = reason ? `?reason=${encodeURIComponent(reason)}` : "";
+    return apiClient.post<Client>(`/clients/${id}/suspend${query}`).then((r) => r.data);
+  },
 
   reactivate: (id: number) =>
     apiClient.post<Client>(`/clients/${id}/reactivate`).then((r) => r.data),
 
-  // ── Archive Workflow ──────────────────────────────────────────────────
+  // ── Archive Workflow ───────────────────────────────────────────────────────
   archive: (id: number) =>
     apiClient.post<Client>(`/clients/${id}/archive`).then((r) => r.data),
 
   restore: (id: number) =>
     apiClient.post<Client>(`/clients/${id}/restore`).then((r) => r.data),
 
-  // ── File Uploads (Mapped to specific backend endpoints) ───────────────
+  // ── Document Uploads (⚡ TRIGGERS COMPLIANCE RE-EVALUATION) ────────────────
   uploadAvatar: (id: number, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
     return apiClient
-      .post<Client>(`/clients/${id}/upload/avatar`, formData, {
+      .post<Client>(`/clients/${id}/upload-avatar`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((r) => r.data);
   },
 
-  uploadIdDocument: (id: number, front: File, back?: File) => {
-    const formData = new FormData();
-    formData.append("front", front);
-    if (back) formData.append("back", back);
-    return apiClient
-      .post<Client>(`/clients/${id}/upload/id-document`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
-      .then((r) => r.data);
-  },
-
-  uploadDlDocument: (id: number, file: File) => {
+  uploadIdFront: (id: number, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
     return apiClient
-      .post<Client>(`/clients/${id}/upload/dl-document`, formData, {
+      .post<Client>(`/clients/${id}/upload-id-front`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((r) => r.data);
   },
 
-  // ── Related Data ──────────────────────────────────────────────────────
+  uploadIdBack: (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiClient
+      .post<Client>(`/clients/${id}/upload-id-back`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
+  },
+
+  // ⚡ TRIGGERS: check_compliance_on_create & check_dl_expiry
+  uploadDlFront: (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiClient
+      .post<Client>(`/clients/${id}/upload-dl-front`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
+  },
+
+  // ── Related Data ───────────────────────────────────────────────────────────
   getBookings: (clientId: number) =>
     apiClient
       .get<Booking[]>("/bookings", { params: { client_id: clientId } })

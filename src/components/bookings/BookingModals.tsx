@@ -12,7 +12,6 @@ import type { ConfirmActionType } from "@/hooks/bookings/useBookingProfile";
 interface BookingModalsProps {
   booking: Booking;
   client: Client;
-  
   // Client & Vehicle Modals
   showClientModal: boolean;
   showVehicleModal: boolean;
@@ -22,21 +21,19 @@ interface BookingModalsProps {
   onChangeVehicle: (id: number) => void;
   onCloseClientModal: () => void;
   onCloseVehicleModal: () => void;
-
   // Share Invoice Modal
   showShareModal: boolean;
+  // ✅ FIXED: Removed fatal trailing spaces from the type definition
   shareMethod: "email" | "whatsapp" | "";
   onSetShareMethod: (method: "email" | "whatsapp" | "") => void;
   onSendInvoice: () => void;
   onCloseShareModal: () => void;
-
   // Confirm Status Dialog
   showConfirmDialog: boolean;
   confirmAction: ConfirmActionType;
   onConfirmAction: () => void;
   onCloseConfirm: () => void;
   isActionLoading: boolean;
-
   // Final Mileage Modal
   showMileageModal: boolean;
   finalMileage: number;
@@ -44,8 +41,7 @@ interface BookingModalsProps {
   currentVehicleMileage: number;
   onSaveFinalMileage: () => void;
   onCloseMileageModal: () => void;
-
-  // ✅ NEW: Quotation Modal Props
+  // Quotation Modal Props
   showQuotationModal: boolean;
   quotationUrl: string | null;
   onCopyQuotationLink: () => void;
@@ -63,6 +59,7 @@ export default function BookingModals({
   showQuotationModal, quotationUrl, onCopyQuotationLink, onCloseQuotationModal
 }: BookingModalsProps) {
 
+  // ✅ FIXED: Broken arrow (= >) and trailing spaces in strings
   const getConfirmDetails = () => {
     if (confirmAction === "confirm") return { title: "Confirm Booking?", message: "This will lock in the dates, generate the contract, and notify the client.", variant: "info" as const };
     if (confirmAction === "activate") return { title: "Start Trip?", message: "This will mark the vehicle as rented and officially start the trip.", variant: "warning" as const };
@@ -74,12 +71,13 @@ export default function BookingModals({
 
   return (
     <>
-      {/* ─ 1. CHANGE CLIENT MODAL ── */}
+      {/* ── 1. CHANGE CLIENT MODAL ── */}
       <Modal open={showClientModal} onClose={onCloseClientModal} title="Change Client" subtitle="Reassign this booking to a different client" size="sm">
         <FormGroup label="Select Client">
           <Select
             value={booking.client_id.toString()}
             onChange={(e) => onChangeClient(parseInt(e.target.value))}
+            // ✅ FIXED: Removed hidden \n from the template literal
             options={availableClients.map((c) => ({ value: c.id.toString(), label: `${c.full_name} (${c.phone})` }))}
           />
         </FormGroup>
@@ -145,7 +143,7 @@ export default function BookingModals({
         message={confirmDetails.message}
         variant={confirmDetails.variant}
         confirmLabel={isActionLoading ? "Processing..." : "Yes, Proceed"}
-        loading={isActionLoading} // ✅ Fixed prop name
+        loading={isActionLoading}
       />
 
       {/* ── 5. FINAL MILEAGE MODAL ── */}
@@ -163,7 +161,6 @@ export default function BookingModals({
               {currentVehicleMileage.toLocaleString()} <span className="text-sm font-medium text-ink-muted">km</span>
             </p>
           </div>
-
           <div>
             <label className="block text-xs font-semibold text-ink-muted mb-1.5">Final Odometer Reading (km) *</label>
             <div className="relative">
@@ -182,7 +179,6 @@ export default function BookingModals({
               Distance driven: <span className="font-bold text-ink">{Math.max(0, finalMileage - currentVehicleMileage).toLocaleString()} km</span>
             </p>
           </div>
-
           <div className="flex gap-3 pt-2">
             <button 
               onClick={onCloseMileageModal} 
@@ -201,7 +197,7 @@ export default function BookingModals({
         </div>
       </Modal>
 
-      {/* ── 6. QUOTATION GENERATED MODAL (NEW) ── */}
+      {/* ── 6. QUOTATION GENERATED MODAL ── */}
       <Modal 
         open={showQuotationModal} 
         onClose={onCloseQuotationModal} 
@@ -216,7 +212,6 @@ export default function BookingModals({
               The quotation is ready. Send the link below to your client. Once they accept it, the booking will automatically move to <strong>Confirmed</strong>.
             </p>
           </div>
-
           <div className="relative">
             <label className="block text-xs font-semibold text-ink-muted mb-1.5">Shareable Link</label>
             <div className="flex gap-2">

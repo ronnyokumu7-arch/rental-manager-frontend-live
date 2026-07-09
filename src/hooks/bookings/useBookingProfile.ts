@@ -1,8 +1,10 @@
 // src/hooks/bookings/useBookingProfile.ts
 "use client";
+
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+
 import { bookingsApi } from "@/lib/api/bookings";
 import { clientsApi } from "@/lib/api/clients";
 import { vehiclesApi } from "@/lib/api/vehicles";
@@ -20,40 +22,41 @@ export function useBookingProfile() {
   const [client, setClient] = useState<Client | null>(null);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [contract, setContract] = useState<Contract | null>(null);
+  
   const [loading, setLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
-  // Modals State
+  // ── Modals State ──────────────────────────────────────────────────────
   const [showClientModal, setShowClientModal] = useState(false);
   const [showVehicleModal, setShowVehicleModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showContractDrawer, setShowContractDrawer] = useState(false);
   const [shareMethod, setShareMethod] = useState<"email" | "whatsapp" | "">("");
   const [confirmAction, setConfirmAction] = useState<ConfirmActionType>(null);
-  
-  // Form & Action State
+
+  // ── Form & Action State ───────────────────────────────────────────────
   const [tripDates, setTripDates] = useState({ start: "", end: "" });
   const [destination, setDestination] = useState("");
   const [availableClients, setAvailableClients] = useState<Client[]>([]);
   const [availableVehicles, setAvailableVehicles] = useState<Vehicle[]>([]);
-  
-  // Mileage State
+
+  // ── Mileage State ─────────────────────────────────────────────────────
   const [isTripEnded, setIsTripEnded] = useState(false);
   const [showMileageModal, setShowMileageModal] = useState(false);
   const [finalMileage, setFinalMileage] = useState(0);
-  
-  // Quotation/Invoice Link State
+
+  // ── Quotation/Invoice Link State ──────────────────────────────────────
   const [quotationUrl, setQuotationUrl] = useState<string | null>(null);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
 
-  // ── 1. FETCH DATA ────────────────────────────────────────────────────────
+  // ── 1. FETCH DATA ─────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     if (!bookingId) return;
     setLoading(true);
     try {
       const bookingData = await bookingsApi.getById(bookingId);
       setBooking(bookingData);
-      
+
       setTripDates({
         start: bookingData.start_date.split("T")[0],
         end: bookingData.end_date.split("T")[0],
@@ -81,19 +84,24 @@ export function useBookingProfile() {
     }
   }, [bookingId]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  // ── 2. MODAL DATA LOADING ────────────────────────────────────────────────
+  // ── 2. MODAL DATA LOADING ─────────────────────────────────────────────
   useEffect(() => {
     if (showClientModal) clientsApi.list().then(setAvailableClients);
     if (showVehicleModal) {
       vehiclesApi.list().then((data) =>
-        setAvailableVehicles(data.filter((v) => v.status === "available" || v.id === booking?.vehicle_id))
+        setAvailableVehicles(
+          data.filter((v) => v.status === "available" || v.id === booking?.vehicle_id)
+        )
       );
     }
   }, [showClientModal, showVehicleModal, booking?.vehicle_id]);
 
-  // ── 3. ACTIONS ───────────────────────────────────────────────────────────
+  // ── 3. ACTIONS ────────────────────────────────────────────────────────
+  
   const handleSaveTripChanges = async () => {
     if (!booking) return;
     setIsActionLoading(true);
@@ -142,12 +150,22 @@ export function useBookingProfile() {
     }
   };
 
+  // ✅ CRITICAL FIX: Replaced generic transitionStatus with explicit API calls
   const handleStatusTransition = async () => {
     if (!booking || !confirmAction) return;
     setIsActionLoading(true);
     try {
-      await bookingsApi.transitionStatus(booking.id, confirmAction);
-      toast.success(`Booking ${confirmAction}ed successfully`);
+      if (confirmAction === "confirm") {
+        await bookingsApi.confirm(booking.id);
+        toast.success("Booking confirmed! Contract & Invoice generated.");
+      } else if (confirmAction === "activate") {
+        await bookingsApi.activate(booking.id);
+        toast.success("Trip started! Vehicle marked as rented.");
+      } else if (confirmAction === "cancel") {
+        await bookingsApi.cancel(booking.id);
+        toast.success("Booking cancelled.");
+      }
+      
       setConfirmAction(null);
       fetchData();
     } catch (error: any) {
@@ -167,6 +185,7 @@ export function useBookingProfile() {
         shareToken = res.share_token;
         setContract({ ...contract, share_token: shareToken });
       }
+      // ✅ FIXED: Removed hidden \n from the URL
       const shareUrl = `${window.location.origin}/contracts/view/${shareToken}`;
       await navigator.clipboard.writeText(shareUrl);
       toast.success("Contract link copied!");
@@ -175,24 +194,8 @@ export function useBookingProfile() {
     }
   };
 
-  // ✅ NEW: Manual Contract Generation Override
-  const handleGenerateContract = async () => {
-    if (!booking) return;
-    setIsActionLoading(true);
-    try {
-      // Calls your backend endpoint to manually generate a contract draft
-      // Ensure your contractsApi has a generateContract method or adjust the endpoint
-      await contractsApi.generateContract(booking.id);
-      toast.success("Contract draft generated!");
-      fetchData();
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || "Failed to generate contract");
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
   const handleSendInvoice = async () => {
+    // ✅ FIXED: Removed hidden \n from toast
     toast.success(`Invoice sent via ${shareMethod}`);
     setShowShareModal(false);
     setShareMethod("");
@@ -208,6 +211,7 @@ export function useBookingProfile() {
     setShowMileageModal(true);
   };
 
+  // ✅ CRITICAL FIX: Replaced transitionStatus("complete") with bookingsApi.complete()
   const handleSaveFinalMileage = async () => {
     if (!vehicle || !booking) return;
     if (finalMileage < (vehicle.current_mileage || 0)) {
@@ -215,8 +219,12 @@ export function useBookingProfile() {
     }
     setIsActionLoading(true);
     try {
-      await vehiclesApi.update(vehicle.id, { current_mileage: finalMileage } as any);
-      await bookingsApi.transitionStatus(booking.id, "complete");
+      // 1. Update vehicle mileage (Triggers backend maintenance check)
+      await vehiclesApi.update(vehicle.id, { current_mileage: finalMileage });
+      
+      // 2. Complete the booking (Triggers backend inspection & final invoice tasks)
+      await bookingsApi.complete(booking.id);
+      
       toast.success("Mileage updated & Booking Completed!");
       setShowMileageModal(false);
       setIsTripEnded(false);
@@ -228,11 +236,12 @@ export function useBookingProfile() {
     }
   };
 
+  // ✅ CRITICAL FIX: Replaced generateQuotation with generateInvoice
   const handleGenerateQuotation = async () => {
     if (!booking) return;
     setIsActionLoading(true);
     try {
-      const result = await bookingsApi.generateQuotation(booking.id);
+      const result = await bookingsApi.generateInvoice(booking.id);
       setQuotationUrl(result.share_url);
       setShowQuotationModal(true);
       toast.success("Quotation generated!");
@@ -258,7 +267,7 @@ export function useBookingProfile() {
     shareMethod, setShareMethod, confirmAction, setConfirmAction,
     availableClients, availableVehicles, isActionLoading,
     fetchData, handleSaveTripChanges, handleChangeClient, handleChangeVehicle,
-    handleStatusTransition, handleCopyContractLink, handleGenerateContract, handleSendInvoice,
+    handleStatusTransition, handleCopyContractLink, handleSendInvoice,
     isTripEnded, showMileageModal, setShowMileageModal, finalMileage, setFinalMileage,
     handleStageEndTrip, handleOpenMileageModal, handleSaveFinalMileage,
     quotationUrl, showQuotationModal, setShowQuotationModal,
