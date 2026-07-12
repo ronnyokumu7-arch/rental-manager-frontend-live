@@ -1,6 +1,8 @@
 // src/components/financials/payments/RecordPaymentModal.tsx
+"use client";
+
 import { useState, useEffect } from "react";
-import { X, Loader2, Banknote } from "lucide-react";
+import { Loader2, Banknote, CheckCircle2 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { invoicesApi } from "@/lib/api/invoices";
 import type { Invoice } from "@/lib/types";
@@ -12,6 +14,10 @@ interface RecordPaymentModalProps {
   onPaymentRecorded: () => void;
 }
 
+// ── Design System Constants ──────────────────────────────────────────────────
+const inputClass = "w-full px-4 py-3 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed";
+const labelClass = "block text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] mb-2";
+
 export default function RecordPaymentModal({ open, onClose, onPaymentRecorded }: RecordPaymentModalProps) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<number | null>(null);
@@ -19,10 +25,18 @@ export default function RecordPaymentModal({ open, onClose, onPaymentRecorded }:
   const [method, setMethod] = useState<"mpesa" | "manual">("mpesa");
   const [reference, setReference] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fetchingInvoices, setFetchingInvoices] = useState(false);
 
   useEffect(() => {
     if (open) {
-      invoicesApi.list({ status: "sent,overdue" }).then(setInvoices);
+      setFetchingInvoices(true);
+      invoicesApi.list()
+        .then((data) => {
+          const unpaid = data.filter(inv => inv.status !== "paid" && inv.status !== "void");
+          setInvoices(unpaid);
+        })
+        .catch(() => toast.error("Failed to load invoices"))
+        .finally(() => setFetchingInvoices(false));
     }
   }, [open]);
 
@@ -66,47 +80,65 @@ export default function RecordPaymentModal({ open, onClose, onPaymentRecorded }:
 
   return (
     <Modal open={open} onClose={handleClose} title="Record Payment" subtitle="Log an offline payment transaction" size="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        
         {/* Invoice Selection */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Select Invoice *</label>
+          <label className={labelClass}>
+            Select Unpaid Invoice <span className="text-[var(--color-danger)]">*</span>
+          </label>
           <select
             value={selectedInvoice || ""}
             onChange={(e) => {
               setSelectedInvoice(Number(e.target.value));
               setAmount("");
             }}
-            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+            className={inputClass}
             required
+            disabled={fetchingInvoices}
           >
-            <option value="">Select an invoice...</option>
-            {invoices.map(inv => (
-              <option key={inv.id} value={inv.id}>
-                {inv.invoice_number} - {inv.currency_code} {Number(inv.amount_due).toLocaleString()}
-              </option>
-            ))}
+            <option value="">
+              {fetchingInvoices ? "Loading invoices..." : "Select an invoice..."}
+            </option>
+            {invoices.map(inv => {
+              const bal = Number(inv.amount_due) - Number(inv.amount_paid);
+              return (
+                <option key={inv.id} value={inv.id}>
+                  {inv.invoice_number} — {inv.currency_code} {bal.toLocaleString()} remaining
+                </option>
+              );
+            })}
           </select>
+          
+          {invoices.length === 0 && !fetchingInvoices && (
+            <div className="mt-3 p-4 rounded-xl bg-[var(--color-success-bg)]/30 border border-[var(--color-success-bg)] flex items-start gap-3">
+              <CheckCircle2 size={16} className="text-[var(--color-success-text)] mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-[var(--color-success-text)] font-medium">
+                All invoices are paid up!
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Balance Info */}
         {selectedInvoiceData && (
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-semibold text-slate-500 uppercase">Total Due</span>
-              <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+          <div className="p-5 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider">Total Due</span>
+              <span className="text-sm font-bold text-[var(--color-ink)]">
                 {selectedInvoiceData.currency_code} {Number(selectedInvoiceData.amount_due).toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-semibold text-slate-500 uppercase">Already Paid</span>
-              <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider">Already Paid</span>
+              <span className="text-sm font-medium text-[var(--color-ink-muted)]">
                 {selectedInvoiceData.currency_code} {Number(selectedInvoiceData.amount_paid).toLocaleString()}
               </span>
             </div>
-            <div className="border-t border-slate-200 dark:border-slate-700 my-2" />
+            <div className="border-t border-[var(--color-surface-border)] my-3" />
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase">Remaining Balance</span>
-              <span className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
+              <span className="text-[10px] font-bold text-[var(--color-primary)] uppercase tracking-wider">Remaining Balance</span>
+              <span className="text-lg font-extrabold text-[var(--color-primary)]">
                 {selectedInvoiceData.currency_code} {remaining.toLocaleString()}
               </span>
             </div>
@@ -115,40 +147,51 @@ export default function RecordPaymentModal({ open, onClose, onPaymentRecorded }:
 
         {/* Amount Input */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Payment Amount *</label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            max={remaining}
-            step="0.01"
-            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-            placeholder="0.00"
-            required
-            disabled={!selectedInvoice}
-          />
+          <label className={labelClass}>
+            Payment Amount <span className="text-[var(--color-danger)]">*</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-3.5 text-[var(--color-ink-subtle)] text-sm font-semibold">
+              {selectedInvoiceData?.currency_code || "KES"}
+            </span>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              max={remaining}
+              step="0.01"
+              className={`${inputClass} pl-16`}
+              placeholder="0.00"
+              required
+              disabled={!selectedInvoice}
+            />
+          </div>
         </div>
 
         {/* Method & Reference */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Method *</label>
+            <label className={labelClass}>
+              Method <span className="text-[var(--color-danger)]">*</span>
+            </label>
             <select
               value={method}
               onChange={(e) => setMethod(e.target.value as any)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              className={inputClass}
             >
               <option value="mpesa">M-Pesa</option>
               <option value="manual">Bank / Cash</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Reference *</label>
+            <label className={labelClass}>
+              Reference <span className="text-[var(--color-danger)]">*</span>
+            </label>
             <input
               type="text"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              className={inputClass}
               placeholder={method === "mpesa" ? "e.g., QFG34HJ8L" : "Receipt #"}
               required
             />
@@ -156,11 +199,19 @@ export default function RecordPaymentModal({ open, onClose, onPaymentRecorded }:
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <button type="button" onClick={handleClose} className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--color-surface-border)]">
+          <button 
+            type="button" 
+            onClick={handleClose} 
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all"
+          >
             Cancel
           </button>
-          <button type="submit" disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all disabled:opacity-50">
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
             {loading ? "Processing..." : "Record Payment"}
           </button>

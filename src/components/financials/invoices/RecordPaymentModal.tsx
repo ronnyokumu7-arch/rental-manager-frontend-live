@@ -1,6 +1,8 @@
 // src/components/financials/invoices/RecordPaymentModal.tsx
+"use client";
+
 import { useState } from "react";
-import { X, Loader2, Banknote } from "lucide-react";
+import { Loader2, Banknote } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import type { Invoice } from "@/lib/types";
 
@@ -10,6 +12,10 @@ interface RecordPaymentModalProps {
   onClose: () => void;
   onSubmit: (amount: number) => Promise<boolean>;
 }
+
+// ── Design System Constants ──────────────────────────────────────────────────
+const inputClass = "w-full px-4 py-3 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all duration-200 text-sm";
+const labelClass = "block text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] mb-2";
 
 export default function RecordPaymentModal({ invoice, open, onClose, onSubmit }: RecordPaymentModalProps) {
   const [amount, setAmount] = useState("");
@@ -35,42 +41,70 @@ export default function RecordPaymentModal({ invoice, open, onClose, onSubmit }:
 
   return (
     <Modal open={open} onClose={onClose} title="Record Offline Payment" subtitle={`Invoice ${invoice.invoice_number}`} size="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Total Due</span>
-            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{invoice.currency_code} {Number(invoice.amount_due).toLocaleString()}</span>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* Invoice Summary Card */}
+        <div className="p-5 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider">Total Due</span>
+            <span className="text-sm font-bold text-[var(--color-ink)]">
+              {invoice.currency_code} {Number(invoice.amount_due).toLocaleString()}
+            </span>
           </div>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Already Paid</span>
-            <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{invoice.currency_code} {Number(invoice.amount_paid).toLocaleString()}</span>
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider">Already Paid</span>
+            <span className="text-sm font-medium text-[var(--color-ink-muted)]">
+              {invoice.currency_code} {Number(invoice.amount_paid).toLocaleString()}
+            </span>
           </div>
-          <div className="border-t border-slate-200 dark:border-slate-700 my-2" />
+          <div className="border-t border-[var(--color-surface-border)] my-3" />
           <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase">Remaining Balance</span>
-            <span className="text-lg font-extrabold text-indigo-600 dark:text-indigo-400">{invoice.currency_code} {remaining.toLocaleString()}</span>
+            <span className="text-[10px] font-bold text-[var(--color-primary)] uppercase tracking-wider">Remaining Balance</span>
+            <span className="text-lg font-extrabold text-[var(--color-primary)]">
+              {invoice.currency_code} {remaining.toLocaleString()}
+            </span>
           </div>
         </div>
 
+        {/* Payment Amount Input */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Payment Amount *</label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            max={remaining}
-            step="0.01"
-            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-            placeholder="0.00"
-            required
-          />
+          <label className={labelClass}>
+            Payment Amount <span className="text-[var(--color-danger)]">*</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-3.5 text-[var(--color-ink-subtle)] text-sm font-semibold">
+              {invoice.currency_code}
+            </span>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              max={remaining}
+              step="0.01"
+              className={`${inputClass} pl-16`}
+              placeholder="0.00"
+              required
+            />
+          </div>
+          <p className="text-[10px] text-[var(--color-ink-muted)] mt-1.5">
+            Maximum amount: {invoice.currency_code} {remaining.toLocaleString()}
+          </p>
         </div>
 
-        <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--color-surface-border)]">
+          <button 
+            type="button" 
+            onClick={onClose} 
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all"
+          >
             Cancel
           </button>
-          <button type="submit" disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all disabled:opacity-50">
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
             {loading ? "Processing..." : "Record Payment"}
           </button>

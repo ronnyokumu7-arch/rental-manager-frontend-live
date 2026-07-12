@@ -1,17 +1,23 @@
+// src/app/dashboard/users/new/page.tsx
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, User, Shield, CheckCircle, Mail, Phone, Briefcase, CreditCard, Car } from "lucide-react";
+import {
+  ArrowLeft, ArrowRight, User, Shield, Phone, CheckCircle,
+  Mail, CreditCard, Briefcase, Lock, AlertCircle, Loader2
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { usersApi } from "@/lib/api/users";
-import SectionCard from "@/components/ui/SectionCard";
-import FormGroup from "@/components/forms/FormGroup";
-import Input from "@/components/forms/Input";
-import DatePicker from "@/components/forms/DatePicker";
+import type { UserCreate } from "@/lib/types";
+
+// ── Design System Constants ─────────────────────────────────────────────────
+const inputClass = "w-full px-4 py-3 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all duration-200 text-sm";
+const selectClass = "w-full px-4 py-3 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all duration-200 text-sm appearance-none";
+const labelClass = "block text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] mb-2";
 
 // ✅ STRICT SYSTEM-ALIGNED TITLES (No fluff, only operational roles)
 const ADMIN_TITLES = ["Director", "Manager", "HR"];
-
 const STAFF_DEPARTMENTS: Record<string, string[]> = {
   "Fleet & Operations": ["Fleet Manager", "Dispatcher", "Driver"],
   "Finance": ["Accountant", "Cashier"],
@@ -19,7 +25,7 @@ const STAFF_DEPARTMENTS: Record<string, string[]> = {
 };
 
 const steps = [
-  { id: 1, label: "Role & Position", icon: Shield },
+  { id: 1, label: "Role & Access", icon: Shield },
   { id: 2, label: "Identity", icon: User },
   { id: 3, label: "Compliance", icon: CreditCard },
   { id: 4, label: "Review", icon: CheckCircle },
@@ -31,11 +37,10 @@ export default function NewUserPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  
   const [roleType, setRoleType] = useState<RoleType>(null);
   const [department, setDepartment] = useState("");
   const [jobTitle, setJobTitle] = useState("");
-  
+
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -46,30 +51,40 @@ export default function NewUserPage() {
     dl_expiry: "",
   });
 
-  const updateField = (field: string, value: string) => setFormData((prev) => ({ ...prev, [field]: value }));
+  const updateField = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
-  // ✅ FIX: Prevent form submission on "Enter" key unless on the final step
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === "Enter" && currentStep < 4) {
+  // ✅ PREVENT AUTO-SUBMIT: Move focus to next input on Enter
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
       e.preventDefault();
+      const form = e.currentTarget.form;
+      if (form) {
+        const inputs = Array.from(form.querySelectorAll('input, select'));
+        const currentIndex = inputs.indexOf(e.currentTarget);
+        if (currentIndex < inputs.length - 1) {
+          inputs[currentIndex + 1].focus();
+        }
+      }
     }
   };
 
   const validateStep = (): boolean => {
     if (currentStep === 1) {
-      if (!roleType) { toast.error("Please select a role type"); return false; }
-      if (!jobTitle) { toast.error("Please select a job title"); return false; }
-      if (roleType === "staff" && !department) { toast.error("Please select a department"); return false; }
+      if (!roleType) { toast.error("Please select a role type."); return false; }
+      if (!jobTitle) { toast.error("Please select a job title."); return false; }
+      if (roleType === "staff" && !department) { toast.error("Please select a department."); return false; }
     }
     if (currentStep === 2) {
       if (!formData.full_name || !formData.email || !formData.password) {
-        toast.error("Please fill in all required fields"); return false;
+        toast.error("Please fill in all required identity fields."); return false;
       }
     }
     if (currentStep === 3) {
-      if (roleType === "staff" && !formData.id_number) { toast.error("ID Number is required for staff"); return false; }
-      if (jobTitle === "Driver" && !formData.dl_number) { toast.error("Driver's License is required for Drivers"); return false; }
-      if (jobTitle === "Driver" && !formData.dl_expiry) { toast.error("DL Expiry Date is required for Drivers"); return false; }
+      if (roleType === "staff" && !formData.id_number) { toast.error("ID Number is required for staff."); return false; }
+      if (jobTitle === "Driver" && !formData.dl_number) { toast.error("Driver's License is required for Drivers."); return false; }
+      if (jobTitle === "Driver" && !formData.dl_expiry) { toast.error("DL Expiry Date is required for Drivers."); return false; }
     }
     return true;
   };
@@ -80,22 +95,22 @@ export default function NewUserPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep()) return;
-    
+
     setLoading(true);
     try {
-      await usersApi.create({
+      const payload: UserCreate = {
         full_name: formData.full_name,
         email: formData.email,
         password: formData.password,
         role: roleType === "admin" ? "tenant_admin" : "tenant_staff",
         phone_number: formData.phone_number || null,
-        // ✅ Correctly map department based on role
         department: roleType === "admin" ? "Executive" : department, 
         job_title: jobTitle,
         id_number: formData.id_number || null,
         dl_number: formData.dl_number || null,
         dl_expiry: formData.dl_expiry || null,
-      });
+      };
+      await usersApi.create(payload);
       toast.success("Team member added successfully!");
       router.push("/dashboard/users");
     } catch (error: any) {
@@ -111,224 +126,365 @@ export default function NewUserPage() {
     return "Staff";
   };
 
-  const selectClass = "w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none";
-
   return (
-    <div className="space-y-6 pb-20 max-w-3xl mx-auto">
-      <button onClick={() => router.push("/dashboard/users")} className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-        <ArrowLeft size={14} /> Back to Team
-      </button>
-
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Add Team Member</h1>
-        <p className="text-sm text-slate-500 mt-1">Create a new account for your staff or admin.</p>
-      </div>
-
-      {/* Step Indicator */}
-      <div className="flex items-center justify-between mb-8 px-4">
-        {steps.map((step, index) => (
-          <div key={step.id} className="flex items-center flex-1">
-            <div className="flex flex-col items-center flex-1">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${currentStep >= step.id ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
-                {currentStep > step.id ? <CheckCircle size={18} /> : <step.icon size={18} />}
-              </div>
-              <span className={`mt-2 text-xs font-medium ${currentStep >= step.id ? "text-blue-600 dark:text-blue-400" : "text-slate-400"}`}>{step.label}</span>
-            </div>
-            {index < steps.length - 1 && <div className={`h-0.5 flex-1 mx-4 ${currentStep > step.id ? "bg-blue-300" : "bg-slate-200 dark:bg-slate-700"}`} />}
-          </div>
-        ))}
-      </div>
-
-      {/* ✅ FIX: Added onKeyDown to block accidental Enter key submissions */}
-      <form onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
+    <div className="min-h-[calc(100vh-4rem)] bg-[var(--color-bg)] p-4 sm:p-8 flex items-start justify-center">
+      <div className="w-full max-w-4xl">
         
-        {/* Step 1: Role & Position */}
-        {currentStep === 1 && (
-          <SectionCard className="!p-6">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">1. Select Access Level</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {/* Admin & HR Card */}
-              <button type="button" onClick={() => { setRoleType("admin"); setDepartment(""); setJobTitle(""); }}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${roleType === "admin" ? "border-blue-600 bg-blue-50 dark:bg-blue-900/10" : "border-slate-200 dark:border-slate-700 hover:border-slate-300"}`}>
-                <Shield className={`mb-2 ${roleType === "admin" ? "text-blue-600" : "text-slate-400"}`} size={20} />
-                <p className="font-bold text-slate-900 dark:text-slate-100">Admin</p>
-                <p className="text-xs text-slate-500 mt-1">Leadership, HR, and full agency management access.</p>
-              </button>
-              {/* Staff Card */}
-              <button type="button" onClick={() => { setRoleType("staff"); setDepartment(""); setJobTitle(""); }}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${roleType === "staff" ? "border-blue-600 bg-blue-50 dark:bg-blue-900/10" : "border-slate-200 dark:border-slate-700 hover:border-slate-300"}`}>
-                <Briefcase className={`mb-2 ${roleType === "staff" ? "text-blue-600" : "text-slate-400"}`} size={20} />
-                <p className="font-bold text-slate-900 dark:text-slate-100">Operational Staff</p>
-                <p className="text-xs text-slate-500 mt-1">Day-to-day operations, drivers, finance, and support.</p>
-              </button>
-            </div>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <button
+            onClick={() => router.push("/dashboard/users")}
+            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors"
+          >
+            <ArrowLeft size={16} /> Back to Team
+          </button>
+          <h1 className="text-xl font-bold text-[var(--color-ink)] hidden sm:block">Add Team Member</h1>
+          <div className="w-24" /> {/* Spacer for balance */}
+        </div>
 
-            {/* ✅ ADMIN DROPDOWN: Shows only when Admin is selected */}
-            {roleType === "admin" && (
-              <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">2. Select Admin Title</h3>
-                <FormGroup label="Job Title / Position">
-                  <select value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className={selectClass}>
-                    <option value="">Select Title...</option>
-                    {ADMIN_TITLES.map((title) => (
-                      <option key={title} value={title}>{title}</option>
-                    ))}
-                  </select>
-                </FormGroup>
-              </div>
-            )}
-
-            {/* ✅ STAFF DROPDOWNS: Shows only when Staff is selected */}
-            {roleType === "staff" && (
-              <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">2. Select Department & Position</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormGroup label="Department">
-                    <select 
-                      value={department} 
-                      onChange={(e) => { setDepartment(e.target.value); setJobTitle(""); }}
-                      className={selectClass}
-                    >
-                      <option value="">Select Department...</option>
-                      {Object.keys(STAFF_DEPARTMENTS).map((dept) => (
-                        <option key={dept} value={dept}>{dept}</option>
-                      ))}
-                    </select>
-                  </FormGroup>
-                  <FormGroup label="Job Title / Position">
-                    <select 
-                      value={jobTitle} 
-                      onChange={(e) => setJobTitle(e.target.value)}
-                      disabled={!department}
-                      className={`${selectClass} disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      <option value="">Select Position...</option>
-                      {department && STAFF_DEPARTMENTS[department]?.map((title) => (
-                        <option key={title} value={title}>{title}</option>
-                      ))}
-                    </select>
-                  </FormGroup>
-                </div>
-              </div>
-            )}
-          </SectionCard>
-        )}
-
-        {/* Step 2: Identity & Contact */}
-        {currentStep === 2 && (
-          <SectionCard className="!p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormGroup label="Full Name" required>
-                <Input value={formData.full_name} onChange={(e) => updateField("full_name", e.target.value)} placeholder="e.g. Jane Doe" />
-              </FormGroup>
-              <FormGroup label="Email Address" required>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
-                  <Input type="email" value={formData.email} onChange={(e) => updateField("email", e.target.value)} placeholder="jane@agency.com" className="pl-9" />
-                </div>
-              </FormGroup>
-              <FormGroup label="Phone Number">
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
-                  <Input type="tel" value={formData.phone_number} onChange={(e) => updateField("phone_number", e.target.value)} placeholder="+254 7..." className="pl-9" />
-                </div>
-              </FormGroup>
-              <FormGroup label="Temporary Password" required>
-                <Input type="password" value={formData.password} onChange={(e) => updateField("password", e.target.value)} placeholder="Min 8 characters" />
-              </FormGroup>
-            </div>
-          </SectionCard>
-        )}
-
-        {/* Step 3: Compliance */}
-        {currentStep === 3 && (
-          <SectionCard className="!p-6">
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-xs text-blue-700 dark:text-blue-300">
-                <strong>Role:</strong> {getRoleDisplay()} | 
-                {jobTitle === "Driver" && <span> ID & DL required</span>}
-                {roleType === "staff" && jobTitle !== "Driver" && <span> ID required, DL optional</span>}
-                {roleType === "admin" && <span> All fields optional</span>}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormGroup label="National ID Number" required={roleType === "staff"}>
-                <div className="relative">
-                  <CreditCard className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
-                  <Input value={formData.id_number} onChange={(e) => updateField("id_number", e.target.value)} placeholder="e.g. 12345678" className="pl-9" />
-                </div>
-              </FormGroup>
-              {roleType === "staff" && (
-                <>
-                  <FormGroup label="Driver's License Number" required={jobTitle === "Driver"}>
-                    <div className="relative">
-                      <Car className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
-                      <Input value={formData.dl_number} onChange={(e) => updateField("dl_number", e.target.value)} placeholder="e.g. DL-01234" className="pl-9" />
+        {/* Wizard Card */}
+        <div className="bg-[var(--color-surface)] rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--color-surface-border)] overflow-hidden">
+          
+          {/* Step Indicator */}
+          <div className="px-8 py-6 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50">
+            <div className="flex items-center justify-between max-w-2xl mx-auto">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                const isActive = currentStep === step.id;
+                const isCompleted = currentStep > step.id;
+                return (
+                  <div key={step.id} className="flex items-center flex-1 last:flex-none">
+                    <div className="flex flex-col items-center relative z-10">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                        isActive 
+                          ? "bg-[var(--color-primary)] text-white shadow-[0_0_0_4px_var(--color-primary-muted)]" 
+                          : isCompleted 
+                            ? "bg-[var(--color-success)] text-white" 
+                            : "bg-[var(--color-surface)] border-2 border-[var(--color-surface-border)] text-[var(--color-ink-subtle)]"
+                      }`}>
+                        {isCompleted ? <CheckCircle size={18} /> : <Icon size={18} />}
+                      </div>
+                      <span className={`mt-2 text-xs font-bold uppercase tracking-wider ${
+                        isActive ? "text-[var(--color-primary)]" : isCompleted ? "text-[var(--color-success-text)]" : "text-[var(--color-ink-subtle)]"
+                      }`}>
+                        {step.label}
+                      </span>
                     </div>
-                  </FormGroup>
-                  <FormGroup label="DL Expiry Date" required={jobTitle === "Driver"}>
-                    <DatePicker value={formData.dl_expiry} onChange={(val) => updateField("dl_expiry", val)} placeholder="Select date" />
-                  </FormGroup>
-                </>
-              )}
+                    {index < steps.length - 1 && (
+                      <div className={`h-0.5 flex-1 mx-4 rounded-full transition-all duration-500 ${
+                        currentStep > step.id ? "bg-[var(--color-success)]" : "bg-[var(--color-surface-border)]"
+                      }`} />
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          </SectionCard>
-        )}
+          </div>
 
-        {/* Step 4: Review */}
-        {currentStep === 4 && (
-          <SectionCard className="!p-6">
-            <div className="space-y-4">
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Role & Access</h4>
-                <div className="flex items-center gap-3">
-                  <Shield size={16} className="text-blue-600" />
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{getRoleDisplay()}</span>
-                  <span className="text-xs text-slate-500">({roleType === "admin" ? "Executive" : department})</span>
+          {/* Form Content */}
+          <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="p-8 sm:p-10">
+            
+            {/* STEP 1: ROLE & ACCESS */}
+            {currentStep === 1 && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="text-center mb-10">
+                  <h2 className="text-2xl font-bold text-[var(--color-ink)]">Select Access Level</h2>
+                  <p className="text-sm text-[var(--color-ink-muted)] mt-2">Define their operational role and permissions.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto mb-8">
+                  {/* Admin Card */}
+                  <button 
+                    type="button" 
+                    onClick={() => { setRoleType("admin"); setDepartment(""); setJobTitle(""); }}
+                    className={`p-6 rounded-2xl border-2 text-left transition-all ${
+                      roleType === "admin" 
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5" 
+                        : "border-[var(--color-surface-border)] bg-[var(--color-surface-hover)] hover:border-[var(--color-surface-border-strong)]"
+                    }`}
+                  >
+                    <Shield className={`mb-3 ${roleType === "admin" ? "text-[var(--color-primary)]" : "text-[var(--color-ink-subtle)]"}`} size={24} />
+                    <p className="font-bold text-[var(--color-ink)]">Admin</p>
+                    <p className="text-xs text-[var(--color-ink-muted)] mt-1">Leadership, HR, and full agency management access.</p>
+                  </button>
+                  
+                  {/* Staff Card */}
+                  <button 
+                    type="button" 
+                    onClick={() => { setRoleType("staff"); setDepartment(""); setJobTitle(""); }}
+                    className={`p-6 rounded-2xl border-2 text-left transition-all ${
+                      roleType === "staff" 
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5" 
+                        : "border-[var(--color-surface-border)] bg-[var(--color-surface-hover)] hover:border-[var(--color-surface-border-strong)]"
+                    }`}
+                  >
+                    <Briefcase className={`mb-3 ${roleType === "staff" ? "text-[var(--color-primary)]" : "text-[var(--color-ink-subtle)]"}`} size={24} />
+                    <p className="font-bold text-[var(--color-ink)]">Operational Staff</p>
+                    <p className="text-xs text-[var(--color-ink-muted)] mt-1">Day-to-day operations, drivers, finance, and support.</p>
+                  </button>
+                </div>
+
+                {/* Conditional Dropdowns */}
+                <div className="max-w-2xl mx-auto">
+                  {roleType === "admin" && (
+                    <div className="space-y-4 pt-6 border-t border-[var(--color-surface-border)]">
+                      <label className={labelClass}>Admin Title</label>
+                      <select value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className={selectClass}>
+                        <option value="">Select Title...</option>
+                        {ADMIN_TITLES.map((title) => (
+                          <option key={title} value={title}>{title}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {roleType === "staff" && (
+                    <div className="space-y-4 pt-6 border-t border-[var(--color-surface-border)]">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className={labelClass}>Department</label>
+                          <select 
+                            value={department} 
+                            onChange={(e) => { setDepartment(e.target.value); setJobTitle(""); }}
+                            className={selectClass}
+                          >
+                            <option value="">Select Department...</option>
+                            {Object.keys(STAFF_DEPARTMENTS).map((dept) => (
+                              <option key={dept} value={dept}>{dept}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className={labelClass}>Job Title / Position</label>
+                          <select 
+                            value={jobTitle} 
+                            onChange={(e) => setJobTitle(e.target.value)}
+                            disabled={!department}
+                            className={`${selectClass} disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            <option value="">Select Position...</option>
+                            {department && STAFF_DEPARTMENTS[department]?.map((title) => (
+                              <option key={title} value={title}>{title}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Identity</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><span className="text-slate-500">Name:</span> <span className="font-medium text-slate-900 dark:text-slate-100">{formData.full_name}</span></div>
-                  <div><span className="text-slate-500">Email:</span> <span className="font-medium text-slate-900 dark:text-slate-100">{formData.email}</span></div>
-                  <div><span className="text-slate-500">Phone:</span> <span className="font-medium text-slate-900 dark:text-slate-100">{formData.phone_number || "—"}</span></div>
+            )}
+
+            {/* STEP 2: IDENTITY & CONTACT */}
+            {currentStep === 2 && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="text-center mb-10">
+                  <h2 className="text-2xl font-bold text-[var(--color-ink)]">Identity & Contact</h2>
+                  <p className="text-sm text-[var(--color-ink-muted)] mt-2">Create their login credentials and contact info.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                  <div className="md:col-span-2">
+                    <label className={labelClass}>Full Name <span className="text-[var(--color-danger)]">*</span></label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-3.5 h-4 w-4 text-[var(--color-ink-subtle)]" />
+                      <input
+                        type="text"
+                        value={formData.full_name}
+                        onChange={(e) => updateField("full_name", e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="e.g. Jane Doe"
+                        className={`${inputClass} pl-11`}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Email Address <span className="text-[var(--color-danger)]">*</span></label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-3.5 h-4 w-4 text-[var(--color-ink-subtle)]" />
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => updateField("email", e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="jane@agency.com"
+                        className={`${inputClass} pl-11`}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Phone Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-3.5 h-4 w-4 text-[var(--color-ink-subtle)]" />
+                      <input
+                        type="tel"
+                        value={formData.phone_number}
+                        onChange={(e) => updateField("phone_number", e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="+254 7..."
+                        className={`${inputClass} pl-11`}
+                      />
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className={labelClass}>Temporary Password <span className="text-[var(--color-danger)]">*</span></label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-3.5 h-4 w-4 text-[var(--color-ink-subtle)]" />
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => updateField("password", e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Min 8 characters"
+                        className={`${inputClass} pl-11`}
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Compliance</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><span className="text-slate-500">ID Number:</span> <span className="font-medium text-slate-900 dark:text-slate-100">{formData.id_number || "—"}</span></div>
+            )}
+
+            {/* STEP 3: COMPLIANCE */}
+            {currentStep === 3 && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="text-center mb-10">
+                  <h2 className="text-2xl font-bold text-[var(--color-ink)]">Compliance Details</h2>
+                  <p className="text-sm text-[var(--color-ink-muted)] mt-2">
+                    {jobTitle === "Driver" ? "ID & Driver's License required for operational safety." : "National ID required for staff records."}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                  <div className="md:col-span-2">
+                    <label className={labelClass}>National ID Number {roleType === "staff" && <span className="text-[var(--color-danger)]">*</span>}</label>
+                    <div className="relative">
+                      <CreditCard className="absolute left-4 top-3.5 h-4 w-4 text-[var(--color-ink-subtle)]" />
+                      <input
+                        type="text"
+                        value={formData.id_number}
+                        onChange={(e) => updateField("id_number", e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="e.g. 12345678"
+                        className={`${inputClass} pl-11`}
+                      />
+                    </div>
+                  </div>
+                  
                   {roleType === "staff" && (
                     <>
-                      <div><span className="text-slate-500">DL Number:</span> <span className="font-medium text-slate-900 dark:text-slate-100">{formData.dl_number || "—"}</span></div>
-                      <div><span className="text-slate-500">DL Expiry:</span> <span className="font-medium text-slate-900 dark:text-slate-100">{formData.dl_expiry || "—"}</span></div>
+                      <div>
+                        <label className={labelClass}>Driver's License Number {jobTitle === "Driver" && <span className="text-[var(--color-danger)]">*</span>}</label>
+                        <div className="relative">
+                          <Briefcase className="absolute left-4 top-3.5 h-4 w-4 text-[var(--color-ink-subtle)]" />
+                          <input
+                            type="text"
+                            value={formData.dl_number}
+                            onChange={(e) => updateField("dl_number", e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="e.g. DL-01234"
+                            className={`${inputClass} pl-11`}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className={labelClass}>DL Expiry Date {jobTitle === "Driver" && <span className="text-[var(--color-danger)]">*</span>}</label>
+                        <input
+                          type="date"
+                          value={formData.dl_expiry}
+                          onChange={(e) => updateField("dl_expiry", e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          className={inputClass}
+                        />
+                      </div>
                     </>
                   )}
                 </div>
               </div>
-            </div>
-          </SectionCard>
-        )}
+            )}
 
-        {/* Navigation */}
-        <div className="flex items-center justify-between mt-6">
-          <button type="button" onClick={prevStep} disabled={currentStep === 1} className="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg disabled:opacity-30">
-            <ArrowLeft size={14} className="inline mr-1" /> Previous
-          </button>
-          {currentStep < 4 ? (
-            // ✅ Explicitly type="button" to prevent form submission
-            <button type="button" onClick={nextStep} className="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm">
-              Next Step <ArrowRight size={14} className="inline ml-1" />
-            </button>
-          ) : (
-            // ✅ The ONLY submit button. User MUST click this to create the user.
-            <button type="submit" disabled={loading} className="px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm disabled:opacity-50">
-              <CheckCircle size={14} className="inline mr-1" /> {loading ? "Creating..." : "Create Teammate"}
-            </button>
-          )}
+            {/* STEP 4: REVIEW */}
+            {currentStep === 4 && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="text-center mb-10">
+                  <h2 className="text-2xl font-bold text-[var(--color-ink)]">Review & Submit</h2>
+                  <p className="text-sm text-[var(--color-ink-muted)] mt-2">Verify all details before creating the account.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto mb-8">
+                  {/* Role Section */}
+                  <div className="md:col-span-2 p-6 rounded-2xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20">
+                    <h3 className="text-xs font-bold text-[var(--color-primary)] uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <Shield size={14} /> Role & Access
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-bold text-[var(--color-ink)]">{getRoleDisplay()}</span>
+                      <span className="text-xs text-[var(--color-ink-muted)]">({roleType === "admin" ? "Executive" : department})</span>
+                    </div>
+                  </div>
+
+                  {/* Identity Summary */}
+                  <div className="p-6 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
+                    <h3 className="text-xs font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-4">Identity</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-xs"><span className="text-[var(--color-ink-muted)]">Name</span><span className="font-semibold text-[var(--color-ink)]">{formData.full_name || "—"}</span></div>
+                      <div className="flex justify-between text-xs"><span className="text-[var(--color-ink-muted)]">Email</span><span className="font-semibold text-[var(--color-ink)]">{formData.email || "—"}</span></div>
+                      <div className="flex justify-between text-xs"><span className="text-[var(--color-ink-muted)]">Phone</span><span className="font-semibold text-[var(--color-ink)]">{formData.phone_number || "—"}</span></div>
+                    </div>
+                  </div>
+
+                  {/* Compliance Summary */}
+                  <div className="p-6 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
+                    <h3 className="text-xs font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-4">Compliance</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-xs"><span className="text-[var(--color-ink-muted)]">ID Number</span><span className="font-semibold text-[var(--color-ink)]">{formData.id_number || "—"}</span></div>
+                      {roleType === "staff" && (
+                        <>
+                          <div className="flex justify-between text-xs"><span className="text-[var(--color-ink-muted)]">DL Number</span><span className="font-semibold text-[var(--color-ink)]">{formData.dl_number || "—"}</span></div>
+                          <div className="flex justify-between text-xs"><span className="text-[var(--color-ink-muted)]">DL Expiry</span><span className="font-semibold text-[var(--color-ink)]">{formData.dl_expiry || "—"}</span></div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center justify-between mt-12 pt-6 border-t border-[var(--color-surface-border)]">
+              <button
+                type="button"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ArrowLeft size={16} /> Previous
+              </button>
+              
+              {currentStep < 4 ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 transition-all"
+                >
+                  Next Step <ArrowRight size={16} />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-success)] hover:bg-[var(--color-success)]/90 shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />} 
+                  {loading ? "Creating Account..." : "Create Team Member"}
+                </button>
+              )}
+            </div>
+
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

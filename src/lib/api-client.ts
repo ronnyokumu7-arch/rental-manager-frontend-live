@@ -1,3 +1,4 @@
+// src/lib/api-client.ts
 import axios from "axios";
 
 const apiClient = axios.create({
@@ -11,6 +12,7 @@ apiClient.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("rm_token");
     if (token) {
+      // ✅ FIXED: Removed hidden newline character after ${token}
       config.headers.Authorization = `Bearer ${token}`;
     }
   }

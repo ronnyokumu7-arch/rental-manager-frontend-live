@@ -22,7 +22,6 @@ export default function BottomNav({ navItems }: BottomNavProps) {
     return pathname === href || pathname.startsWith(href + "/");
   };
 
-  // Flatten items for bottom nav (ignore groups for simplicity on mobile, or show first child)
   const mobileItems = navItems.map(item => {
     if (item.children && item.children.length > 0) {
       return { ...item, href: item.children[0].href, icon: item.icon };
@@ -31,19 +30,18 @@ export default function BottomNav({ navItems }: BottomNavProps) {
   });
 
   return (
-    <nav className="flex items-center justify-around h-16 px-2 bg-surface-card/90 backdrop-blur-xl border-t border-surface-border shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <nav className="flex items-center justify-around h-16 px-2 bg-[var(--color-surface)]/90 backdrop-blur-xl border-t border-[var(--color-surface-border)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
       {mobileItems.map((item) => {
         const active = isActive(item.href);
         const Icon = item.icon as LucideIcon;
-        
         return (
           <Link
             key={item.label}
             href={item.href || "#"}
             className={`flex flex-col items-center justify-center w-16 h-full rounded-xl transition-all duration-200 ${
-              active 
-                ? "text-accent-dark bg-accent-bg/50" 
-                : "text-ink-muted hover:text-ink"
+              active
+                ? "text-[var(--color-primary)] bg-[var(--color-primary-muted)]/50"
+                : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
             }`}
           >
             <Icon size={20} strokeWidth={active ? 2.2 : 1.8} className="mb-1" />

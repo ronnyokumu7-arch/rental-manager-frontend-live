@@ -1,106 +1,97 @@
-// src/app/dashboard/profile/page.tsx
-"use client";
+// src/app/super-admin/agencies/[id]/page.tsx
+'use client';
 
-import { User, Mail, Phone, MapPin, Shield, Bell, Key } from "lucide-react";
-import PageHeader from "@/components/ui/PageHeader";
-import SectionCard from "@/components/ui/SectionCard";
+import { useState } from 'react';
+import { useParams } from 'next/navigation';
+import { useTenantProfile } from '@/hooks/useTenantProfile';
+import { TenantProfileTabs } from '@/components/tenants/TenantProfileTabs';
+import { BusinessIdentitySection } from '@/components/tenants/BusinessIdentitySection';
+import { AdminSnapshotSection } from '@/components/tenants/AdminSnapshotSection';
+import { SubscriptionStatusCard } from '@/components/tenants/SubscriptionStatusCard';
+import { PaymentGatewaysSection } from '@/components/tenants/PaymentGatewaysSection';
+import { ChangeAdminEmailModal } from '@/components/tenants/ChangeAdminEmailModal';
 
-export default function ProfilePage() {
-  return (
-    <div className="space-y-6">
-      {/* ── Header ── */}
-      <PageHeader 
-        title="My Profile" 
-        subtitle="Manage your account settings, contact information, and security preferences." 
-        icon={User}
-        breadcrumb={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Profile" }
-        ]}
-      />
+export default function AgencyProfilePage() {
+  const params = useParams();
+  const agencyId = params.id as string;
 
-      {/* ── Profile Content Grid ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left Column: Personal Info */}
-        <div className="lg:col-span-2 space-y-6">
-          <SectionCard title="Personal Information" icon={User}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Full Name</label>
-                <input type="text" defaultValue="John Doe" className="input" readOnly />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Email Address</label>
-                <input type="email" defaultValue="admin@agency.com" className="input" readOnly />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Phone Number</label>
-                <input type="tel" defaultValue="+254 700 000 000" className="input" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Role</label>
-                <input type="text" defaultValue="Agency Administrator" className="input bg-surface-hover cursor-not-allowed" readOnly />
-              </div>
-            </div>
-          </SectionCard>
+  const { tenant, isLoading, error, activeTab, setActiveTab, refetch } = useTenantProfile(agencyId);
+  
+  const [isChangeEmailModalOpen, setIsChangeEmailModalOpen] = useState(false);
 
-          <SectionCard title="Address & Location" icon={MapPin}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Street Address</label>
-                <input type="text" placeholder="Enter your street address" className="input" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">City</label>
-                <input type="text" placeholder="e.g. Nairobi" className="input" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Country</label>
-                <input type="text" placeholder="e.g. Kenya" className="input" />
-              </div>
-            </div>
-          </SectionCard>
-        </div>
-
-        {/* Right Column: Security & Preferences */}
-        <div className="space-y-6">
-          <SectionCard title="Security" icon={Shield}>
-            <div className="space-y-3">
-              <button className="w-full flex items-center justify-between p-3 rounded-lg border border-surface-border hover:bg-surface-hover transition-colors">
-                <div className="flex items-center gap-3">
-                  <Key size={16} className="text-ink-muted" />
-                  <span className="text-sm font-semibold text-ink">Change Password</span>
-                </div>
-              </button>
-              <button className="w-full flex items-center justify-between p-3 rounded-lg border border-surface-border hover:bg-surface-hover transition-colors">
-                <div className="flex items-center gap-3">
-                  <Shield size={16} className="text-ink-muted" />
-                  <span className="text-sm font-semibold text-ink">Two-Factor Auth</span>
-                </div>
-                <span className="text-xs font-bold text-success-text bg-success-bg px-2 py-0.5 rounded-full">Enabled</span>
-              </button>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Notifications" icon={Bell}>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-ink">Email Notifications</span>
-                <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-surface-border text-accent-dark focus:ring-accent-dark" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-ink">SMS Alerts</span>
-                <input type="checkbox" className="h-4 w-4 rounded border-surface-border text-accent-dark focus:ring-accent-dark" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-ink">Booking Reminders</span>
-                <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-surface-border text-accent-dark focus:ring-accent-dark" />
-              </div>
-            </div>
-          </SectionCard>
-        </div>
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6 animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+        <div className="h-64 bg-gray-100 rounded"></div>
       </div>
+    );
+  }
+
+  if (error || !tenant) {
+    return (
+      <div className="p-6 text-center text-red-600">
+        <p className="font-medium">Failed to load agency profile.</p>
+        <p className="text-sm text-gray-500 mt-2">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[var(--color-background)]">
+      {/* ✅ HEADER: Full width, consistent padding */}
+      <header className="bg-[var(--color-surface)] border-b border-[var(--color-surface-border)] px-6 md:px-8 py-8">
+        <h1 className="text-2xl font-bold text-[var(--color-ink)]">{tenant.name}</h1>
+        <p className="text-sm text-[var(--color-ink-muted)] mt-1">Agency ID: {tenant.id} • {tenant.admin_email}</p>
+      </header>
+
+      {/* ✅ TABS: Full width, matching padding */}
+      <div className="bg-[var(--color-surface)] border-b border-[var(--color-surface-border)]">
+        <TenantProfileTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      </div>
+
+      {/* ✅ MAIN CONTENT: Same padding as header for perfect flush alignment */}
+      <main className="px-6 md:px-8 py-8 space-y-6">
+        
+        {activeTab === 'profile' && (
+          // ✅ NEW: 12-column grid with 7/5 split for better proportions
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7">
+              <BusinessIdentitySection tenant={tenant} onUpdated={refetch} />
+            </div>
+            <div className="lg:col-span-5">
+              <AdminSnapshotSection 
+                tenant={tenant} 
+                onChangeEmailClick={() => setIsChangeEmailModalOpen(true)} 
+              />
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'subscription' && (
+          <div className="space-y-6">
+            <SubscriptionStatusCard tenant={tenant} onUpdated={refetch} />
+            <PaymentGatewaysSection tenantId={tenant.id} onUpdated={refetch} />
+          </div>
+        )}
+        
+        {activeTab === 'settings' && (
+          <div className="bg-[var(--color-surface)] rounded-2xl border border-dashed border-[var(--color-surface-border)] p-12 text-center text-[var(--color-ink-muted)]">
+            Settings (Coming Next)
+          </div>
+        )}
+      </main>
+
+      {/* Modal */}
+      {isChangeEmailModalOpen && tenant && (
+        <ChangeAdminEmailModal
+          tenantId={tenant.id}
+          currentAdminEmail={tenant.admin_email || tenant.email}
+          currentAdminPhone={tenant.admin_phone || tenant.phone_number}
+          onClose={() => setIsChangeEmailModalOpen(false)}
+          onSuccess={refetch}
+        />
+      )}
     </div>
   );
 }

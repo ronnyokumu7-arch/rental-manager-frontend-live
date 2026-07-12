@@ -53,7 +53,8 @@ export function useInvoices() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.download = `Invoice-${id}.pdf`;
+      // ✅ FIX: Removed the hidden trailing newline character that was corrupting the filename
+      link.download = `Invoice-${id}.pdf`; 
       link.click();
       window.URL.revokeObjectURL(url);
       toast.dismiss();

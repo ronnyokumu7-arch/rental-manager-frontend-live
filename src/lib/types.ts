@@ -21,15 +21,14 @@ export interface User {
   id_number?: string | null;
   dl_number?: string | null;
   dl_expiry?: string | null;
+  
+  // ✅ NEW: Recovery & Security Audit Fields (Synced with backend UserOut)
+  phone_verified?: boolean;
+  failed_login_attempts?: number;
+  account_locked_until?: string | null;
+  
   created_at: string;
   updated_at: string;
-}
-
-export interface Tenant {
-  id: number;
-  name: string;
-  logo_url?: string | null;
-  is_active: boolean;
 }
 
 export interface AuthState {
@@ -77,7 +76,6 @@ export interface Client {
   updated_at: string;
 }
 
-// ✅ FIXED: Removed all trailing spaces from the Omit keys
 export type ClientCreate = Omit<
   Client,
   | "id"
@@ -128,7 +126,6 @@ export interface Vehicle {
   updated_at: string;
 }
 
-// ✅ ALIGNED: Renamed to match backend Pydantic schemas exactly
 export interface VehicleCreate {
   make: string;
   model: string;
@@ -271,7 +268,8 @@ export interface InvoiceUpdate {
 }
 
 // ─── Payments ────────────────────────────────────────────────────────────────
-export type PaymentMethod = "mpesa" | "manual";
+// ✅ UPDATED: Synced with backend unified PaymentMethod enum
+export type PaymentMethod = "mpesa" | "airtel_money" | "card" | "paypal" | "bank" | "manual";
 export type PaymentStatus = "pending" | "completed" | "failed";
 
 export interface Payment {
@@ -333,7 +331,6 @@ export interface RoleTemplate {
 }
 
 // ─── Tasks & Action Center ──────────────────────────────────────────────────
-// ✅ CRITICAL FIX: Removed all trailing spaces from string literals!
 export type TaskStatus = "unassigned" | "pending" | "completed";
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 export type TaskCategory = "fleet" | "finance" | "hr" | "booking" | "compliance";
@@ -362,4 +359,107 @@ export interface Task {
 export interface TaskUpdate {
   status?: TaskStatus;
   completed_at?: string;
+}
+
+// ─── Tenants & Subscriptions ─────────────────────────────────────────────────
+export type SubscriptionStatus =
+  | "trial"
+  | "starter_trial"
+  | "active"
+  | "past_due"
+  | "suspended"
+  | "cancelled";
+
+// ✅ UPDATED: Added airtel_money to match backend PaymentMethodType enum
+export type PaymentMethodType = "mpesa" | "airtel_money" | "card" | "paypal" | "bank";
+
+export interface TenantProfile {
+  id: number;
+  tenant_id: number;
+  company_name: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  tax_number?: string | null; // KRA PIN
+  logo_url?: string | null;
+  contract_prefix: string;
+  contract_footer?: string | null;
+}
+
+export interface Tenant {
+  id: number;
+  name: string;
+  email: string;
+  phone_number?: string | null;
+  
+  // Denormalized Admin Snapshot
+  admin_name?: string | null;
+  admin_email?: string | null;
+  admin_phone?: string | null;
+  
+  // Lifecycle & Multi-Tenancy
+  is_active: boolean;
+  is_archived: boolean;
+  suspended_at?: string | null;
+  suspension_reason?: string | null;
+  
+  // ✅ NEW: Recovery & Audit Trail (Synced with backend Tenant model)
+  last_reset_request_at?: string | null;
+  email_change_cooldown_until?: string | null;
+  admin_email_changed_at?: string | null;
+  admin_changed_by_user_id?: number | null;
+  
+  // Subscription & Billing
+  plan: string;
+  subscription_status: SubscriptionStatus;
+  trial_ends_at?: string | null;
+  subscription_ends_at?: string | null;
+  grace_period_ends_at?: string | null;
+  
+  // Payment Gateway Readiness
+  default_payment_method?: PaymentMethodType | null;
+  stripe_customer_id?: string | null;
+  paypal_payer_id?: string | null;
+  payment_metadata?: Record<string, any> | null;
+  
+  // Nested Profile Data
+  profile?: TenantProfile | null;
+  
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateTenantPayload {
+  name: string;
+  email: string;
+  password: string;
+  phone_number?: string;
+  plan?: string;
+  admin_name?: string;
+  admin_email?: string;
+  admin_phone?: string;
+  business_location?: string;
+  kra_pin?: string;
+  currency?: string;
+  time_zone?: string;
+  is_corporate?: boolean;
+  billing_cycle?: string;
+}
+
+export interface UpdateTenantPayload {
+  name?: string;
+  email?: string;
+  phone_number?: string;
+  admin_name?: string;
+  admin_email?: string;
+  admin_phone?: string;
+  is_active?: boolean;
+  is_archived?: boolean;
+  plan?: string;
+  subscription_status?: SubscriptionStatus;
+  default_payment_method?: PaymentMethodType;
+  stripe_customer_id?: string;
+  paypal_payer_id?: string;
+  payment_metadata?: Record<string, any>;
 }

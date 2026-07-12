@@ -10,49 +10,52 @@ import {
   TrendingUp,
   Clock,
   AlertCircle,
-  BarChart3,
   LayoutDashboard,
   Plus,
-  Download,
 } from "lucide-react";
-
-import StatCard from "@/components/ui/StatCard";
-import SectionCard from "@/components/ui/SectionCard";
-import Badge from "@/components/ui/Badge";
 
 // ✅ Import the modular tab components
 import InvoicesTab from "@/components/financials/InvoicesTab";
 import ContractsTab from "@/components/financials/ContractsTab";
 import PaymentsTab from "@/components/financials/PaymentsTab";
 
-// ✅ FIXED: Removed all trailing spaces from tab IDs and labels
 const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "invoices", label: "Invoices", icon: Receipt },
   { id: "contracts", label: "Contracts", icon: FileText },
   { id: "payments", label: "Payments", icon: DollarSign },
-  { id: "reports", label: "Reports", icon: BarChart3 },
 ];
 
 export default function FinancialsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Mock data for Overview tab
+  const recentInvoices = [
+    { id: "INV-2401", client: "John Doe", amount: "KES 15,000", status: "paid", date: "Oct 24" },
+    { id: "INV-2402", client: "Jane Smith", amount: "KES 8,500", status: "pending", date: "Oct 23" },
+    { id: "INV-2403", client: "Acme Corp", amount: "KES 45,000", status: "overdue", date: "Oct 20" },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Unified Header */}
-      <div className="flex items-center justify-between">
+      
+      {/* Premium Header & Tab Switcher */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
+              <DollarSign size={20} />
+            </div>
             Financials
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-sm text-[var(--color-ink-muted)] mt-1">
             Manage contracts, invoices, and payments in one place
           </p>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-fit">
+        {/* Unified Tab Switcher */}
+        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -60,10 +63,10 @@ export default function FinancialsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                   isActive
-                    ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    ? "bg-[var(--color-primary)] text-white shadow-sm"
+                    : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
                 }`}
               >
                 <Icon size={14} />
@@ -76,158 +79,154 @@ export default function FinancialsPage() {
 
       {/* Persistent Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Revenue"
-          value="KES 128.5K"
-          subtitle="This month"
-          icon={TrendingUp}
-          variant="success"
-          trend={{ value: "12.5%", isPositive: true }}
-        />
-        <StatCard
-          title="Pending Payments"
-          value="KES 45.2K"
-          subtitle="5 invoices"
-          icon={Clock}
-          variant="warning"
-        />
-        <StatCard
-          title="Overdue Invoices"
-          value="5"
-          subtitle="Requires action"
-          icon={AlertCircle}
-          variant="danger"
-        />
-        <StatCard
-          title="Active Contracts"
-          value="12"
-          subtitle="+2 this month"
-          icon={FileText}
-          variant="accent"
-          trend={{ value: "2", isPositive: true }}
-        />
+        {/* Total Revenue */}
+        <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Total Revenue</p>
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-success-bg)] flex items-center justify-center text-[var(--color-success-text)]">
+              <TrendingUp size={16} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-[var(--color-ink)]">KES 128.5K</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-[var(--color-success-text)] font-semibold">+12.5%</span>
+            <span className="text-xs text-[var(--color-ink-muted)]">This month</span>
+          </div>
+        </div>
+
+        {/* Pending Payments */}
+        <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Pending Payments</p>
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-warning-bg)] flex items-center justify-center text-[var(--color-warning-text)]">
+              <Clock size={16} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-[var(--color-ink)]">KES 45.2K</p>
+          <p className="text-xs text-[var(--color-ink-muted)] mt-1">5 invoices awaiting clearance</p>
+        </div>
+
+        {/* Overdue Invoices */}
+        <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Overdue Invoices</p>
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-danger-bg)] flex items-center justify-center text-[var(--color-danger-text)]">
+              <AlertCircle size={16} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-[var(--color-ink)]">5</p>
+          <p className="text-xs text-[var(--color-danger-text)] font-semibold mt-1">Requires immediate action</p>
+        </div>
+
+        {/* Active Contracts */}
+        <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Active Contracts</p>
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-primary-muted)] flex items-center justify-center text-[var(--color-primary-text)]">
+              <FileText size={16} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-[var(--color-ink)]">12</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-[var(--color-success-text)] font-semibold">+2</span>
+            <span className="text-xs text-[var(--color-ink-muted)]">Added this month</span>
+          </div>
+        </div>
       </div>
 
       {/* Tab Content Area */}
       <div className="animate-in fade-in duration-300">
+        
         {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
           <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <SectionCard>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide">
-                    Recent Invoices
-                  </h3>
-                  <button
-                    onClick={() => setActiveTab("invoices")}
-                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-semibold"
-                  >
-                    View all
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    { id: "T1-001", client: "John Doe", amount: "KES 15,000", status: "paid", date: "Oct 24" },
-                    { id: "T1-002", client: "Jane Smith", amount: "KES 8,500", status: "pending", date: "Oct 23" },
-                    { id: "T1-003", client: "Acme Corp", amount: "KES 45,000", status: "overdue", date: "Oct 20" },
-                  ].map((inv) => (
+            {/* Recent Invoices List */}
+            <div className="lg:col-span-2 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden">
+              <div className="p-5 border-b border-[var(--color-surface-border)] flex items-center justify-between">
+                <h3 className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider">Recent Invoices</h3>
+                <button
+                  onClick={() => setActiveTab("invoices")}
+                  className="text-xs text-[var(--color-primary)] hover:underline font-semibold"
+                >
+                  View all
+                </button>
+              </div>
+              <div className="divide-y divide-[var(--color-surface-border)]">
+                {recentInvoices.map((inv) => {
+                  let statusStyle = "bg-[var(--color-success-bg)] text-[var(--color-success-text)]";
+                  if (inv.status === "pending") statusStyle = "bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]";
+                  if (inv.status === "overdue") statusStyle = "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]";
+
+                  return (
                     <div
                       key={inv.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors cursor-pointer"
+                      className="flex items-center justify-between p-4 hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-500">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-muted)]">
                           <Receipt size={18} />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{inv.id}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">{inv.client} • {inv.date}</p>
+                          <p className="text-sm font-bold text-[var(--color-ink)]">{inv.id}</p>
+                          <p className="text-xs text-[var(--color-ink-muted)]">{inv.client} • {inv.date}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                        <p className="text-sm font-bold text-[var(--color-ink)] tabular-nums">
                           {inv.amount}
                         </p>
-                        <Badge
-                          variant={
-                            inv.status === "paid"
-                              ? "success"
-                              : inv.status === "pending"
-                              ? "warning"
-                              : "danger"
-                          }
-                          size="sm"
-                        >
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${statusStyle}`}>
                           {inv.status}
-                        </Badge>
+                        </span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </SectionCard>
+                  );
+                })}
+              </div>
             </div>
-            <div className="space-y-6">
-              <SectionCard>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide mb-4">
-                  Quick Actions
-                </h3>
-                <div className="space-y-2">
-                  <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors text-left">
-                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-indigo-600 shadow-sm">
-                      <Plus size={16} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">Create Invoice</p>
-                      <p className="text-xs text-indigo-700 dark:text-indigo-300">Bill a client instantly</p>
-                    </div>
-                  </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors text-left">
-                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-emerald-600 shadow-sm">
-                      <DollarSign size={16} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Record Payment</p>
-                      <p className="text-xs text-emerald-700 dark:text-emerald-300">Log offline transactions</p>
-                    </div>
-                  </button>
-                </div>
-              </SectionCard>
+
+            {/* Quick Actions */}
+            <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden p-5 h-fit">
+              <h3 className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button 
+                  onClick={() => setActiveTab("invoices")}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 hover:bg-[var(--color-primary)]/10 transition-colors text-left"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-primary)] shadow-sm">
+                    <Plus size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[var(--color-ink)]">Create Invoice</p>
+                    <p className="text-xs text-[var(--color-ink-muted)]">Bill a client instantly</p>
+                  </div>
+                </button>
+                
+                <button 
+                  onClick={() => setActiveTab("payments")}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--color-success-bg)]/30 border border-[var(--color-success-bg)] hover:bg-[var(--color-success-bg)]/50 transition-colors text-left"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-success-text)] shadow-sm">
+                    <DollarSign size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[var(--color-ink)]">Record Payment</p>
+                    <p className="text-xs text-[var(--color-ink-muted)]">Log offline transactions</p>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         )}
 
-        {/* ✅ TAB 2: INVOICES (PLUGGED IN) */}
+        {/* TAB 2: INVOICES */}
         {activeTab === "invoices" && <InvoicesTab />}
 
-        {/* ✅ TAB 3: CONTRACTS (PLUGGED IN) */}
+        {/* TAB 3: CONTRACTS */}
         {activeTab === "contracts" && <ContractsTab />}
 
-        {/* ✅ TAB 4: PAYMENTS (PLUGGED IN) */}
+        {/* TAB 4: PAYMENTS */}
         {activeTab === "payments" && <PaymentsTab />}
-
-        {/* TAB 5: REPORTS (Placeholder) */}
-        {activeTab === "reports" && (
-          <SectionCard>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                Financial Analytics
-              </h3>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                <Download size={14} /> Export Report
-              </button>
-            </div>
-            <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
-              <BarChart3 size={48} className="text-slate-300 dark:text-slate-600 mb-4" />
-              <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
-                Reports & Analytics Module
-              </h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">
-                Revenue charts, fleet utilization metrics, and client retention reports will be mounted here.
-              </p>
-            </div>
-          </SectionCard>
-        )}
       </div>
     </div>
   );

@@ -4,56 +4,55 @@
 /* ============================================================
    THEME TOKENS — The "DNA" of the Application
    ============================================================ */
+
 :root {
   /* ── Typography ─────────────────────────────────────────── */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* ─ Brand Identity (The "Rental Manager" Indigo) ──────────── */
+  /* ── Brand Identity (The "Rental Manager" Indigo) ──────────── */
   --color-primary:       #6366f1;
   --color-primary-hover: #4f46e5;
   --color-primary-muted: #e0e7ff;
   --color-primary-text:  #3730a3;
 
-  /* ── Surface & Backgrounds (Light Mode) ──────────────────── */
-  --color-bg:            #fafafa;
+  /* ── Surface & Backgrounds (Light Mode) — PREMIUM WHITE ──── */
+  --color-bg:            #ffffff;
   --color-surface:       #ffffff;
-  --color-surface-hover: #f4f4f5;
-  --color-surface-border: #e4e4e7;
-  --color-surface-border-strong: #d4d4d8;
+  --color-surface-hover: #f8fafc;
+  --color-surface-border: #e2e8f0;
+  --color-surface-border-strong: #cbd5e1;
 
-  /* ── Ink (Text Colors) ──────────────────────────────────── */
-  --color-ink:           #09090b;
-  --color-ink-muted:     #52525b;
-  --color-ink-subtle:    #a1a1aa;
+  /* ── Ink (Text Colors) — HIGH CONTRAST ──────────────────── */
+  --color-ink:           #0f172a;
+  --color-ink-muted:     #475569;
+  --color-ink-subtle:    #94a3b8;
   --color-ink-inverse:   #ffffff;
 
   /* ── Semantic Colors (Light Mode) ───────────────────────── */
   --color-success:       #10b981;
   --color-success-bg:    #d1fae5;
   --color-success-text:  #065f46;
-  
   --color-warning:       #f59e0b;
   --color-warning-bg:    #fef3c7;
   --color-warning-text:  #92400e;
-  
   --color-danger:        #ef4444;
   --color-danger-bg:     #fee2e2;
   --color-danger-text:   #991b1b;
 
-  /* ── Depth & Elevation (Shadows) ─────────────────────────── */
-  --shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-  --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+  /* ── Depth & Elevation (Shadows) — PREMIUM DEPTH ─────────── */
+  --shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+  --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.06);
   
   --shadow-card:      0 0 0 1px var(--color-surface-border), var(--shadow-sm);
   --shadow-card-hover: 0 0 0 1px var(--color-surface-border-strong), var(--shadow-md);
-  --shadow-modal:     0 25px 50px -12px rgb(0 0 0 / 0.15), 0 0 0 1px var(--color-surface-border);
-  --shadow-dropdown:  0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05), 0 0 0 1px var(--color-surface-border);
+  --shadow-modal:     0 25px 50px -12px rgb(0 0 0 / 0.25), 0 0 0 1px var(--color-surface-border);
+  --shadow-dropdown:  0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04), 0 0 0 1px var(--color-surface-border);
   --shadow-focus:     0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
 
-  /* ── Motion ────────────────────────────────────────────── */
+  /* ─ Motion ────────────────────────────────────────────── */
   --ease-spring:  cubic-bezier(0.4, 0, 0.2, 1);
   --ease-bounce:  cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 150ms;
@@ -63,26 +62,25 @@
 /* ============================================================
    DARK MODE OVERRIDES — "Space Black" Aesthetic
    ============================================================ */
+
 .dark {
   /* ── Surface & Backgrounds (Dark Mode) ───────────────────── */
-  --color-bg:            #09090b; /* Deep Zinc 950 */
-  --color-surface:       #18181b; /* Zinc 900 */
-  --color-surface-hover: #27272a; /* Zinc 800 */
-  --color-surface-border: #27272a; /* Zinc 800 */
-  --color-surface-border-strong: #3f3f46; /* Zinc 700 */
+  --color-bg:            #09090b;
+  --color-surface:       #18181b;
+  --color-surface-hover: #27272a;
+  --color-surface-border: #27272a;
+  --color-surface-border-strong: #3f3f46;
 
-  /* ─ Ink (Text Colors) ───────────────────────────────────── */
-  --color-ink:           #fafafa; /* Zinc 50 */
-  --color-ink-muted:     #a1a1aa; /* Zinc 400 */
-  --color-ink-subtle:    #71717a; /* Zinc 500 */
+  /* ── Ink (Text Colors) ───────────────────────────────────── */
+  --color-ink:           #fafafa;
+  --color-ink-muted:     #a1a1aa;
+  --color-ink-subtle:    #71717a;
 
   /* ── Semantic Colors (Dark Mode) ────────────────────────── */
   --color-success-bg:    rgba(16, 185, 129, 0.15);
   --color-success-text:  #34d399;
-  
   --color-warning-bg:    rgba(245, 158, 11, 0.15);
   --color-warning-text:  #fbbf24;
-  
   --color-danger-bg:     rgba(239, 68, 68, 0.15);
   --color-danger-text:   #f87171;
 
@@ -97,18 +95,22 @@
 /* ============================================================
    KEYFRAMES
    ============================================================ */
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(-10px); }
   to   { opacity: 1; transform: translateX(0); }
 }
+
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -117,12 +119,13 @@
 /* ============================================================
    BASE STYLES — Global Resets & Typography
    ============================================================ */
+
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
     border-color: var(--color-surface-border);
   }
-  
+
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -133,7 +136,7 @@
     background-color: var(--color-bg);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-size: 0.9375rem; /* 15px - Modern SaaS standard */
+    font-size: 0.9375rem;
     line-height: 1.6;
     transition: background-color var(--duration-normal) var(--ease-spring),
                 color var(--duration-normal) var(--ease-spring);
@@ -169,11 +172,12 @@
 /* ============================================================
    COMPONENT CLASSES — The "Building Blocks"
    ============================================================ */
+
 @layer components {
-  /* ── Cards ───────────────────────────────────────────────── */
+  /* ── Cards — PREMIUM LIGHT MODE ───────────────────────── */
   .card {
     background-color: var(--color-surface);
-    border-radius: 0.75rem; /* 12px */
+    border-radius: 0.75rem;
     box-shadow: var(--shadow-card);
     border: 1px solid var(--color-surface-border);
     padding: 1.5rem;
@@ -192,7 +196,7 @@
     gap: 0.5rem;
     font-weight: 600;
     font-size: 0.875rem;
-    border-radius: 0.5rem; /* 8px */
+    border-radius: 0.5rem;
     padding: 0.625rem 1.25rem;
     transition: all var(--duration-fast) var(--ease-spring);
     cursor: pointer;
@@ -200,7 +204,7 @@
     text-decoration: none;
     user-select: none;
   }
-  .btn:active { transform: scale(0.98); } /* Tactile press effect */
+  .btn:active { transform: scale(0.98); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
   .btn-primary {
@@ -246,7 +250,7 @@
   .btn-lg  { padding: 0.75rem 1.5rem; font-size: 1rem; }
   .btn-icon { padding: 0.625rem; }
 
-  /* ── Inputs ─────────────────────────────────────────────── */
+  /* ── Inputs ────────────────────────────────────────────── */
   .input {
     width: 100%;
     border-radius: 0.5rem;
@@ -300,7 +304,6 @@
     border-radius: 50%;
     background-color: currentColor;
   }
-
   .badge-success, [data-badge-variant="success"] {
     background: var(--color-success-bg) !important;
     color: var(--color-success-text) !important;
@@ -437,6 +440,7 @@
 /* ============================================================
    UTILITIES
    ============================================================ */
+
 @layer utilities {
   .gradient-text {
     background: linear-gradient(135deg, var(--color-primary) 0%, #818cf8 100%);
@@ -444,15 +448,15 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+
   .bg-sidebar {
     background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
   }
-  
+
   .bg-card-gradient {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   }
-  
+
   .glow-primary {
     box-shadow: 0 0 20px rgb(99 102 241 / 0.3);
   }

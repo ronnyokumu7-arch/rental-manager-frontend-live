@@ -14,25 +14,17 @@ import {
   Puzzle,
   Database,
   Key,
-  FileText,
   Users,
   Globe,
   Lock,
   Zap,
   BarChart3,
-  Mail,
-  Smartphone,
-  Calendar,
-  Truck,
   UserCheck,
   Receipt,
   Landmark,
   Shield,
   HardDrive,
-  RefreshCw,
-  Eye,
   Activity,
-  Code,
   Webhook,
 } from "lucide-react";
 
@@ -191,12 +183,12 @@ const SETTINGS_MODULES: Record<TabId, SettingModule[]> = {
 
 const getThemeClasses = (theme: string) => {
   const themes: Record<string, { iconBg: string; iconText: string }> = {
-    blue: { iconBg: "bg-blue-50 dark:bg-blue-900/20", iconText: "text-blue-600 dark:text-blue-400" },
-    emerald: { iconBg: "bg-emerald-50 dark:bg-emerald-900/20", iconText: "text-emerald-600 dark:text-emerald-400" },
-    purple: { iconBg: "bg-purple-50 dark:bg-purple-900/20", iconText: "text-purple-600 dark:text-purple-400" },
-    amber: { iconBg: "bg-amber-50 dark:bg-amber-900/20", iconText: "text-amber-600 dark:text-amber-400" },
-    rose: { iconBg: "bg-rose-50 dark:bg-rose-900/20", iconText: "text-rose-600 dark:text-rose-400" },
-    slate: { iconBg: "bg-slate-100 dark:bg-slate-800", iconText: "text-slate-600 dark:text-slate-400" },
+    blue: { iconBg: "bg-[var(--color-primary-muted)]", iconText: "text-[var(--color-primary-text)]" },
+    emerald: { iconBg: "bg-[var(--color-success-bg)]", iconText: "text-[var(--color-success-text)]" },
+    purple: { iconBg: "bg-[var(--color-primary-muted)]", iconText: "text-[var(--color-primary-text)]" },
+    amber: { iconBg: "bg-[var(--color-warning-bg)]", iconText: "text-[var(--color-warning-text)]" },
+    rose: { iconBg: "bg-[var(--color-danger-bg)]", iconText: "text-[var(--color-danger-text)]" },
+    slate: { iconBg: "bg-[var(--color-surface-hover)]", iconText: "text-[var(--color-ink-muted)]" },
   };
   return themes[theme] || themes.blue;
 };
@@ -207,36 +199,42 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      
+      {/* Premium Header & Tab Switcher */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Settings</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
+              <Settings size={20} />
+            </div>
+            Settings
+          </h1>
+          <p className="text-sm text-[var(--color-ink-muted)] mt-1">
             Manage your agency configuration and system preferences
           </p>
         </div>
-      </div>
 
-      {/* Tab Switcher */}
-      <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-fit">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as TabId)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
-                isActive
-                  ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              }`}
-            >
-              <Icon size={14} />
-              {tab.label}
-            </button>
-          );
-        })}
+        {/* Unified Tab Switcher */}
+        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabId)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                  isActive
+                    ? "bg-[var(--color-primary)] text-white shadow-sm"
+                    : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
+                }`}
+              >
+                <Icon size={14} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Settings Grid */}
@@ -248,7 +246,7 @@ export default function SettingsPage() {
             <div
               key={module.title}
               onClick={() => router.push(module.href)}
-              className="group relative flex items-center gap-4 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-200 cursor-pointer"
+              className="group relative flex items-center gap-4 p-5 rounded-2xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] hover:border-[var(--color-primary)]/50 hover:shadow-[var(--shadow-lg)] transition-all duration-200 cursor-pointer"
             >
               {/* Icon Container */}
               <div
@@ -260,16 +258,16 @@ export default function SettingsPage() {
               {/* Text Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
+                  <h3 className="text-base font-semibold text-[var(--color-ink)] truncate">
                     {module.title}
                   </h3>
                   {module.badge && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--color-primary-muted)] text-[var(--color-primary-text)]">
                       {module.badge}
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                <p className="text-sm text-[var(--color-ink-muted)] mt-0.5 line-clamp-2">
                   {module.description}
                 </p>
               </div>
@@ -277,7 +275,7 @@ export default function SettingsPage() {
               {/* Navigation Chevron */}
               <ChevronRight
                 size={18}
-                className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 group-hover:translate-x-1 transition-all duration-200 flex-shrink-0"
+                className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all duration-200 flex-shrink-0"
               />
             </div>
           );

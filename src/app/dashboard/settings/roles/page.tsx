@@ -1,7 +1,7 @@
 // src/app/dashboard/settings/roles/page.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Shield, Check, Loader2, ArrowLeft, Sparkles,
@@ -10,19 +10,16 @@ import {
 import toast from "react-hot-toast";
 
 import { roleTemplatesApi } from "@/lib/api/roleTemplates";
-import type { PermissionCategory, RoleTemplate } from "@/lib/types";
+import type { RoleTemplate } from "@/lib/types";
 
-import PageHeader from "@/components/ui/PageHeader";
-import SectionCard from "@/components/ui/SectionCard";
-
-// Map category names to icons for the premium feel
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  "Dashboard & General": LayoutDashboard,
-  "Client Management": Users,
-  "Fleet & Vehicles": Car,
-  "Bookings & Contracts": CalendarDays,
-  "Financials": Wallet,
-  "Team & Settings": Settings,
+// Map category names to short labels and icons for the sub-tabs
+const CATEGORY_CONFIG: Record<string, { label: string; icon: any }> = {
+  "Dashboard & General": { label: "General", icon: LayoutDashboard },
+  "Client Management": { label: "Clients", icon: Users },
+  "Fleet & Vehicles": { label: "Fleet", icon: Car },
+  "Bookings & Contracts": { label: "Bookings", icon: CalendarDays },
+  "Financials": { label: "Financials", icon: Wallet },
+  "Team & Settings": { label: "Team & System", icon: Settings },
 };
 
 export default function RolesPermissionsPage() {
@@ -31,11 +28,13 @@ export default function RolesPermissionsPage() {
   const [templates, setTemplates] = useState<RoleTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [activePermissions, setActivePermissions] = useState<Set<string>>(new Set());
   const [hasChanges, setHasChanges] = useState(false);
+  
+  const [activeCategoryTab, setActiveCategoryTab] = useState<string | null>(null);
 
-  // Initial Data Fetch
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -47,11 +46,15 @@ export default function RolesPermissionsPage() {
         setMatrix(matrixData);
         setTemplates(templatesData);
 
-        // Auto-select the first role if available
         if (templatesData.length > 0 && !selectedRole) {
           const firstRole = templatesData[0].job_title;
           setSelectedRole(firstRole);
           setActivePermissions(new Set(templatesData[0].permissions));
+        }
+        
+        const firstCategory = Object.keys(matrixData)[0];
+        if (firstCategory && !activeCategoryTab) {
+          setActiveCategoryTab(firstCategory);
         }
       } catch (error) {
         toast.error("Failed to load permission settings");
@@ -62,7 +65,6 @@ export default function RolesPermissionsPage() {
     fetchData();
   }, []);
 
-  // Handle Role Selection
   const handleSelectRole = (jobTitle: string) => {
     if (hasChanges) {
       if (!confirm("You have unsaved changes. Are you sure you want to switch roles?")) return;
@@ -73,38 +75,29 @@ export default function RolesPermissionsPage() {
     setHasChanges(false);
   };
 
-  // Toggle Permission
   const togglePermission = (key: string) => {
     setActivePermissions((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(key)) {
-        newSet.delete(key);
-      } else {
-        newSet.add(key);
-      }
+      if (newSet.has(key)) newSet.delete(key);
+      else newSet.add(key);
       return newSet;
     });
     setHasChanges(true);
   };
 
-  // Toggle Entire Category
   const toggleCategory = (permissions: { key: string }[]) => {
     const allSelected = permissions.every((p) => activePermissions.has(p.key));
     setActivePermissions((prev) => {
       const newSet = new Set(prev);
       permissions.forEach((p) => {
-        if (allSelected) {
-          newSet.delete(p.key);
-        } else {
-          newSet.add(p.key);
-        }
+        if (allSelected) newSet.delete(p.key);
+        else newSet.add(p.key);
       });
       return newSet;
     });
     setHasChanges(true);
   };
 
-  // Save Changes
   const handleSave = async () => {
     if (!selectedRole) return;
     const template = templates.find((t) => t.job_title === selectedRole);
@@ -123,51 +116,57 @@ export default function RolesPermissionsPage() {
     }
   };
 
-  // Get current template ID
-  const currentTemplateId = templates.find((t) => t.job_title === selectedRole)?.id;
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <div className="w-10 h-10 rounded-full border-4 border-[var(--color-primary)] border-t-transparent animate-spin" />
       </div>
     );
   }
 
+  const currentPermissions = activeCategoryTab ? matrix[activeCategoryTab] || [] : [];
+  const allSelected = currentPermissions.every((p: any) => activePermissions.has(p.key));
+  const someSelected = currentPermissions.some((p: any) => activePermissions.has(p.key));
+  const ActiveIcon = activeCategoryTab ? (CATEGORY_CONFIG[activeCategoryTab]?.icon || Settings) : Settings;
+
   return (
     <div className="space-y-6 pb-24">
-      <PageHeader
-        title="Roles & Permissions"
-        subtitle="Define what each team member can see and do based on their job title."
-        icon={Shield}
-        breadcrumb={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Settings", href: "/dashboard/settings" },
-          { label: "Roles & Permissions" },
-        ]}
-        actions={[
-          {
-            // ✅ FIXED: Removed trailing space from the URL
-            label: "Back to Settings",
-            icon: ArrowLeft,
-            variant: "secondary",
-            onClick: () => router.push("/dashboard/settings"),
-          },
-        ]}
-      />
+      
+      {/* Premium Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
+              <Shield size={20} />
+            </div>
+            Roles & Permissions
+          </h1>
+          <p className="text-sm text-[var(--color-ink-muted)] mt-1">
+            Define what each team member can see and do based on their job title.
+          </p>
+        </div>
+        <button
+          onClick={() => router.push("/dashboard/settings")}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--color-ink-muted)] bg-[var(--color-surface)] border border-[var(--color-surface-border)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] shadow-sm transition-all w-fit"
+        >
+          <ArrowLeft size={16} /> Back to Settings
+        </button>
+      </div>
 
       <div className="grid grid-cols-12 gap-6">
+        
         {/* ─ LEFT PANEL: Role Selector ─────────────────────────────────── */}
         <div className="col-span-12 lg:col-span-3">
-          <SectionCard className="!p-0 overflow-hidden sticky top-20">
-            <div className="px-5 py-4 border-b border-surface-border bg-surface-hover/50">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-ink-muted flex items-center gap-2">
-                <Sparkles size={12} className="text-blue-500" /> Team Roles
+          <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden sticky top-6">
+            <div className="px-5 py-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50">
+              <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] flex items-center gap-2">
+                <Sparkles size={12} className="text-[var(--color-primary)]" /> Team Roles
               </h3>
             </div>
-            <div className="p-2 max-h-[calc(100vh-250px)] overflow-y-auto">
+            {/* ✅ REDUCED HEIGHT: Mathematically calculated to prevent full-page scroll */}
+            <div className="p-2 max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
               {templates.length === 0 ? (
-                <div className="p-4 text-center text-sm text-ink-muted">
+                <div className="p-4 text-center text-sm text-[var(--color-ink-muted)]">
                   No roles created yet.
                 </div>
               ) : (
@@ -180,23 +179,23 @@ export default function RolesPermissionsPage() {
                           onClick={() => handleSelectRole(template.job_title)}
                           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group ${
                             isActive
-                              ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 shadow-sm"
-                              : "text-ink hover:bg-surface-hover"
+                              ? "bg-[var(--color-primary-muted)] text-[var(--color-primary-text)] shadow-sm"
+                              : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
                           }`}
                         >
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
-                            isActive ? "bg-blue-100 dark:bg-blue-800/40 text-blue-600 dark:text-blue-400" : "bg-surface-hover text-ink-muted group-hover:bg-white dark:group-hover:bg-slate-800"
+                            isActive ? "bg-[var(--color-slate)]/20 text-[var(--color-primary)]" : "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]"
                           }`}>
                             <Shield size={14} />
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold truncate">{template.job_title}</p>
-                            <p className="text-[11px] text-ink-muted truncate">
+                            <p className="text-[11px] text-[var(--color-ink-muted)] truncate">
                               {template.permissions.length} permissions
                             </p>
                           </div>
                           {isActive && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] shadow-[0_0_8px_var(--color-primary)]" />
                           )}
                         </button>
                       </li>
@@ -205,87 +204,108 @@ export default function RolesPermissionsPage() {
                 </ul>
               )}
             </div>
-          </SectionCard>
+          </div>
         </div>
 
         {/* ── RIGHT PANEL: Permission Matrix ────────────────────────────── */}
         <div className="col-span-12 lg:col-span-9 space-y-6">
           {selectedRole ? (
             <>
-              {Object.entries(matrix).map(([categoryName, permissions]) => {
-                const Icon = CATEGORY_ICONS[categoryName] || Settings;
-                const allSelected = permissions.every((p: any) => activePermissions.has(p.key));
-                const someSelected = permissions.some((p: any) => activePermissions.has(p.key));
+              {/* Category Sub-Tabs */}
+              <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
+                {Object.keys(matrix).map((catName) => {
+                  const config = CATEGORY_CONFIG[catName] || { label: catName, icon: Settings };
+                  const Icon = config.icon;
+                  const isActiveTab = activeCategoryTab === catName;
+                  return (
+                    <button
+                      key={catName}
+                      onClick={() => setActiveCategoryTab(catName)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                        isActiveTab
+                          ? "bg-[var(--color-primary)] text-white shadow-sm"
+                          : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
+                      }`}
+                    >
+                      <Icon size={14} />
+                      {config.label}
+                    </button>
+                  );
+                })}
+              </div>
 
-                return (
-                  <SectionCard key={categoryName} className="!p-0 overflow-hidden">
-                    {/* Category Header */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border bg-surface-hover/30">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-surface-border flex items-center justify-center text-ink-muted shadow-sm">
-                          <Icon size={16} />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-ink">{categoryName}</h3>
-                          <p className="text-xs text-ink-muted">
-                            {permissions.filter((p: any) => activePermissions.has(p.key)).length} of {permissions.length} enabled
-                          </p>
-                        </div>
+              {/* Active Category Content */}
+              {activeCategoryTab && matrix[activeCategoryTab] && (
+                <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden animate-in fade-in duration-200">
+                  
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] shadow-sm">
+                        <ActiveIcon size={16} />
                       </div>
-                      <button
-                        onClick={() => toggleCategory(permissions)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                          allSelected
-                            ? "bg-slate-100 dark:bg-slate-800 text-ink-muted hover:bg-slate-200 dark:hover:bg-slate-700"
-                            : "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40"
-                        }`}
-                      >
-                        {allSelected ? "Deselect All" : someSelected ? "Select Remaining" : "Select All"}
-                      </button>
+                      <div>
+                        <h3 className="text-sm font-bold text-[var(--color-ink)]">{activeCategoryTab}</h3>
+                        <p className="text-xs text-[var(--color-ink-muted)]">
+                          {currentPermissions.filter((p: any) => activePermissions.has(p.key)).length} of {currentPermissions.length} enabled
+                        </p>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => toggleCategory(currentPermissions)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        allSelected
+                          ? "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-border)]"
+                          : "bg-[var(--color-primary-muted)] text-[var(--color-primary-text)] hover:bg-[var(--color-primary)] hover:text-white"
+                      }`}
+                    >
+                      {allSelected ? "Deselect All" : someSelected ? "Select Remaining" : "Select All"}
+                    </button>
+                  </div>
 
-                    {/* Permissions Grid */}
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                      {permissions.map((perm: any) => {
-                        const isEnabled = activePermissions.has(perm.key);
-                        return (
-                          <div
-                            key={perm.key}
-                            className="flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-surface-hover/50 transition-colors group"
+                  {/* Permissions Grid */}
+                  <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    {currentPermissions.map((perm: any) => {
+                      const isEnabled = activePermissions.has(perm.key);
+                      return (
+                        <div
+                          key={perm.key}
+                          className="flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-[var(--color-surface-hover)]/50 transition-colors group"
+                        >
+                          <label className="flex-1 cursor-pointer select-none" onClick={() => togglePermission(perm.key)}>
+                            <p className={`text-sm font-medium transition-colors ${isEnabled ? "text-[var(--color-ink)]" : "text-[var(--color-ink-muted)]"}`}>
+                              {perm.label}
+                            </p>
+                          </label>
+                          {/* Premium Toggle Switch */}
+                          <button
+                            type="button"
+                            onClick={() => togglePermission(perm.key)}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:ring-offset-2 focus:ring-offset-[var(--color-surface)] ${
+                              isEnabled ? "bg-[var(--color-primary)]" : "bg-[var(--color-surface-border)]"
+                            }`}
                           >
-                            <label className="flex-1 cursor-pointer select-none" onClick={() => togglePermission(perm.key)}>
-                              <p className={`text-sm font-medium transition-colors ${isEnabled ? "text-ink" : "text-ink-muted"}`}>
-                                {perm.label}
-                              </p>
-                            </label>
-                            {/* Premium Toggle Switch */}
-                            <button
-                              type="button"
-                              onClick={() => togglePermission(perm.key)}
-                              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                                isEnabled ? "bg-blue-600" : "bg-slate-200 dark:bg-slate-700"
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                                isEnabled ? "translate-x-5" : "translate-x-0"
                               }`}
-                            >
-                              <span
-                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                                  isEnabled ? "translate-x-5" : "translate-x-0"
-                                }`}
-                              />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </SectionCard>
-                );
-              })}
+                            />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           ) : (
-            <SectionCard className="flex flex-col items-center justify-center py-20 text-center">
-              <Shield className="w-12 h-12 text-ink-subtle mb-4" />
-              <h3 className="text-lg font-bold text-ink">Select a Role</h3>
-              <p className="text-sm text-ink-muted mt-1">Choose a role from the left to configure its permissions.</p>
-            </SectionCard>
+            <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-[var(--color-surface-hover)] flex items-center justify-center mb-4">
+                <Shield size={28} className="text-[var(--color-ink-muted)]" />
+              </div>
+              <h3 className="text-lg font-bold text-[var(--color-ink)]">Select a Role</h3>
+              <p className="text-sm text-[var(--color-ink-muted)] mt-1">Choose a role from the left to configure its permissions.</p>
+            </div>
           )}
         </div>
       </div>
@@ -293,15 +313,15 @@ export default function RolesPermissionsPage() {
       {/* ─ STICKY SAVE BAR ─────────────────────────────────────────────── */}
       <div
         className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
-          hasChanges ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+          hasChanges ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-surface-border shadow-2xl shadow-slate-900/10">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--color-surface)]/95 backdrop-blur-xl border border-[var(--color-surface-border)] shadow-[var(--shadow-lg)]">
             <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              <p className="text-sm font-medium text-ink">
-                You have unsaved changes for <span className="font-bold text-blue-600">{selectedRole}</span>
+              <div className="w-2 h-2 rounded-full bg-[var(--color-warning)] animate-pulse" />
+              <p className="text-sm font-medium text-[var(--color-ink)]">
+                You have unsaved changes for <span className="font-bold text-[var(--color-primary)]">{selectedRole}</span>
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -311,14 +331,14 @@ export default function RolesPermissionsPage() {
                   setActivePermissions(new Set(template?.permissions || []));
                   setHasChanges(false);
                 }}
-                className="px-4 py-2 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                className="px-4 py-2 text-sm font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors"
               >
                 Discard
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] rounded-xl shadow-[var(--shadow-md)] transition-all disabled:opacity-50"
               >
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                 Save Permissions

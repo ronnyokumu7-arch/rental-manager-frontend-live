@@ -1,4 +1,6 @@
+// src/app/dashboard/clients/page.tsx
 "use client";
+
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
@@ -10,20 +12,11 @@ import {
   User,
   CreditCard,
   ChevronRight,
+  Archive,
 } from "lucide-react";
 import toast from "react-hot-toast";
-// API & Types
 import { clientsApi } from "@/lib/api/clients";
 import type { Client } from "@/lib/types";
-// UI Components
-import PageHeader from "@/components/ui/PageHeader";
-import SectionCard from "@/components/ui/SectionCard";
-import DataTable from "@/components/ui/DataTable";
-import Pagination from "@/components/ui/Pagination";
-import EmptyState from "@/components/ui/EmptyState";
-import { ClientStatusBadge } from "@/components/ui/Badge";
-import TableToolbar from "@/components/ui/TableToolbar";
-import ActionButtons from "@/components/ui/ActionButtons";
 
 type ViewMode = "active" | "vault";
 
@@ -36,26 +29,18 @@ const CLIENT_FILTER_OPTIONS = [
 
 export default function ClientsPage() {
   const router = useRouter();
-
-  // ── State ──────────────────────────────────────────────────────────────
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<ViewMode>("active");
-
-  // UI State
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // ── Data Fetching ──────────────────────────────────────────────────────
   const fetchClients = async () => {
     setLoading(true);
     try {
-      const data =
-        view === "active"
-          ? await clientsApi.list()
-          : await clientsApi.listArchived();
+      const data = view === "active" ? await clientsApi.list() : await clientsApi.listArchived();
       setClients(data);
     } catch (error) {
       toast.error("Failed to load clients");
@@ -68,14 +53,11 @@ export default function ClientsPage() {
     fetchClients();
   }, [view]);
 
-  // ── Client-side Filtering & Pagination ─────────────────────────────────
   const filteredClients = useMemo(() => {
     let result = clients;
-
     if (view === "active" && statusFilter) {
       result = result.filter((c) => c.status === statusFilter);
     }
-
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -87,7 +69,6 @@ export default function ClientsPage() {
           c.dl_number?.toLowerCase().includes(q)
       );
     }
-
     return result;
   }, [clients, view, statusFilter, search]);
 
@@ -101,7 +82,6 @@ export default function ClientsPage() {
     setCurrentPage(1);
   }, [search, statusFilter, view]);
 
-  // ── Table Columns ──────────────────────────────────────────────────────
   const columns: ColumnDef<Client>[] = [
     {
       accessorKey: "full_name",
@@ -110,35 +90,22 @@ export default function ClientsPage() {
         const c = row.original;
         return (
           <div className="flex items-center gap-3 min-w-0">
-            {/* Avatar Fallback */}
             {c.avatar_image ? (
-              <img
-                src={c.avatar_image}
-                alt={c.full_name}
-                className="w-9 h-9 rounded-full object-cover border border-surface-border shadow-sm"
-              />
+              <img src={c.avatar_image} alt={c.full_name} className="w-9 h-9 rounded-full object-cover border border-[var(--color-surface-border)] shadow-sm" />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-surface-hover border border-surface-border flex items-center justify-center text-ink-subtle">
+              <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)]">
                 <User size={16} />
               </div>
             )}
             <div className="min-w-0">
-              {/* Name */}
-              <p className="text-sm font-semibold text-ink truncate">
-                {c.full_name}
-              </p>
-              {/* Email with Icon (Moved to second row) */}
+              <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{c.full_name}</p>
               {c.email ? (
-                <a
-                  href={`mailto:${c.email}`}
-                  className="flex items-center gap-1.5 text-xs text-ink-muted hover:text-accent-dark transition-colors truncate"
-                  title={`Email: ${c.email}`}
-                >
-                  <Mail size={12} className="text-ink-subtle flex-shrink-0" />
+                <a href={`mailto:${c.email}`} className="flex items-center gap-1.5 text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors truncate">
+                  <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
                   <span className="truncate">{c.email}</span>
                 </a>
               ) : (
-                <p className="text-xs text-ink-muted truncate">No email provided</p>
+                <p className="text-xs text-[var(--color-ink-muted)] truncate">No email</p>
               )}
             </div>
           </div>
@@ -151,8 +118,8 @@ export default function ClientsPage() {
       cell: ({ row }) => {
         const c = row.original;
         return (
-          <div className="flex items-center gap-2 text-sm text-ink">
-            <Phone size={12} className="text-ink-subtle" />
+          <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
+            <Phone size={12} className="text-[var(--color-ink-subtle)]" />
             <span className="font-medium">{c.phone}</span>
           </div>
         );
@@ -163,21 +130,13 @@ export default function ClientsPage() {
       header: "National ID",
       cell: ({ row }) => {
         const c = row.original;
-        if (!c.id_number) {
-          return (
-            <span className="text-sm text-ink-subtle italic">
-              Not provided
-            </span>
-          );
-        }
+        if (!c.id_number) return <span className="text-sm text-[var(--color-ink-subtle)] italic">Not provided</span>;
         return (
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-surface-hover border border-surface-border flex items-center justify-center text-ink-muted flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-muted)] flex-shrink-0">
               <CreditCard size={14} />
             </div>
-            <span className="text-sm font-semibold text-ink tracking-wide">
-              {c.id_number}
-            </span>
+            <span className="text-sm font-semibold text-[var(--color-ink)] tracking-wide">{c.id_number}</span>
           </div>
         );
       },
@@ -187,68 +146,37 @@ export default function ClientsPage() {
       header: "Driver's License",
       cell: ({ row }) => {
         const c = row.original;
-        if (!c.dl_number) {
-          return (
-            <span className="text-sm text-ink-subtle italic">
-              Not provided
-            </span>
-          );
-        }
-
-        // Calculate health status based on DL expiry
-        let color = "bg-ink-subtle";
-        let labelBg = "bg-surface-hover";
-        let labelText = "text-ink-muted";
+        if (!c.dl_number) return <span className="text-sm text-[var(--color-ink-subtle)] italic">Not provided</span>;
+        
+        let color = "bg-[var(--color-ink-subtle)]";
+        let labelBg = "bg-[var(--color-surface-hover)]";
+        let labelText = "text-[var(--color-ink-muted)]";
         let healthLabel = "No expiry set";
 
         if (c.dl_expiry) {
           const expiryDate = new Date(c.dl_expiry);
           const today = new Date();
-          const daysUntilExpiry = Math.ceil(
-            (expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-          );
-
+          const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
           if (daysUntilExpiry < 0) {
-            color = "bg-danger";
-            labelBg = "bg-danger-bg";
-            labelText = "text-danger-text";
-            healthLabel = "Expired";
+            color = "bg-[var(--color-danger)]"; labelBg = "bg-[var(--color-danger-bg)]"; labelText = "text-[var(--color-danger-text)]"; healthLabel = "Expired";
           } else if (daysUntilExpiry < 30) {
-            color = "bg-danger";
-            labelBg = "bg-danger-bg";
-            labelText = "text-danger-text";
-            healthLabel = `${daysUntilExpiry}d left`;
+            color = "bg-[var(--color-danger)]"; labelBg = "bg-[var(--color-danger-bg)]"; labelText = "text-[var(--color-danger-text)]"; healthLabel = `${daysUntilExpiry}d left`;
           } else if (daysUntilExpiry < 60) {
-            color = "bg-warning";
-            labelBg = "bg-warning-bg";
-            labelText = "text-warning-text";
-            healthLabel = `${daysUntilExpiry}d left`;
+            color = "bg-[var(--color-warning)]"; labelBg = "bg-[var(--color-warning-bg)]"; labelText = "text-[var(--color-warning-text)]"; healthLabel = `${daysUntilExpiry}d left`;
           } else {
-            color = "bg-success";
-            labelBg = "bg-success-bg";
-            labelText = "text-success-text";
-            healthLabel = `${daysUntilExpiry}d left`;
+            color = "bg-[var(--color-success)]"; labelBg = "bg-[var(--color-success-bg)]"; labelText = "text-[var(--color-success-text)]"; healthLabel = `${daysUntilExpiry}d left`;
           }
         }
 
         return (
           <div className="flex items-center gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-ink truncate">
-                {c.dl_number}
-              </p>
-              <p className="text-xs text-ink-muted">
-                {c.dl_expiry
-                  ? new Date(c.dl_expiry).toLocaleDateString("en-US", {
-                      month: "short",
-                      year: "numeric",
-                    })
-                  : "No expiry"}
+              <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{c.dl_number}</p>
+              <p className="text-xs text-[var(--color-ink-muted)]">
+                {c.dl_expiry ? new Date(c.dl_expiry).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "No expiry"}
               </p>
             </div>
-            <div
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${labelBg} ${labelText} flex items-center gap-1.5`}
-            >
+            <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${labelBg} ${labelText} flex items-center gap-1.5`}>
               <span className={`w-1.5 h-1.5 rounded-full ${color}`} />
               {healthLabel}
             </div>
@@ -261,11 +189,18 @@ export default function ClientsPage() {
       header: "Status",
       cell: ({ row }) => {
         const c = row.original;
-        if (c.is_archived)
-          return (
-            <span className="text-xs text-ink-subtle italic">Archived</span>
-          );
-        return <ClientStatusBadge status={c.status} />;
+        if (c.is_archived) return <span className="text-xs text-[var(--color-ink-subtle)] italic">Archived</span>;
+        const statusColors: Record<string, string> = {
+          active: "bg-[var(--color-success-bg)] text-[var(--color-success-text)]",
+          pending: "bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]",
+          suspended: "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]",
+          inactive: "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]",
+        };
+        return (
+          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${statusColors[c.status] || statusColors.inactive}`}>
+            {c.status}
+          </span>
+        );
       },
     },
     {
@@ -274,111 +209,161 @@ export default function ClientsPage() {
       cell: ({ row }) => {
         const c = row.original;
         return (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/dashboard/clients/${c.id}`);
-              }}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-              title="View Client"
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/dashboard/clients/${c.id}`);
+            }}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all"
+            title="View Client"
+          >
+            <ChevronRight size={14} />
+          </button>
         );
       },
     },
   ];
 
-  // ── Render ───────────────────────────────────────────────────────────
   return (
-    <div>
-      <PageHeader
-        title="Clients"
-        subtitle="Manage your client database and relationships"
-        icon={Users}
-        breadcrumb={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Clients" },
-        ]}
-        actions={
-          view === "active"
-            ? [
-                {
-                  label: "New Client",
-                  icon: Plus,
-                  variant: "primary",
-                  onClick: () => router.push("/dashboard/clients/new"),
-                },
-              ]
-            : []
-        }
-      />
-      <SectionCard padding={false}>
-        {/* Unified Toolbar */}
-        <TableToolbar
-          viewMode={view}
-          onViewModeChange={setView}
-          activeCount={clients.filter((c) => !c.is_archived).length}
-          vaultCount={clients.filter((c) => c.is_archived).length}
-          searchValue={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Search name, email, phone, ID..."
-          filterValue={statusFilter}
-          onFilterChange={setStatusFilter}
-          filterOptions={CLIENT_FILTER_OPTIONS}
-          filterPlaceholder="All Statuses"
-        />
+    <div className="space-y-6">
+      {/* Premium Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
+              <Users size={20} />
+            </div>
+            Clients
+          </h1>
+          <p className="text-sm text-[var(--color-ink-muted)] mt-1">
+            {view === "active" ? "Manage your client database and relationships" : "Archived client records"}
+          </p>
+        </div>
+        {view === "active" && (
+          <button
+            onClick={() => router.push("/dashboard/clients/new")}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all"
+          >
+            <Plus size={16} /> New Client
+          </button>
+        )}
+      </div>
 
-        {/* Content */}
-        {loading ? (
-          <div className="p-12 text-center text-ink-muted">
-            Loading clients...
+      {/* Premium Card Container */}
+      <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden">
+        {/* Toolbar */}
+        <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)]">
+            <button
+              onClick={() => setView("active")}
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                view === "active" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+              }`}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => setView("vault")}
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                view === "vault" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+              }`}
+            >
+              <Archive size={12} /> Vault
+            </button>
           </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search clients..."
+              className="w-full sm:w-64 px-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
+            />
+            <select
+              value={statusFilter || ""}
+              onChange={(e) => setStatusFilter(e.target.value || null)}
+              className="px-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm appearance-none"
+            >
+              <option value="">All Statuses</option>
+              {CLIENT_FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        {loading ? (
+          <div className="p-12 text-center text-[var(--color-ink-muted)]">Loading clients...</div>
         ) : filteredClients.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title={
-              view === "active" ? "No clients found" : "No archived clients"
-            }
-            description={
-              search || statusFilter
-                ? "Try adjusting your search or filters."
-                : view === "active"
-                ? "Get started by adding your first client."
-                : "Archived clients will appear here."
-            }
-            action={
-              view === "active" && !search && !statusFilter ? (
-                <button
-                  className="btn btn-primary"
-                  onClick={() => router.push("/dashboard/clients/new")}
-                >
-                  <Plus size={16} /> Add Client
-                </button>
-              ) : null
-            }
-          />
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center mx-auto mb-4">
+              <Users size={24} className="text-[var(--color-ink-subtle)]" />
+            </div>
+            <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">
+              {view === "active" ? "No clients found" : "No archived clients"}
+            </h3>
+            <p className="text-sm text-[var(--color-ink-muted)] mb-4">
+              {search || statusFilter ? "Try adjusting your search or filters." : view === "active" ? "Get started by adding your first client." : "Archived clients will appear here."}
+            </p>
+            {view === "active" && !search && !statusFilter && (
+              <button
+                onClick={() => router.push("/dashboard/clients/new")}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-all"
+              >
+                <Plus size={16} /> Add Client
+              </button>
+            )}
+          </div>
         ) : (
           <>
-            <DataTable
-              data={paginatedClients}
-              columns={columns}
-              onRowClick={(client) =>
-                router.push(`/dashboard/clients/${client.id}`)
-              }
-            />
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredClients.length}
-              pageSize={pageSize}
-              onPageChange={setCurrentPage}
-            />
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
+                  <tr>
+                    {columns.map((col) => (
+                      <th key={String(col.accessorKey || col.id)} className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
+                        {typeof col.header === 'string' ? col.header : ''}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-surface-border)]">
+                  {paginatedClients.map((client) => (
+                    <tr key={client.id} onClick={() => router.push(`/dashboard/clients/${client.id}`)} className="hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors">
+                      {columns.map((col) => (
+                        <td key={String(col.accessorKey || col.id)} className="px-6 py-4">
+                          {col.cell && typeof col.cell === 'function' 
+                            ? col.cell({ row: { original: client }, getValue: () => null, renderValue: () => null, column: col, table: {} } as any) 
+                            : null}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-4 border-t border-[var(--color-surface-border)] flex items-center justify-between">
+              <p className="text-xs text-[var(--color-ink-muted)]">
+                Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredClients.length)} of {filteredClients.length} clients
+              </p>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all">
+                  Previous
+                </button>
+                <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-primary)] text-white">
+                  {currentPage} / {totalPages || 1}
+                </span>
+                <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all">
+                  Next
+                </button>
+              </div>
+            </div>
           </>
         )}
-      </SectionCard>
+      </div>
     </div>
   );
 }

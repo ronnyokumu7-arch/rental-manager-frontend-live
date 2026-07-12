@@ -1,12 +1,12 @@
 // src/components/financials/InvoicesTab.tsx
+"use client";
+
 import { useState } from "react";
-import { Search, Filter, FileText, Receipt } from "lucide-react";
-import SectionCard from "@/components/ui/SectionCard";
-import Pagination from "@/components/ui/Pagination";
-import EmptyState from "@/components/ui/EmptyState";
+import { Search, FileText, Plus } from "lucide-react";
 import { useInvoices } from "@/hooks/financials/useInvoices";
 import InvoicesTable from "./invoices/InvoicesTable";
 import RecordPaymentModal from "./invoices/RecordPaymentModal";
+import CreateInvoiceModal from "./invoices/CreateInvoiceModal";
 import type { Invoice } from "@/lib/types";
 
 export default function InvoicesTab() {
@@ -14,11 +14,13 @@ export default function InvoicesTab() {
     invoices, loading, search, setSearch,
     statusFilter, setStatusFilter,
     currentPage, setCurrentPage, totalPages, totalItems,
-    handleDownload, handleCopyLink, handleVoid, handleRecordPayment
+    handleDownload, handleCopyLink, handleVoid, handleRecordPayment,
+    refetch
   } = useInvoices();
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const openPaymentModal = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
@@ -27,24 +29,29 @@ export default function InvoicesTab() {
 
   return (
     <>
-      <SectionCard padding={false}>
+      {/* Premium Card Container */}
+      <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden">
+        
         {/* Toolbar */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+        <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Search */}
+            <div className="relative w-full sm:w-64">
+              <Search size={14} className="absolute left-4 top-3.5 text-[var(--color-ink-subtle)]" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search invoice or booking ID..."
-                className="pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none w-64"
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all"
               />
             </div>
+            
+            {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="px-4 py-2 text-sm rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none cursor-pointer transition-all appearance-none"
             >
               <option value="all">All Statuses</option>
               <option value="draft">Draft</option>
@@ -54,26 +61,30 @@ export default function InvoicesTab() {
               <option value="void">Void</option>
             </select>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors">
-            <FileText size={14} /> New Invoice
+          
+          {/* New Invoice Button */}
+          <button 
+            onClick={() => setCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all w-full sm:w-auto justify-center"
+          >
+            <Plus size={14} /> New Invoice
           </button>
         </div>
 
         {/* Content Area */}
         {loading ? (
           <div className="flex items-center justify-center p-12">
-            <div className="w-8 h-8 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
+            <div className="w-10 h-10 rounded-full border-4 border-[var(--color-primary)] border-t-transparent animate-spin" />
           </div>
         ) : invoices.length === 0 ? (
-          // ✅ FIXED: Premium Centered Empty State
           <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-              <Receipt size={32} className="text-slate-400 dark:text-slate-600" />
+            <div className="w-16 h-16 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center mb-4">
+              <FileText size={32} className="text-[var(--color-ink-subtle)]" />
             </div>
-            <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
+            <h4 className="text-base font-bold text-[var(--color-ink)] mb-1">
               No invoices found
             </h4>
-            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">
+            <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
               {search || statusFilter !== "all" 
                 ? "Try adjusting your filters." 
                 : "Invoices will automatically appear here when bookings are confirmed."}
@@ -88,12 +99,42 @@ export default function InvoicesTab() {
               onVoid={handleVoid}
               onRecordPayment={openPaymentModal}
             />
-            <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
-              <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} pageSize={10} onPageChange={setCurrentPage} />
+            <div className="p-4 border-t border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-[var(--color-ink-muted)]">
+                  Showing {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, totalItems)} of {totalItems} invoices
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-primary)] text-white">
+                    {currentPage} / {totalPages || 1}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           </>
         )}
-      </SectionCard>
+      </div>
+
+      {/* Modals */}
+      <CreateInvoiceModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreated={refetch}
+      />
 
       <RecordPaymentModal
         invoice={selectedInvoice}

@@ -13,32 +13,30 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ children, navItems }: DashboardShellProps) {
   return (
-    <div className="min-h-screen bg-surface text-ink flex">
-      {/* Global Toast Provider - Premium Positioning */}
-      <Toaster 
-        position="top-right" 
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-ink)] flex transition-colors duration-200">
+      {/* Global Toast Provider */}
+      <Toaster
+        position="top-right"
         toastOptions={{
-          className: "!bg-surface-card !text-ink !border !border-surface-border !shadow-[var(--shadow-dropdown)]",
-        }} 
+          className: "!bg-[var(--color-surface)] !text-[var(--color-ink)] !border !border-[var(--color-surface-border)] !shadow-[var(--shadow-dropdown)] !rounded-xl",
+          duration: 3000,
+        }}
       />
 
-      {/* Desktop Sidebar (Hidden on Mobile) */}
+      {/* Desktop Sidebar */}
       <div className="hidden lg:block fixed inset-y-0 left-0 z-40 w-[72px]">
         <Sidebar navItems={navItems} />
       </div>
 
-      {/* Main Content Column */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-[72px]">
-        {/* Sticky Topbar */}
         <Topbar />
-
-        {/* Scrollable Content Area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
           {children}
         </main>
       </div>
 
-      {/* Mobile Bottom Nav (Hidden on Desktop) */}
+      {/* Mobile Bottom Nav */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40">
         <BottomNav navItems={navItems} />
       </div>

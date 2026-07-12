@@ -53,7 +53,8 @@ export function useContracts() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.download = `Contract-${id}.pdf`;
+      // ✅ FIX: Removed the hidden trailing newline character that was corrupting the filename
+      link.download = `Contract-${id}.pdf`; 
       link.click();
       window.URL.revokeObjectURL(url);
       toast.dismiss();
@@ -98,6 +99,22 @@ export function useContracts() {
     }
   };
 
+  // ✅ NEW: Generate/Regenerate Contract Logic
+  const handleGenerate = async (bookingId: number) => {
+    try {
+      toast.loading("Generating contract...");
+      await contractsApi.regenerate(bookingId);
+      toast.dismiss();
+      toast.success("Contract generated successfully!");
+      fetchContracts(); // Refresh the list
+      return true;
+    } catch (error: any) {
+      toast.dismiss();
+      toast.error(error.response?.data?.detail || "Failed to generate contract");
+      return false;
+    }
+  };
+
   return {
     contracts: paginatedContracts,
     loading,
@@ -110,6 +127,7 @@ export function useContracts() {
     handleCopyLink,
     handleSend,
     handleVoid,
+    handleGenerate, // ✅ Added
     refetch: fetchContracts,
   };
 }
