@@ -1,4 +1,6 @@
+// src/components/profile/AddressCard.tsx
 "use client";
+
 import { useState } from "react";
 import { MapPin, Home, Briefcase, Pencil, Save, X } from "lucide-react";
 import SectionCard from "@/components/ui/SectionCard";
@@ -25,68 +27,102 @@ export default function AddressCard({ client, onSave }: AddressCardProps) {
   const currentAddress = activeTab === "residential" ? formData.residential_address : formData.work_address;
   const Icon = activeTab === "residential" ? Home : Briefcase;
 
+  // ✅ BRAND TOKENS: Consistent with all profile components
+  const labelClass = "text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-2 block";
+  
   return (
-    <SectionCard 
-      title="Address & Location" 
-      icon={MapPin}
-      className="!p-4" // Reduced overall padding for a more compact card
-    >
-      {/* Compact Toggle Switch */}
-      <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg mb-3 w-fit">
-        <button
-          onClick={() => setActiveTab("residential")}
-          className={`flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-            activeTab === "residential" ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-          }`}
-        >
-          <Home size={10} /> Residential
-        </button>
-        <button
-          onClick={() => setActiveTab("work")}
-          className={`flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-            activeTab === "work" ? "bg-white dark:bg-slate-700 text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-          }`}
-        >
-          <Briefcase size={10} /> Work
-        </button>
+    <SectionCard className="!p-0 overflow-hidden">
+      
+      {/* Unified Header with Integrated Tabs */}
+      <div className="p-6 pb-5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/20">
+        <div className="flex flex-col gap-4">
+          {/* Top Row: Icon + Title */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center">
+              <MapPin size={18} className="text-[var(--color-primary)]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-[var(--color-ink)]">Address & Location</h3>
+              <p className="text-[11px] text-[var(--color-ink-muted)]">Residential and workplace details</p>
+            </div>
+          </div>
+
+          {/* Bottom Row: Toggle Switch (Full Width on Mobile) */}
+          <div className="flex items-center">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] w-full sm:w-auto">
+              <button
+                onClick={() => setActiveTab("residential")}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${
+                  activeTab === "residential" 
+                    ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm ring-1 ring-[var(--color-surface-border)]" 
+                    : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)]/50"
+                }`}
+              >
+                <Home size={12} /> Residential
+              </button>
+              <button
+                onClick={() => setActiveTab("work")}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${
+                  activeTab === "work" 
+                    ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm ring-1 ring-[var(--color-surface-border)]" 
+                    : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)]/50"
+                }`}
+              >
+                <Briefcase size={12} /> Work
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Content Area */}
-      <div className="relative group">
-        <label className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold tracking-wide">
+      {/* Content Area - Flush Alignment */}
+      <div className="p-6">
+        <label className={labelClass}>
           {activeTab === "residential" ? "Home / Hotel Address" : "Work Address"}
         </label>
 
         {isEditing ? (
-          <div className="mt-2 space-y-2">
+          <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
             <textarea
-              value={activeTab === "residential" ? formData.residential_address : formData.work_address}
+              value={currentAddress}
               onChange={(e) => setFormData({ ...formData, [`${activeTab}_address`]: e.target.value })}
-              className="w-full p-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none h-16 resize-none" // Reduced from h-24 to h-16
+              className="w-full p-3 text-sm border border-[var(--color-surface-border)] rounded-xl bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none h-24 resize-none transition-all"
               placeholder={`Enter ${activeTab} address...`}
+              autoFocus
             />
-            <div className="flex justify-end gap-1.5">
-              <button onClick={() => setIsEditing(false)} className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+            <div className="flex justify-end gap-2">
+              <button 
+                onClick={() => setIsEditing(false)} 
+                className="p-2 rounded-xl text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                title="Cancel"
+              >
                 <X size={14} />
               </button>
-              <button onClick={handleSave} className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors">
+              <button 
+                onClick={handleSave} 
+                className="p-2 rounded-xl text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/5 transition-colors"
+                title="Save Changes"
+              >
                 <Save size={14} />
               </button>
             </div>
           </div>
         ) : (
-          <div className="mt-2 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 min-h-[40px] flex items-start justify-between group"> {/* Reduced padding and min-height */}
-            <div className="flex items-start gap-2 flex-1 min-w-0">
-              <Icon size={14} className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0" />
-              <p className="text-[13px] font-medium text-slate-900 dark:text-slate-100 leading-snug break-words">
-                {currentAddress || <span className="text-slate-400 italic">No address provided</span>}
+          <div className="group relative p-4 rounded-xl border border-transparent hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-surface-border)] transition-all duration-200 min-h-[56px] flex items-start justify-between">
+            <div className="flex items-start gap-3 flex-1 min-w-0 pr-8">
+              <Icon size={16} className="text-[var(--color-ink-subtle)] mt-0.5 shrink-0" />
+              <p className="text-sm font-medium text-[var(--color-ink)] leading-snug break-words">
+                {currentAddress || <span className="text-[var(--color-ink-subtle)] italic">No address provided</span>}
               </p>
             </div>
+            
+            {/* Edit Button - Appears on Hover */}
             <button
               onClick={() => setIsEditing(true)}
-              className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg text-[var(--color-ink-subtle)] opacity-0 group-hover:opacity-100 hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-all"
+              title="Edit Address"
             >
-              <Pencil size={12} />
+              <Pencil size={14} />
             </button>
           </div>
         )}

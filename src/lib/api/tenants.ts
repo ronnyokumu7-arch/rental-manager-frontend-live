@@ -1,5 +1,6 @@
 // src/lib/api/tenants.ts
 import apiClient from "@/lib/api-client";
+import type { AgencyHealthData } from '@/lib/types';
 import type {
   Tenant,
   CreateTenantPayload,
@@ -226,5 +227,18 @@ export const tenantsApi = {
     payload: Record<string, any>
   ): Promise<{ gateway_type: string; status: string; message: string }> => {
     return apiClient.post(`/tenants/${id}/payment-gateways/${gatewayType}/test`, payload).then((r) => r.data);
+  },
+
+  // ---------------------------------------------------------------------------
+  //  Agency Health Endpoints
+  // ---------------------------------------------------------------------------
+
+  /**
+   * GET /tenants/{tenant_id}/health
+   * Get privacy-safe aggregate health metrics for an agency.
+   * Only accessible by Super Admins.
+   */
+  getHealthMetrics: async (tenantId: number | string): Promise<AgencyHealthData> => {
+    return apiClient.get<AgencyHealthData>(`/tenants/${tenantId}/health`).then((r) => r.data);
   },
 };

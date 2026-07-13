@@ -38,22 +38,21 @@ export default function BookingActionBar({
         <button
           onClick={onCancel}
           disabled={isActionLoading}
-          // ✅ FIXED: Removed trailing spaces inside the className string
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-danger-text hover:bg-danger-bg transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
         >
           <XCircle size={14} /> Cancel Booking
         </button>
       ) : (
         <button
           onClick={onShareInvoice}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-ink hover:bg-surface-hover transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-[var(--color-ink)] bg-[var(--color-surface-hover)] hover:bg-[var(--color-surface-hover)]/80 border border-[var(--color-surface-border)] transition-all active:scale-95"
         >
           <Share2 size={14} /> Share Invoice
         </button>
       )}
 
       {/* ── Divider ── */}
-      <div className="w-px h-6 bg-surface-border" />
+      <div className="w-px h-8 bg-[var(--color-surface-border)]" />
 
       {/* ── Right Side: Primary Lifecycle Actions ── */}
       <div className="flex items-center gap-2">
@@ -64,7 +63,7 @@ export default function BookingActionBar({
               label="Generate Quote" 
               onClick={onGenerateQuotation} 
               loading={isActionLoading} 
-              variant="accent" 
+              variant="primary" 
             />
             <ActionButton 
               icon={<CheckCircle2 size={14} />} 
@@ -81,7 +80,7 @@ export default function BookingActionBar({
             label="Start Trip" 
             onClick={onActivate} 
             loading={isActionLoading} 
-            variant="accent" 
+            variant="primary" 
           />
         )}
         {status === "active" && (
@@ -100,7 +99,7 @@ export default function BookingActionBar({
                 label="Update Mileage" 
                 onClick={onOpenMileageModal} 
                 loading={isActionLoading} 
-                variant="accent" 
+                variant="primary" 
               />
             )}
           </>
@@ -119,21 +118,32 @@ export default function BookingActionBar({
   );
 }
 
-// ── Internal Sub-component for clean button rendering ──
-function ActionButton({ icon, label, onClick, loading, variant }: any) {
+// ── Internal Sub-component for clean, premium button rendering ──
+function ActionButton({ 
+  icon, 
+  label, 
+  onClick, 
+  loading, 
+  variant 
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  loading: boolean;
+  variant: "primary" | "success" | "warning" | "secondary";
+}) {
   const styles: Record<string, string> = {
-    accent: "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20",
-    success: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20",
-    warning: "bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20",
-    secondary: "bg-surface-hover text-ink border border-surface-border hover:bg-surface-border",
+    primary: "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90 shadow-sm shadow-[var(--color-primary)]/20",
+    success: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20",
+    warning: "bg-amber-500 text-white hover:bg-amber-600 shadow-sm shadow-amber-500/20",
+    secondary: "bg-[var(--color-surface-hover)] text-[var(--color-ink)] border border-[var(--color-surface-border)] hover:bg-[var(--color-surface-hover)]/80",
   };
 
   return (
     <button
       onClick={onClick}
       disabled={loading}
-      // ✅ FIXED: Removed hidden newline and trailing spaces from the template literal
-      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${styles[variant]}`}
+      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 ${styles[variant]}`}
     >
       {loading ? <Loader2 size={14} className="animate-spin" /> : icon}
       {label}

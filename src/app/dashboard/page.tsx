@@ -12,8 +12,8 @@ import FleetCalendar from "@/components/calendar/FleetCalendar";
 
 const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "activity", label: "Activity & Bookings", icon: Activity },
-  { id: "reports", label: "Reports & Analytics", icon: BarChart3 },
+  { id: "activity", label: "Bookings Calendar", icon: Activity },
+  { id: "reports", label: "Analytics", icon: BarChart3 },
 ];
 
 export default function DashboardPage() {

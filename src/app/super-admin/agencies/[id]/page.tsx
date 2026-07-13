@@ -10,12 +10,20 @@ import { AdminSnapshotSection } from '@/components/tenants/AdminSnapshotSection'
 import { SubscriptionStatusCard } from '@/components/tenants/SubscriptionStatusCard';
 import { PaymentGatewaysSection } from '@/components/tenants/PaymentGatewaysSection';
 import { ChangeAdminEmailModal } from '@/components/tenants/ChangeAdminEmailModal';
+import { HealthScoreCard } from '@/components/tenants/health/HealthScoreCard';
+import { ActivityPulseWidget } from '@/components/tenants/health/ActivityPulseWidget';
+import { FleetUtilizationGauge } from '@/components/tenants/health/FleetUtilizationGauge';
+import { RevenueVelocitySparkline } from '@/components/tenants/health/RevenueVelocitySparkline';
+import { PaymentReliabilityStreak } from '@/components/tenants/health/PaymentReliabilityStreak';
+import { SupportTicketTrend } from '@/components/tenants/health/SupportTicketTrend';
+import { useAgencyHealth } from '@/hooks/useAgencyHealth';
 
 export default function AgencyProfilePage() {
   const params = useParams();
   const agencyId = params.id as string;
 
   const { tenant, isLoading, error, activeTab, setActiveTab, refetch } = useTenantProfile(agencyId);
+  const { data: healthData, isLoading: isHealthLoading } = useAgencyHealth(agencyId);
   
   const [isChangeEmailModalOpen, setIsChangeEmailModalOpen] = useState(false);
 
@@ -37,6 +45,13 @@ export default function AgencyProfilePage() {
     );
   }
 
+  // ✅ UNIFIED GRID SYSTEM: Used for both tabs for perfect consistency
+  const UnifiedGrid = ({ children }: { children: React.ReactNode }) => (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {children}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       {/* ✅ HEADER: Full width, consistent padding */}
@@ -54,31 +69,67 @@ export default function AgencyProfilePage() {
       <main className="px-6 md:px-8 py-8 space-y-6">
         
         {activeTab === 'profile' && (
-          // ✅ NEW: 12-column grid with 7/5 split for better proportions
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <UnifiedGrid>
+            {/* Left Column: Wider (7 cols) - Business Identity */}
             <div className="lg:col-span-7">
               <BusinessIdentitySection tenant={tenant} onUpdated={refetch} />
             </div>
+            {/* Right Column: Narrower (5 cols) - Admin Snapshot */}
             <div className="lg:col-span-5">
               <AdminSnapshotSection 
                 tenant={tenant} 
                 onChangeEmailClick={() => setIsChangeEmailModalOpen(true)} 
               />
             </div>
-          </div>
+          </UnifiedGrid>
         )}
         
         {activeTab === 'subscription' && (
-          <div className="space-y-6">
-            <SubscriptionStatusCard tenant={tenant} onUpdated={refetch} />
-            <PaymentGatewaysSection tenantId={tenant.id} onUpdated={refetch} />
-          </div>
+          <UnifiedGrid>
+            {/* ✅ Left Column: Narrower (5 cols) - Subscription Sidebar */}
+            <div className="lg:col-span-5 sticky top-24">
+              <SubscriptionStatusCard tenant={tenant} onUpdated={refetch} />
+            </div>
+            {/* ✅ Right Column: Wider (7 cols) - Payment Gateways */}
+            <div className="lg:col-span-7">
+              <PaymentGatewaysSection tenantId={tenant.id} onUpdated={refetch} />
+            </div>
+          </UnifiedGrid>
         )}
         
-        {activeTab === 'settings' && (
-          <div className="bg-[var(--color-surface)] rounded-2xl border border-dashed border-[var(--color-surface-border)] p-12 text-center text-[var(--color-ink-muted)]">
-            Settings (Coming Next)
-          </div>
+        {activeTab === 'health' && (
+          <UnifiedGrid>
+            {/* ✅ Left Column: Sticky Anchor (5 cols) */}
+            <div className="lg:col-span-5 sticky top-24 flex flex-col gap-6">
+              {isHealthLoading ? (
+                <>
+                  <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] h-[400px] animate-pulse" />
+                  <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] h-[280px] animate-pulse" />
+                </>
+              ) : healthData ? (
+                <>
+                  <HealthScoreCard score={healthData.score} />
+                  <SupportTicketTrend data={healthData.supportTickets} />
+                </>
+              ) : null}
+            </div>
+            
+            {/* ✅ Right Column: Metrics Grid (7 cols) */}
+            <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {isHealthLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] h-[280px] animate-pulse" />
+                ))
+              ) : healthData ? (
+                <>
+                  <ActivityPulseWidget data={healthData.activity} />
+                  <FleetUtilizationGauge data={healthData.utilization} />
+                  <RevenueVelocitySparkline data={healthData.revenueVelocity} />
+                  <PaymentReliabilityStreak data={healthData.paymentReliability} />
+                </>
+              ) : null}
+            </div>
+          </UnifiedGrid>
         )}
       </main>
 

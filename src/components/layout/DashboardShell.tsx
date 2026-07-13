@@ -1,4 +1,6 @@
+// src/components/layout/DashboardShell.tsx
 "use client";
+
 import { ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
 import Sidebar from "./Sidebar";
@@ -13,7 +15,7 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ children, navItems }: DashboardShellProps) {
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-ink)] flex transition-colors duration-200">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-ink)] flex transition-colors duration-300">
       {/* Global Toast Provider */}
       <Toaster
         position="top-right"
@@ -31,6 +33,7 @@ export default function DashboardShell({ children, navItems }: DashboardShellPro
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-[72px]">
         <Topbar />
+        {/* ✅ CRITICAL: Main content is transparent to inherit shell background */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
           {children}
         </main>

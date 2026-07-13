@@ -1,6 +1,6 @@
 // src/components/tenants/ChangeAdminEmailModal.tsx
 import { useState } from 'react';
-import { Shield, Mail, Phone, UserCheck, Loader2, AlertTriangle, X } from 'lucide-react';
+import { Shield, Mail, Phone, UserCheck, Loader2, AlertTriangle, X, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { tenantsApi } from '@/lib/api/tenants';
 import type { ChangeAdminEmailPayload } from '@/lib/api/tenants';
@@ -10,7 +10,7 @@ interface ChangeAdminEmailModalProps {
   currentAdminEmail: string;
   currentAdminPhone?: string | null;
   onClose: () => void;
-  onSuccess: () => void; // Triggers parent refetch
+  onSuccess: () => void;
 }
 
 type VerificationMethod = 'email' | 'phone' | 'manual_override';
@@ -27,6 +27,7 @@ export function ChangeAdminEmailModal({
   const [reason, setReason] = useState('');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
 
   const isManualOverride = method === 'manual_override';
   const canSubmit = 
@@ -60,40 +61,41 @@ export function ChangeAdminEmailModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--color-surface)] rounded-2xl shadow-2xl w-full max-w-lg border border-[var(--color-surface-border)] overflow-hidden">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      {/* ✅ Removed max-h-[90vh] and overflow-hidden to prevent internal scrolling */}
+      <div className="bg-[var(--color-surface)] rounded-2xl shadow-2xl w-full max-w-lg border border-[var(--color-surface-border)] flex flex-col">
         
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-surface-border)] bg-amber-50/50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600">
-              <Shield size={18} />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-[var(--color-ink)]">Update Email</h3>
-              <p className="text-xs text-[var(--color-ink-muted)]">High-security action • Audit logged</p>
-            </div>
-          </div>
-          <button 
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-colors"
-          >
+        {/* Premium Security Header */}
+        <div className="relative px-6 py-4 border-b border-indigo-500/10 bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent shrink-0">
+          <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-colors">
             <X size={18} />
           </button>
+          
+          <div className="flex items-start gap-4">
+            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-sm shrink-0">
+              <Shield size={20} />
+            </div>
+            <div className="flex-1 pt-0.5">
+              <h3 className="text-base font-bold text-[var(--color-ink)] mb-0.5">Change Admin Email</h3>
+              <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed">
+                High-security action. All changes are permanently logged in the audit trail. You are advised to proceed with caution.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* Modal Body - NO SCROLLBAR ON DESKTOP */}
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           
-          {/* Current vs New Email Display */}
+          {/* Current vs New Email */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
-              <span className="text-xs font-medium text-[var(--color-ink-muted)] uppercase">Current Admin Email</span>
-              <span className="text-sm font-medium text-[var(--color-ink)]">{currentAdminEmail}</span>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
+              <span className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest">Current Admin Email</span>
+              <span className="text-sm font-medium text-[var(--color-ink)] truncate ml-2">{currentAdminEmail}</span>
             </div>
             
             <div>
-              <label className="text-xs font-medium text-[var(--color-ink-muted)] uppercase tracking-wider mb-1.5 block">
+              <label className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1.5 block">
                 New Admin Email Address
               </label>
               <input
@@ -101,15 +103,15 @@ export function ChangeAdminEmailModal({
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="admin@newdomain.com"
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 required
               />
             </div>
           </div>
 
-          {/* Verification Method Selector */}
+          {/* Compact Verification Method Selector */}
           <div>
-            <label className="text-xs font-medium text-[var(--color-ink-muted)] uppercase tracking-wider mb-2 block">
+            <label className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-2 block">
               Verification Method
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -127,12 +129,12 @@ export function ChangeAdminEmailModal({
                     disabled={opt.disabled}
                     onClick={() => setMethod(opt.id)}
                     className={`
-                      flex flex-col items-center gap-1.5 p-3 rounded-lg border text-xs font-medium transition-all
+                      flex flex-col items-center gap-1 p-2.5 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all
                       ${isSelected 
-                        ? 'border-amber-500 bg-amber-50 text-amber-700' 
+                        ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500' 
                         : opt.disabled 
                           ? 'border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 text-[var(--color-ink-subtle)] cursor-not-allowed opacity-50'
-                          : 'border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:border-[var(--color-ink-subtle)]'}
+                          : 'border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:border-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-hover)]'}
                     `}
                   >
                     <Icon size={16} />
@@ -146,56 +148,65 @@ export function ChangeAdminEmailModal({
           {/* OTP Input (Conditional) */}
           {!isManualOverride && (
             <div>
-              <label className="text-xs font-medium text-[var(--color-ink-muted)] uppercase tracking-wider mb-1.5 block">
+              <label className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1.5 block">
                 6-Digit OTP Code
               </label>
-              <input
-                type="text"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="000000"
-                maxLength={6}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                required
-              />
-              <p className="text-[10px] text-[var(--color-ink-subtle)] mt-1">
+              <div className="relative">
+                <input
+                  type={showOtp ? "text" : "password"}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  maxLength={6}
+                  className="w-full px-4 py-2.5 pr-10 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowOtp(!showOtp)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)] transition-colors"
+                >
+                  {showOtp ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              <p className="text-[9px] text-[var(--color-ink-subtle)] mt-1">
                 Sent to {method === 'email' ? currentAdminEmail : currentAdminPhone}
               </p>
             </div>
           )}
 
-          {/* Mandatory Reason */}
+          {/* Justification Field - Grows naturally when typing */}
           <div>
-            <label className="text-xs font-medium text-[var(--color-ink-muted)] uppercase tracking-wider mb-1.5 block">
+            <label className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1.5 block">
               Justification (Required for audit)
             </label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Explain why this change is necessary (min 10 characters)..."
-              rows={3}
-              className="w-full px-3 py-2.5 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none"
+              rows={2}
+              className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-y min-h-[60px]"
               required
               minLength={10}
             />
           </div>
 
           {/* Security Warning */}
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-rose-50 border border-rose-200">
-            <AlertTriangle size={14} className="text-rose-600 flex-shrink-0 mt-0.5" />
-            <p className="text-[10px] text-rose-700 leading-relaxed">
+          <div className="flex items-start gap-2 p-2.5 rounded-xl bg-rose-500/5 border border-rose-500/10">
+            <AlertTriangle size={14} className="text-rose-400 flex-shrink-0 mt-0.5" />
+            <p className="text-[9px] text-rose-400/80 leading-relaxed">
               This action will immediately change the primary login email. A notification will be sent to the old contact channel. A 24-hour cooldown will be enforced.
             </p>
           </div>
         </form>
 
-        {/* Modal Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30">
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30 shrink-0">
           <button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] transition-colors disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
@@ -203,9 +214,9 @@ export function ChangeAdminEmailModal({
             type="button"
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20"
           >
-            {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Shield size={14} />}
+            {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
             {isLoading ? 'Processing...' : 'Confirm Change'}
           </button>
         </div>

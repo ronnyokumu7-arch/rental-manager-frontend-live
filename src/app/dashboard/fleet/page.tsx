@@ -43,7 +43,9 @@ export default function FleetPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  
+  // ✅ LOCKED DOWN: Exactly 7 rows per page to eliminate internal scrolling
+  const pageSize = 7;
 
   const [garageVehicle, setGarageVehicle] = useState<Vehicle | null>(null);
   const [garageModalOpen, setGarageModalOpen] = useState(false);
@@ -109,6 +111,11 @@ export default function FleetPage() {
     setCurrentPage(1);
   }, [search, statusFilter, view]);
 
+  // ✅ Fleet Counter Calculations (Active fleet only)
+  const totalVehicles = vehicles.filter(v => !v.is_archived).length;
+  const availableVehicles = vehicles.filter(v => v.status === 'available' && !v.is_archived).length;
+  const rentedVehicles = vehicles.filter(v => v.status === 'rented' && !v.is_archived).length;
+
   return (
     <div className="space-y-6">
       {/* Premium Header */}
@@ -127,7 +134,7 @@ export default function FleetPage() {
         {view === "active" && (
           <button
             onClick={() => router.push("/dashboard/fleet/new")}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all active:scale-95"
           >
             <Plus size={16} /> Add Vehicle
           </button>
@@ -162,6 +169,26 @@ export default function FleetPage() {
               <Archive size={12} /> Vault
             </button>
           </div>
+
+          {/* ✅ FLEET COUNTERS: Integrated into toolbar, minimal design */}
+          {view === "active" && (
+            <div className="flex items-center gap-6 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--color-ink-muted)] font-medium">Fleet Size</span>
+                <span className="text-[var(--color-ink)] font-bold tabular-nums">{totalVehicles}</span>
+              </div>
+              <div className="w-px h-4 bg-[var(--color-surface-border)]" />
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--color-ink-muted)] font-medium">Available</span>
+                <span className="text-[var(--color-success-text)] font-bold tabular-nums">{availableVehicles}</span>
+              </div>
+              <div className="w-px h-4 bg-[var(--color-surface-border)]" />
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--color-ink-muted)] font-medium">Rented</span>
+                <span className="text-[var(--color-primary-text)] font-bold tabular-nums">{rentedVehicles}</span>
+              </div>
+            </div>
+          )}
 
           {/* Search & Filter */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -206,7 +233,7 @@ export default function FleetPage() {
             {view === "active" && !search && !statusFilter && (
               <button
                 onClick={() => router.push("/dashboard/fleet/new")}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-all active:scale-95"
               >
                 <Plus size={16} /> Add Vehicle
               </button>
@@ -271,14 +298,14 @@ export default function FleetPage() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={(e) => { e.stopPropagation(); router.push(`/dashboard/fleet/${v.id}`); }}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all"
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all active:scale-95"
                               title="View Vehicle"
                             >
                               <ChevronRight size={14} />
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); setGarageVehicle(v); setGarageModalOpen(true); }}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-warning)] hover:text-white transition-all"
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-warning)] hover:text-white transition-all active:scale-95"
                               title="Quick Garage"
                             >
                               <Wrench size={14} />
@@ -303,7 +330,7 @@ export default function FleetPage() {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95"
                 >
                   Previous
                 </button>
@@ -313,7 +340,7 @@ export default function FleetPage() {
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages || totalPages === 0}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95"
                 >
                   Next
                 </button>

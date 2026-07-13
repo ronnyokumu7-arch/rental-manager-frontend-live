@@ -463,3 +463,97 @@ export interface UpdateTenantPayload {
   paypal_payer_id?: string;
   payment_metadata?: Record<string, any>;
 }
+
+
+// src/lib/types.ts
+
+// ... existing types ...
+
+// ---------------------------------------------------------------------------
+// Agency Health Dashboard Types (Privacy-First Aggregates)
+// ---------------------------------------------------------------------------
+
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type TrendDirection = 'up' | 'down' | 'stable';
+
+export interface HealthScore {
+  score: number; // 0 to 100
+  riskLevel: RiskLevel;
+  trend: TrendDirection;
+  lastCalculatedAt: string; // ISO date
+}
+
+export interface ActivityPulse {
+  loginsLast7Days: number;
+  loginsLast30Days: number;
+  activeDaysThisMonth: number;
+  lastActiveAt: string | null; // ISO date
+  avgSessionDurationMinutes: number;
+}
+
+export interface FleetUtilization {
+  totalVehicles: number;
+  activeVehicles: number; // Vehicles with at least one booking in current month
+  utilizationPercentage: number; // 0 to 100
+  idleVehiclesCount: number;
+}
+
+export interface RevenueVelocity {
+  bookingsThisWeek: number;
+  bookingsLastWeek: number;
+  bookingsThisMonth: number;
+  trend: TrendDirection;
+  weeklyData: number[]; // Last 8 weeks of booking counts for sparkline
+}
+
+export interface PaymentReliability {
+  currentStreak: number; // Consecutive on-time payments
+  onTimePaymentRate: number; // 0 to 100
+  totalInvoicesPaid: number;
+  overdueInvoicesCount: number;
+}
+
+export interface FeatureAdoption {
+  modulesUsed: string[]; // e.g., ['bookings', 'contracts', 'invoices']
+  totalAvailableModules: number;
+  adoptionPercentage: number; // 0 to 100
+  mostUsedModule: string;
+  leastUsedModule: string | null;
+}
+
+export interface SupportTicketTrend {
+  openTickets: number;
+  closedThisMonth: number;
+  avgResolutionTimeHours: number;
+  trend: TrendDirection;
+}
+
+// The master object returned by the useAgencyHealth hook
+export interface AgencyHealthData {
+  score: HealthScore;
+  activity: ActivityPulse;
+  utilization: FleetUtilization;
+  revenueVelocity: RevenueVelocity;
+  paymentReliability: PaymentReliability;
+  featureAdoption: FeatureAdoption;
+  supportTickets: SupportTicketTrend;
+}
+
+
+export interface SupportTicketTrend {
+  openTickets: number;
+  closedThisMonth: number;
+  avgResolutionTimeHours: number;
+  trend: TrendDirection; // 'up' | 'down' | 'stable'
+}
+
+// Ensure AgencyHealthData includes it (it should already be there from our earlier draft)
+export interface AgencyHealthData {
+  score: HealthScore;
+  activity: ActivityPulse;
+  utilization: FleetUtilization;
+  revenueVelocity: RevenueVelocity;
+  paymentReliability: PaymentReliability;
+  featureAdoption: FeatureAdoption;
+  supportTickets: SupportTicketTrend; // ✅ Now properly typed
+}

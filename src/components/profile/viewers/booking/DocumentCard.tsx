@@ -1,25 +1,110 @@
+// src/components/profile/viewers/booking/DocumentCard.tsx
 "use client";
-import { FileText, CheckCircle, AlertCircle, Eye, Link, Download } from "lucide-react";
+
+import { FileText, CheckCircle2, AlertCircle, Eye, Link, Download, Clock } from "lucide-react";
 
 interface DocumentCardProps {
-  title: string; status: string;
-  onView: () => void; onCopyLink: () => void; onDownload: () => void;
+  title: string;
+  status: string;
+  onView: () => void;
+  onCopyLink: () => void;
+  onDownload: () => void;
 }
 
-export default function DocumentCard({ title, status, onView, onCopyLink, onDownload }: DocumentCardProps) {
-  const isGenerated = status === "Generated";
+// ✅ BRAND TOKENS: Semantic status styling with opacity-based backgrounds
+const getStatusConfig = (status: string) => {
+  switch (status?.toLowerCase()) {
+    case 'generated':
+    case 'signed':
+      return { 
+        label: 'Ready',
+        color: 'text-emerald-600 dark:text-emerald-400',
+        bg: 'bg-emerald-500/5 border-emerald-500/10',
+        icon: CheckCircle2 
+      };
+    case 'pending':
+    case 'draft':
+      return { 
+        label: 'Pending',
+        color: 'text-amber-600 dark:text-amber-400',
+        bg: 'bg-amber-500/5 border-amber-500/10',
+        icon: Clock 
+      };
+    default:
+      return { 
+        label: 'Not Available',
+        color: 'text-[var(--color-ink-muted)]',
+        bg: 'bg-[var(--color-surface-hover)] border-[var(--color-surface-border)]',
+        icon: AlertCircle 
+      };
+  }
+};
+
+export default function DocumentCard({ 
+  title, 
+  status, 
+  onView, 
+  onCopyLink, 
+  onDownload 
+}: DocumentCardProps) {
+
+  const config = getStatusConfig(status);
+  const isAvailable = status?.toLowerCase() === 'generated' || status?.toLowerCase() === 'signed';
+
   return (
-    <div className="relative group rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 overflow-hidden aspect-[16/9] flex flex-col items-center justify-center text-center p-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onClick={onView}>
-      <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-2"><FileText size={20} /></div>
-      <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{title}</p>
-      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
-        {isGenerated ? <CheckCircle size={10} className="text-emerald-500" /> : <AlertCircle size={10} className="text-amber-500" />} {status}
-      </p>
-      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {isGenerated && <button onClick={(e) => { e.stopPropagation(); onView(); }} className="p-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-600" title="View Document"><Eye size={12} /></button>}
-        <button onClick={(e) => { e.stopPropagation(); onCopyLink(); }} className="p-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-600" title="Copy Link"><Link size={12} /></button>
-        <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="p-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-600" title="Download PDF"><Download size={12} /></button>
+    <div 
+      className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col ${
+        isAvailable 
+          ? 'border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30 hover:border-[var(--color-surface-border)]/80 hover:shadow-sm cursor-pointer' 
+          : 'border-dashed border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/10'
+      }`}
+      onClick={isAvailable ? onView : undefined}
+    >
+      
+      {/* Content Area */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        
+        {/* Icon Container */}
+        <div className={`p-3 rounded-xl mb-3 border transition-colors ${config.bg}`}>
+          <FileText size={24} className={config.color} />
+        </div>
+        
+        {/* Title */}
+        <h5 className="text-sm font-bold text-[var(--color-ink)] mb-1">{title}</h5>
+        
+        {/* Status Badge */}
+        <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border ${config.bg} ${config.color}`}>
+          <config.icon size={10} />
+          {config.label}
+        </div>
       </div>
+
+      {/* Action Overlay - Only visible when available */}
+      {isAvailable && (
+        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onView(); }} 
+            className="p-2 rounded-lg bg-white/20 hover:bg-white/40 text-white transition-colors" 
+            title="View Document"
+          >
+            <Eye size={14} />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onCopyLink(); }} 
+            className="p-2 rounded-lg bg-white/20 hover:bg-white/40 text-white transition-colors" 
+            title="Copy Link"
+          >
+            <Link size={14} />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onDownload(); }} 
+            className="p-2 rounded-lg bg-white/20 hover:bg-white/40 text-white transition-colors" 
+            title="Download PDF"
+          >
+            <Download size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

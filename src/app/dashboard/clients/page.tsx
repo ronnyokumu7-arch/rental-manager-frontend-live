@@ -35,7 +35,9 @@ export default function ClientsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  
+  // ✅ LOCKED DOWN: Exactly 7 rows per page to eliminate internal scrolling
+  const pageSize = 7;
 
   const fetchClients = async () => {
     setLoading(true);
@@ -82,21 +84,25 @@ export default function ClientsPage() {
     setCurrentPage(1);
   }, [search, statusFilter, view]);
 
+  // ✅ Counter calculations
+  const totalClients = clients.length;
+  const activeClients = clients.filter(c => c.status === 'active').length;
+  const suspendedClients = clients.filter(c => c.status === 'suspended').length;
+
   const columns: ColumnDef<Client>[] = [
     {
       accessorKey: "full_name",
       header: "Client",
       cell: ({ row }) => {
         const c = row.original;
+        const initials = c.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        
         return (
           <div className="flex items-center gap-3 min-w-0">
-            {c.avatar_image ? (
-              <img src={c.avatar_image} alt={c.full_name} className="w-9 h-9 rounded-full object-cover border border-[var(--color-surface-border)] shadow-sm" />
-            ) : (
-              <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)]">
-                <User size={16} />
-              </div>
-            )}
+            {/* ✅ DEFAULT AVATAR ONLY: Real avatars live in the profile */}
+            <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] font-bold text-xs flex-shrink-0">
+              {initials || <User size={16} />}
+            </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{c.full_name}</p>
               {c.email ? (
@@ -119,7 +125,7 @@ export default function ClientsPage() {
         const c = row.original;
         return (
           <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
-            <Phone size={12} className="text-[var(--color-ink-subtle)]" />
+            <Phone size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
             <span className="font-medium">{c.phone}</span>
           </div>
         );
@@ -136,7 +142,7 @@ export default function ClientsPage() {
             <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-muted)] flex-shrink-0">
               <CreditCard size={14} />
             </div>
-            <span className="text-sm font-semibold text-[var(--color-ink)] tracking-wide">{c.id_number}</span>
+            <span className="text-sm font-semibold text-[var(--color-ink)] tracking-wide font-mono">{c.id_number}</span>
           </div>
         );
       },
@@ -171,7 +177,7 @@ export default function ClientsPage() {
         return (
           <div className="flex items-center gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{c.dl_number}</p>
+              <p className="text-sm font-semibold text-[var(--color-ink)] truncate font-mono">{c.dl_number}</p>
               <p className="text-xs text-[var(--color-ink-muted)]">
                 {c.dl_expiry ? new Date(c.dl_expiry).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "No expiry"}
               </p>
@@ -214,8 +220,8 @@ export default function ClientsPage() {
               e.stopPropagation();
               router.push(`/dashboard/clients/${c.id}`);
             }}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all"
-            title="View Client"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all active:scale-95"
+            title="View Client Profile"
           >
             <ChevronRight size={14} />
           </button>
@@ -239,10 +245,11 @@ export default function ClientsPage() {
             {view === "active" ? "Manage your client database and relationships" : "Archived client records"}
           </p>
         </div>
+        
         {view === "active" && (
           <button
             onClick={() => router.push("/dashboard/clients/new")}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all active:scale-95"
           >
             <Plus size={16} /> New Client
           </button>
@@ -271,6 +278,26 @@ export default function ClientsPage() {
               <Archive size={12} /> Vault
             </button>
           </div>
+
+          {/* ✅ CLIENT COUNTERS: Integrated into toolbar, minimal design */}
+          {view === "active" && (
+            <div className="flex items-center gap-6 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--color-ink-muted)] font-medium">Registered Clients</span>
+                <span className="text-[var(--color-ink)] font-bold tabular-nums">{totalClients}</span>
+              </div>
+              <div className="w-px h-4 bg-[var(--color-surface-border)]" />
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--color-ink-muted)] font-medium">Active Now</span>
+                <span className="text-[var(--color-success-text)] font-bold tabular-nums">{activeClients}</span>
+              </div>
+              <div className="w-px h-4 bg-[var(--color-surface-border)]" />
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--color-ink-muted)] font-medium">Suspended</span>
+                <span className="text-[var(--color-danger-text)] font-bold tabular-nums">{suspendedClients}</span>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <input
@@ -310,7 +337,7 @@ export default function ClientsPage() {
             {view === "active" && !search && !statusFilter && (
               <button
                 onClick={() => router.push("/dashboard/clients/new")}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-all active:scale-95"
               >
                 <Plus size={16} /> Add Client
               </button>
@@ -350,13 +377,13 @@ export default function ClientsPage() {
                 Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredClients.length)} of {filteredClients.length} clients
               </p>
               <div className="flex items-center gap-1">
-                <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all">
+                <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95">
                   Previous
                 </button>
                 <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-primary)] text-white">
                   {currentPage} / {totalPages || 1}
                 </span>
-                <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all">
+                <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95">
                   Next
                 </button>
               </div>

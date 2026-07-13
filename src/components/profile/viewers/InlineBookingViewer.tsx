@@ -6,11 +6,11 @@ import { useInlineBooking } from "@/hooks/profile/useInlineBooking";
 import type { Booking, Task } from "@/lib/types";
 import BookingHero from "./booking/BookingHero";
 import BookingTripDetails from "./booking/BookingTripDetails";
-import TaskContextBar from "../TaskContextBar"; // ✅ ADD THIS IMPORT
+import TaskContextBar from "../TaskContextBar";
 
 interface InlineBookingViewerProps {
   booking: Booking;
-  task?: Task; // ✅ ADD THIS PROP
+  task?: Task;
   onRefresh: () => void;
 }
 
@@ -25,7 +25,10 @@ export default function InlineBookingViewer({ booking, task, onRefresh }: Inline
   } = useInlineBooking(booking);
 
   const handleSaveWithRefresh = async () => { await handleSave(); onRefresh(); };
-  const handleActionWithRefresh = async (action: "confirm" | "activate" | "complete" | "cancel" | "no_show") => { await handleAction(action); onRefresh(); };
+  const handleActionWithRefresh = async (action: "confirm" | "activate" | "complete" | "cancel" | "no_show") => { 
+    await handleAction(action); 
+    onRefresh(); 
+  };
   
   const onSendContractWrapper = async () => {
     const url = await handleSendContract();
@@ -38,45 +41,59 @@ export default function InlineBookingViewer({ booking, task, onRefresh }: Inline
   };
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto custom-scrollbar relative">
-      {/* 1. HERO */}
+    <div className="flex flex-col h-full overflow-y-auto custom-scrollbar relative bg-[var(--color-surface)]">
+      
+      {/* 1. HERO SECTION */}
       <BookingHero 
         booking={booking}
         client={client}
         vehicle={vehicle}
         contract={contract}
-        isEditing={isEditing} isSaving={isSaving} isActionLoading={isActionLoading}
-        onEdit={() => setIsEditing(true)} onCancelEdit={() => setIsEditing(false)} onSave={handleSaveWithRefresh}
+        isEditing={isEditing} 
+        isSaving={isSaving} 
+        isActionLoading={isActionLoading}
+        onEdit={() => setIsEditing(true)} 
+        onCancelEdit={() => setIsEditing(false)} 
+        onSave={handleSaveWithRefresh}
         onAction={handleActionWithRefresh} 
         onSendInvoice={onSendInvoiceWrapper}
         onSendContract={onSendContractWrapper}
       />
       
-      {/* ✅ 2. TASK CONTEXT BAR - ADD THIS */}
+      {/* 2. TASK CONTEXT BAR */}
       {task && <TaskContextBar task={task} />}
       
       {/* 3. TRIP DETAILS + CONTRACT TRACKER */}
-      <BookingTripDetails 
-        isEditing={isEditing}
-        formData={formData}
-        setFormData={setFormData}
-        contractStatus={contract?.status}
-      />
+      <div className="px-6 py-5">
+        <BookingTripDetails 
+          isEditing={isEditing}
+          formData={formData}
+          setFormData={setFormData}
+          contractStatus={contract?.status}
+        />
+      </div>
       
-      {/* 4. TOTAL AMOUNT FOOTER */}
-      <div className="px-4 pb-2">
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 shadow-sm">
-              <Banknote size={20} />
+      {/* 4. TOTAL AMOUNT FOOTER - Premium Token Styling */}
+      <div className="px-6 pb-6 mt-auto">
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--color-surface-hover)]/30 border border-[var(--color-surface-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-sm">
+              <Banknote size={22} />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Total Amount</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">
+              <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-0.5">Total Amount</p>
+              <p className="text-xl font-bold text-[var(--color-ink)] leading-tight">
                 KES {Number(formData.total_amount).toLocaleString()}
               </p>
             </div>
           </div>
+          
+          {/* Optional: Add payment status badge here later */}
+          {contract?.status === 'signed' && (
+            <span className="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10">
+              Paid & Signed
+            </span>
+          )}
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { 
   CreditCard, Calendar, AlertTriangle, CheckCircle2, XCircle, 
-  Clock, Loader2, Zap, Shield 
+  Clock, Loader2, Zap, Shield, Plus, Ban, Info
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { tenantsApi } from '@/lib/api/tenants';
@@ -49,47 +49,19 @@ export function SubscriptionStatusCard({ tenant, onUpdated }: SubscriptionStatus
     
     switch (status) {
       case 'trial':
-        return {
-          icon: Clock,
-          label: 'Free Trial',
-          color: 'bg-blue-500/10 text-blue-700 border-blue-200',
-        };
+        return { icon: Clock, label: 'Free Trial', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' };
       case 'starter_trial':
-        return {
-          icon: Clock,
-          label: 'Starter Trial',
-          color: 'bg-indigo-500/10 text-indigo-700 border-indigo-200',
-        };
+        return { icon: Clock, label: 'Starter Trial', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' };
       case 'active':
-        return {
-          icon: CheckCircle2,
-          label: 'Active',
-          color: 'bg-emerald-500/10 text-emerald-700 border-emerald-200',
-        };
+        return { icon: CheckCircle2, label: 'Active', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
       case 'past_due':
-        return {
-          icon: AlertTriangle,
-          label: 'Past Due',
-          color: 'bg-amber-500/10 text-amber-700 border-amber-200',
-        };
+        return { icon: AlertTriangle, label: 'Past Due', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' };
       case 'suspended':
-        return {
-          icon: XCircle,
-          label: 'Suspended',
-          color: 'bg-rose-500/10 text-rose-700 border-rose-200',
-        };
+        return { icon: XCircle, label: 'Suspended', color: 'bg-rose-500/10 text-rose-400 border-rose-500/20' };
       case 'cancelled':
-        return {
-          icon: XCircle,
-          label: 'Cancelled',
-          color: 'bg-slate-500/10 text-slate-700 border-slate-200',
-        };
+        return { icon: XCircle, label: 'Cancelled', color: 'bg-slate-500/10 text-slate-400 border-slate-500/20' };
       default:
-        return {
-          icon: CreditCard,
-          label: status,
-          color: 'bg-slate-500/10 text-slate-700 border-slate-200',
-        };
+        return { icon: CreditCard, label: status, color: 'bg-slate-500/10 text-slate-400 border-slate-500/20' };
     }
   };
 
@@ -100,6 +72,7 @@ export function SubscriptionStatusCard({ tenant, onUpdated }: SubscriptionStatus
     setIsExtending(true);
     try {
       // TODO: Implement extend trial API endpoint
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate delay
       toast.success('Trial extended by 14 days');
       onUpdated();
     } catch (error: any) {
@@ -128,146 +101,131 @@ export function SubscriptionStatusCard({ tenant, onUpdated }: SubscriptionStatus
   };
 
   return (
-    <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden">
+    <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600">
-            <CreditCard size={18} />
+          <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+            <CreditCard size={16} />
           </div>
           <div>
             <h2 className="text-sm font-semibold text-[var(--color-ink)]">Subscription & Billing</h2>
-            <p className="text-xs text-[var(--color-ink-muted)]">Plan status and payment lifecycle</p>
+            <p className="text-[11px] text-[var(--color-ink-muted)] leading-none mt-0.5">Plan status and lifecycle</p>
           </div>
         </div>
 
         {/* Status Badge */}
-        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${statusBadge.color}`}>
-          <StatusIcon size={14} />
+        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${statusBadge.color}`}>
+          <StatusIcon size={12} />
           {statusBadge.label}
         </div>
       </div>
 
       {/* Body */}
-      <div className="p-6 space-y-6">
-        {/* Plan Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Current Plan */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center gap-1.5">
-              <Zap size={12} /> Current Plan
-            </label>
-            <p className="text-lg font-bold text-[var(--color-ink)] capitalize">
+      <div className="p-5 flex-1 flex flex-col gap-5">
+        
+        {/* Current Plan - Fixed Layout */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest">
+            <Zap size={12} /> Current Plan
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="text-xl font-bold text-[var(--color-ink)] capitalize truncate">
               {tenant.plan.replace('_', ' ')}
             </p>
+            {trialDays !== null && trialDays > 0 && (
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/20">
+                {trialDays}d left
+              </span>
+            )}
           </div>
+        </div>
 
-          {/* Trial End Date */}
+        {/* Key Dates Grid */}
+        <div className="grid grid-cols-1 gap-3 pt-2 border-t border-[var(--color-surface-border)]/50">
           {tenant.trial_ends_at && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar size={12} /> Trial Ends
-              </label>
-              <div className="flex items-center gap-2">
-                <p className={`text-sm font-semibold ${
-                  isTrialExpired 
-                    ? 'text-rose-600' 
-                    : isTrialEndingSoon 
-                      ? 'text-amber-600' 
-                      : 'text-[var(--color-ink)]'
-                }`}>
-                  {formatDate(tenant.trial_ends_at)}
-                </p>
-                {trialDays !== null && trialDays > 0 && (
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    isTrialEndingSoon 
-                      ? 'bg-amber-100 text-amber-700' 
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {trialDays} day{trialDays !== 1 ? 's' : ''} left
-                  </span>
-                )}
-                {isTrialExpired && (
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
-                    Expired
-                  </span>
-                )}
+            <div className="flex items-center justify-between group">
+              <div className="flex items-center gap-2 text-xs text-[var(--color-ink-muted)]">
+                <Calendar size={14} className="opacity-50" />
+                <span>Trial Ends</span>
               </div>
+              <span className={`text-xs font-semibold ${
+                isTrialExpired ? 'text-rose-400' : isTrialEndingSoon ? 'text-amber-400' : 'text-[var(--color-ink)]'
+              }`}>
+                {formatDate(tenant.trial_ends_at)}
+              </span>
             </div>
           )}
-
-          {/* Subscription End Date */}
+          
           {tenant.subscription_ends_at && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar size={12} /> Subscription Ends
-              </label>
-              <p className="text-sm font-semibold text-[var(--color-ink)]">
+            <div className="flex items-center justify-between group">
+              <div className="flex items-center gap-2 text-xs text-[var(--color-ink-muted)]">
+                <Calendar size={14} className="opacity-50" />
+                <span>Sub Ends</span>
+              </div>
+              <span className="text-xs font-semibold text-[var(--color-ink)]">
                 {formatDate(tenant.subscription_ends_at)}
-              </p>
+              </span>
             </div>
           )}
         </div>
 
         {/* Grace Period Warning */}
         {tenant.grace_period_ends_at && tenant.subscription_status === 'past_due' && (
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
-            <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-amber-900">
-                Grace Period Active
-              </p>
-              <p className="text-xs text-amber-700">
-                Account will be suspended on {formatDate(tenant.grace_period_ends_at)} if payment is not received.
-              </p>
-            </div>
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+            <AlertTriangle size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-[10px] text-amber-400/80 leading-relaxed">
+              Suspends on {formatDate(tenant.grace_period_ends_at)} if unpaid.
+            </p>
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3 pt-4 border-t border-[var(--color-surface-border)]">
-          {/* Extend Trial Button */}
-          {(tenant.subscription_status === 'trial' || tenant.subscription_status === 'starter_trial') && (
-            <button
-              onClick={handleExtendTrial}
-              disabled={isExtending}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-colors disabled:opacity-50"
-            >
-              {isExtending ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Clock size={14} />
-              )}
-              Extend Trial (14 days)
-            </button>
-          )}
+        {/* Spacer to push actions to bottom */}
+        <div className="flex-1" />
 
-          {/* Suspend/Activate Button */}
-          {!tenant.is_archived && (
-            <button
-              onClick={handleToggleStatus}
-              disabled={isTogglingStatus}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-50 ${
-                tenant.is_active
-                  ? 'text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-200'
-                  : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200'
-              }`}
-            >
-              {isTogglingStatus ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : tenant.is_active ? (
-                <XCircle size={14} />
-              ) : (
-                <CheckCircle2 size={14} />
-              )}
-              {tenant.is_active ? 'Suspend Account' : 'Activate Account'}
-            </button>
-          )}
+        {/* Action Buttons - Premium Outline Style */}
+        <div className="space-y-3 pt-4 border-t border-[var(--color-surface-border)]">
+          <div className="grid grid-cols-2 gap-2">
+            {(tenant.subscription_status === 'trial' || tenant.subscription_status === 'starter_trial') && (
+              <button
+                onClick={handleExtendTrial}
+                disabled={isExtending}
+                title="Add 14 days to current trial period"
+                className="group relative flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-purple-400 bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/20 hover:border-purple-500/40 transition-all disabled:opacity-50"
+              >
+                {isExtending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                Extend
+              </button>
+            )}
 
-          {/* Payment Method Indicator */}
+            {!tenant.is_archived && (
+              <button
+                onClick={handleToggleStatus}
+                disabled={isTogglingStatus}
+                title={tenant.is_active ? "Suspend account access immediately" : "Reactivate suspended account"}
+                className={`
+                  group relative flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all disabled:opacity-50
+                  ${tenant.is_active 
+                    ? 'text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 border-rose-500/20 hover:border-rose-500/40' 
+                    : 'text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40'}
+                `}
+              >
+                {isTogglingStatus ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : tenant.is_active ? (
+                  <Ban size={14} />
+                ) : (
+                  <CheckCircle2 size={14} />
+                )}
+                {tenant.is_active ? 'Suspend' : 'Activate'}
+              </button>
+            )}
+          </div>
+
+          {/* Default Payment Method Indicator */}
           {tenant.default_payment_method && (
-            <div className="ml-auto flex items-center gap-2 text-xs text-[var(--color-ink-muted)]">
-              <Shield size={14} />
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-[var(--color-ink-subtle)]">
+              <Shield size={10} />
               <span>Default: {tenant.default_payment_method.replace('_', ' ')}</span>
             </div>
           )}

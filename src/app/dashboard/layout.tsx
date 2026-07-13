@@ -36,8 +36,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Show loading spinner while checking auth
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="w-8 h-8 rounded-full border-2 border-accent-dark border-t-transparent animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)] dark:bg-[#0B0D14]">
+        <div className="w-10 h-10 rounded-full border-4 border-[var(--color-primary)] border-t-transparent animate-spin shadow-[0_0_15px_rgba(99,102,241,0.3)]" />
       </div>
     );
   }

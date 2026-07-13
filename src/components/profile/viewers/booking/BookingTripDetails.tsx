@@ -10,70 +10,84 @@ interface BookingTripDetailsProps {
   contractStatus?: string;
 }
 
-const inputClass = "w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm";
-const labelClass = "text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold tracking-wider mb-1 block";
-const valueClass = "text-sm font-medium text-slate-900 dark:text-slate-100 py-1.5 flex items-center gap-2";
+// ✅ BRAND TOKENS: Consistent with all profile components
+const inputClass = "w-full px-3 py-2.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm";
+const labelClass = "text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1.5 block";
+const valueClass = "text-sm font-medium text-[var(--color-ink)] py-2 flex items-center gap-2";
 
-// ✅ Billion-Dollar Vertical Tracking Nodes
+// ✅ PREMIUM CONTRACT LIFECYCLE TRACKER
 const ContractLifecycleTracker = ({ status }: { status?: string }) => {
   const stages = [
-    { key: "draft", label: "Draft", icon: FileText },
-    { key: "sent", label: "Sent", icon: Send },
-    { key: "viewed", label: "Viewed", icon: Clock },
-    { key: "signed", label: "Signed", icon: CheckCircle },
+    { key: "draft", label: "Draft Created", icon: FileText },
+    { key: "sent", label: "Sent to Client", icon: Send },
+    { key: "viewed", label: "Client Viewed", icon: Clock },
+    { key: "signed", label: "Fully Executed", icon: CheckCircle },
   ];
 
   const getCurrentStageIndex = () => {
-    if (!status) return 0;
+    if (!status) return -1; // Not started
     const index = stages.findIndex(s => s.key === status);
-    return index === -1 ? 0 : index;
+    return index === -1 ? -1 : index;
   };
 
   const currentIndex = getCurrentStageIndex();
 
   return (
-    <div className="space-y-4 pt-6"> {/* ✅ Added pt-6 to push the whole tracker down */}
-      <h4 className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-4">
-        Contract Lifecycle
-      </h4>
-      <div className="relative">
-        {/* Vertical Line */}
-        <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-700" />
+    <div className="space-y-4">
+      <h4 className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest">Contract Lifecycle</h4>
+      
+      <div className="relative pl-2">
+        {/* Vertical Track Line */}
+        <div className="absolute left-[27px] top-4 bottom-4 w-px bg-[var(--color-surface-border)]" />
         
-        {/* Progress Line */}
-        <div 
-          className="absolute left-[19px] top-2 w-0.5 bg-emerald-500 transition-all duration-500"
-          style={{ 
-            height: currentIndex > 0 ? `${(currentIndex / (stages.length - 1)) * 100}%` : '0',
-            bottom: 'auto'
-          }}
-        />
+        {/* Active Progress Line */}
+        {currentIndex >= 0 && (
+          <div 
+            className="absolute left-[27px] top-4 w-px bg-emerald-500 transition-all duration-500 ease-out"
+            style={{ 
+              height: `${Math.min(100, (currentIndex / (stages.length - 1)) * 100)}%`,
+              maxHeight: 'calc(100% - 2rem)'
+            }}
+          />
+        )}
 
-        {/* Stages */}
+        {/* Stage Nodes */}
         {stages.map((stage, index) => {
           const Icon = stage.icon;
-          const isCompleted = index < currentIndex;
+          const isCompleted = index <= currentIndex;
           const isCurrent = index === currentIndex;
+          const isFuture = index > currentIndex;
           
           return (
-            <div key={stage.key} className="relative flex items-center gap-3 py-2.5"> {/* ✅ Increased py-1 to py-2.5 for breathing space */}
+            <div key={stage.key} className="relative flex items-start gap-4 py-3 last:pb-0">
+              
+              {/* Node Circle */}
               <div className={`
-                w-10 h-10 rounded-xl flex items-center justify-center z-10 transition-all duration-300
+                relative z-10 w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 transition-all duration-300
                 ${isCompleted 
-                  ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                  ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500' 
                   : isCurrent 
-                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30 ring-4 ring-indigo-500/20' 
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}
+                    ? 'bg-[var(--color-primary)]/5 border-[var(--color-primary)]/20 text-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/10' 
+                    : 'bg-[var(--color-surface-hover)] border-[var(--color-surface-border)] text-[var(--color-ink-subtle)]'}
               `}>
-                <Icon size={16} />
+                <Icon size={18} />
               </div>
-              <div className="flex-1">
-                <p className={`text-xs font-bold ${isCompleted || isCurrent ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400'}`}>
+
+              {/* Stage Info */}
+              <div className="pt-2">
+                <p className={`text-xs font-bold ${
+                  isCompleted || isCurrent ? 'text-[var(--color-ink)]' : 'text-[var(--color-ink-muted)]'
+                }`}>
                   {stage.label}
                 </p>
                 {isCurrent && (
-                  <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">
+                  <p className="text-[10px] text-[var(--color-primary)] font-semibold mt-0.5">
                     Current Stage
+                  </p>
+                )}
+                {isFuture && (
+                  <p className="text-[10px] text-[var(--color-ink-subtle)] mt-0.5">
+                    Pending
                   </p>
                 )}
               </div>
@@ -85,61 +99,57 @@ const ContractLifecycleTracker = ({ status }: { status?: string }) => {
   );
 };
 
-export default function BookingTripDetails({ isEditing, formData, setFormData, contractStatus }: BookingTripDetailsProps) {
-  return (
-    <div className="p-4 space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Left Column: All Trip Details */}
-        <div className="space-y-2">
-          <div>
-            <label className={labelClass}>Destination</label>
-            {isEditing ? (
-              <input type="text" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} className={inputClass} />
-            ) : (
-              <p className={valueClass}><MapPin size={14} className="text-slate-400" /> {formData.destination || "Not specified"}</p>
-            )}
-          </div>
-          <div>
-            <label className={labelClass}>Pickup Location</label>
-            {isEditing ? (
-              <input type="text" value={formData.pickup_location} onChange={e => setFormData({...formData, pickup_location: e.target.value})} className={inputClass} />
-            ) : (
-              <p className={valueClass}><MapPin size={14} className="text-slate-400" /> {formData.pickup_location || "Not specified"}</p>
-            )}
-          </div>
-          <div>
-            <label className={labelClass}>Return Location</label>
-            {isEditing ? (
-              <input type="text" value={formData.return_location} onChange={e => setFormData({...formData, return_location: e.target.value})} className={inputClass} />
-            ) : (
-              <p className={valueClass}><MapPin size={14} className="text-slate-400" /> {formData.return_location || "Not specified"}</p>
-            )}
-          </div>
-          <div>
-            <label className={labelClass}>Rental Start Date</label>
-            {isEditing ? (
-              <input type="date" value={formData.start_date} onChange={e => setFormData({...formData, start_date: e.target.value})} className={inputClass} />
-            ) : (
-              <p className={valueClass}><CalendarDays size={14} className="text-slate-400" /> {formData.start_date ? new Date(formData.start_date).toLocaleDateString() : "Not set"}</p>
-            )}
-          </div>
-          <div>
-            <label className={labelClass}>Rental End Date</label>
-            {isEditing ? (
-              <input type="date" value={formData.end_date} onChange={e => setFormData({...formData, end_date: e.target.value})} className={inputClass} />
-            ) : (
-              <p className={valueClass}><CalendarDays size={14} className="text-slate-400" /> {formData.end_date ? new Date(formData.end_date).toLocaleDateString() : "Not set"}</p>
-            )}
-          </div>
-        </div>
+export default function BookingTripDetails({ 
+  isEditing, 
+  formData, 
+  setFormData, 
+  contractStatus 
+}: BookingTripDetailsProps) {
+  
+  const tripFields = [
+    { key: 'destination', label: 'Destination', icon: MapPin, type: 'text' },
+    { key: 'pickup_location', label: 'Pickup Location', icon: MapPin, type: 'text' },
+    { key: 'return_location', label: 'Return Location', icon: MapPin, type: 'text' },
+    { key: 'start_date', label: 'Rental Start Date', icon: CalendarDays, type: 'date' },
+    { key: 'end_date', label: 'Rental End Date', icon: CalendarDays, type: 'date' },
+  ];
 
-        {/* Right Column: Contract Lifecycle Tracker */}
-        <div>
-          <ContractLifecycleTracker status={contractStatus} />
-        </div>
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      {/* LEFT COLUMN: Trip Details */}
+      <div className="lg:col-span-7 space-y-5">
+        <h4 className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest">Trip Details</h4>
         
+        <div className="space-y-4">
+          {tripFields.map((field) => (
+            <div key={field.key}>
+              <label className={labelClass}>{field.label}</label>
+              {isEditing ? (
+                <input 
+                  type={field.type} 
+                  value={formData[field.key] || ''} 
+                  onChange={e => setFormData({...formData, [field.key]: e.target.value})} 
+                  className={inputClass} 
+                />
+              ) : (
+                <div className={valueClass}>
+                  <field.icon size={14} className="text-[var(--color-ink-subtle)]" />
+                  {field.type === 'date' && formData[field.key] 
+                    ? new Date(formData[field.key]).toLocaleDateString() 
+                    : (formData[field.key] || "Not specified")}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* RIGHT COLUMN: Contract Lifecycle Tracker (Container Removed) */}
+      <div className="lg:col-span-5 pt-1">
+        <ContractLifecycleTracker status={contractStatus} />
+      </div>
+
     </div>
   );
 }

@@ -1,6 +1,11 @@
+// src/components/profile/ClientStatusCard.tsx
 "use client";
+
 import { useState } from "react";
-import { Shield, CreditCard, CheckCircle2, AlertCircle, Clock, Loader2 } from "lucide-react";
+import { 
+  Shield, CreditCard, CheckCircle2, AlertCircle, 
+  Clock, Loader2, Ban, UserCheck 
+} from "lucide-react";
 import SectionCard from "@/components/ui/SectionCard";
 import type { Client } from "@/lib/types";
 
@@ -9,27 +14,53 @@ interface ClientStatusCardProps {
   onStatusAction: (action: "suspend" | "reactivate") => void;
 }
 
-export default function ClientStatusCard({ client, onStatusAction }: ClientStatusCardProps) {
+export default function ClientStatusCard({ 
+  client, 
+  onStatusAction 
+}: ClientStatusCardProps) {
   const [isActionLoading, setIsActionLoading] = useState(false);
 
-  let dlHealth = { label: "Not Set", color: "neutral", icon: Clock };
-  if (client.dl_expiry) {
-    const daysLeft = Math.ceil((new Date(client.dl_expiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    if (daysLeft < 0) dlHealth = { label: "Expired", color: "danger", icon: AlertCircle };
-    else if (daysLeft < 30) dlHealth = { label: `${daysLeft}d Left`, color: "warning", icon: AlertCircle };
-    else dlHealth = { label: "Active", color: "success", icon: CheckCircle2 };
-  }
+  // ✅ DL Health Logic with Semantic States
+  const getDlHealth = () => {
+    if (!client.dl_expiry) return { label: "Not Set", color: "neutral", icon: Clock };
+    
+    const daysLeft = Math.ceil(
+      (new Date(client.dl_expiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    );
+    
+    if (daysLeft < 0) return { label: "Expired", color: "danger", icon: AlertCircle };
+    if (daysLeft < 30) return { label: `${daysLeft}d Left`, color: "warning", icon: AlertCircle };
+    return { label: "Active", color: "success", icon: CheckCircle2 };
+  };
 
+  const dlHealth = getDlHealth();
+
+  // ✅ Action Config with Semantic Styling
   const getActionConfig = () => {
     switch (client.status) {
       case "pending":
-        return { label: "Verify", variant: "bg-blue-600 hover:bg-blue-700 text-white", action: "reactivate" as const };
+        return { 
+          label: "Verify Client", 
+          variant: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20",
+          action: "reactivate" as const,
+          icon: UserCheck
+        };
       case "active":
-        return { label: "Suspend", variant: "bg-amber-500 hover:bg-amber-600 text-white", action: "suspend" as const };
+        return { 
+          label: "Suspend", 
+          variant: "text-amber-600 dark:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20",
+          action: "suspend" as const,
+          icon: Ban
+        };
       case "suspended":
-        return { label: "Reactivate", variant: "bg-emerald-600 hover:bg-emerald-700 text-white", action: "reactivate" as const };
+        return { 
+          label: "Reactivate", 
+          variant: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20",
+          action: "reactivate" as const,
+          icon: UserCheck
+        };
       default:
-        return { label: "Manage", variant: "bg-slate-600 text-white", action: null };
+        return { label: "Manage", variant: "", action: null, icon: null };
     }
   };
 
@@ -45,32 +76,42 @@ export default function ClientStatusCard({ client, onStatusAction }: ClientStatu
     }
   };
 
+  // ✅ BRAND TOKENS: Consistent with all profile components
+  const labelClass = "text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1 block";
+  const valueClass = "text-sm font-semibold text-[var(--color-ink)]";
+  const rowClass = "flex items-center justify-between py-4 border-b border-[var(--color-surface-border)] last:border-b-0";
+
   return (
     <SectionCard className="!p-0 overflow-hidden">
-      {/* ✅ Standardized Header: Matches PersonalInfoCard exactly */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-            <Shield size={18} className="text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide">
-            Status & Verification
-          </h3>
+      
+      {/* Unified Header */}
+      <div className="flex items-center gap-3 p-6 pb-5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/20">
+        <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center">
+          <Shield size={18} className="text-[var(--color-primary)]" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-[var(--color-ink)]">Status & Verification</h3>
+          <p className="text-[11px] text-[var(--color-ink-muted)]">Account health and compliance status</p>
         </div>
       </div>
 
-      {/* ✅ Standardized Body Padding & Tightened Spacing */}
-      <div className="px-5 py-4 space-y-3">
+      {/* Dense Data Rows */}
+      <div className="px-6 divide-y divide-[var(--color-surface-border)]">
+        
         {/* Account Status Row */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white dark:bg-slate-700 rounded-lg shadow-sm">
-              <Shield size={16} className="text-slate-600 dark:text-slate-400" />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold">Account Status</p>
-              <p className={`text-sm font-bold ${client.status === "active" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-slate-100"}`}>
-                {client.status === "active" ? "Verified" : client.status}
+        <div className={rowClass}>
+          <div>
+            <p className={labelClass}>Account Status</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <div className={`w-2 h-2 rounded-full ${
+                client.status === 'active' ? 'bg-emerald-500' : 
+                client.status === 'suspended' ? 'bg-amber-500' : 'bg-slate-400'
+              }`} />
+              <p className={`text-sm font-semibold ${
+                client.status === 'active' ? 'text-emerald-600 dark:text-emerald-400' : 
+                client.status === 'suspended' ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--color-ink)]'
+              }`}>
+                {client.status === 'active' ? 'Verified & Active' : client.status}
               </p>
             </div>
           </div>
@@ -79,36 +120,43 @@ export default function ClientStatusCard({ client, onStatusAction }: ClientStatu
             <button
               onClick={handleButtonClick}
               disabled={isActionLoading}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${actionConfig.variant}`}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 ${actionConfig.variant}`}
             >
-              {isActionLoading ? <Loader2 size={12} className="animate-spin" /> : null}
+              {isActionLoading ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : actionConfig.icon ? (
+                <actionConfig.icon size={12} />
+              ) : null}
               {isActionLoading ? "Processing..." : actionConfig.label}
             </button>
           )}
         </div>
 
         {/* DL Health Status Row */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white dark:bg-slate-700 rounded-lg shadow-sm">
-              <CreditCard size={16} className="text-slate-600 dark:text-slate-400" />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold">DL Health Status</p>
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                EXP: {client.dl_expiry ? new Date(client.dl_expiry).toLocaleDateString("en-GB") : "N/A"}
+        <div className={`${rowClass} border-b-0`}>
+          <div>
+            <p className={labelClass}>Driver's License</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <CreditCard size={14} className="text-[var(--color-ink-subtle)]" />
+              <p className="text-sm font-semibold text-[var(--color-ink)]">
+                {client.dl_expiry 
+                  ? new Date(client.dl_expiry).toLocaleDateString("en-GB") 
+                  : "Not Provided"}
               </p>
             </div>
           </div>
           
-          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-            dlHealth.color === "success" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-            dlHealth.color === "warning" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
-            dlHealth.color === "danger" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
+          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
+            dlHealth.color === "success" ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border-emerald-500/10" :
+            dlHealth.color === "warning" ? "text-amber-600 dark:text-amber-400 bg-amber-500/5 border-amber-500/10" :
+            dlHealth.color === "danger" ? "text-rose-600 dark:text-rose-400 bg-rose-500/5 border-rose-500/10" :
+            "text-[var(--color-ink-muted)] bg-[var(--color-surface-hover)] border-[var(--color-surface-border)]"
           }`}>
-            <dlHealth.icon size={12} /> {dlHealth.label}
+            <dlHealth.icon size={12} /> 
+            {dlHealth.label}
           </div>
         </div>
+
       </div>
     </SectionCard>
   );

@@ -76,7 +76,7 @@ export function BusinessIdentitySection({ tenant, onUpdated }: BusinessIdentityS
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 transition-colors disabled:opacity-50"
               >
                 {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                {isSaving ? 'Saving...' : 'Save'}
               </button>
             </>
           ) : (

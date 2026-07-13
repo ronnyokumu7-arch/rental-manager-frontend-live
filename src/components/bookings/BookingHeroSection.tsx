@@ -45,47 +45,59 @@ export default function BookingHeroSection({ booking, contract }: BookingHeroSec
   ];
 
   return (
-    <div className="bg-surface-card border border-surface-border rounded-2xl p-6 shadow-sm">
+    <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl p-6 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between relative">
+        
+        {/* Background Connecting Line */}
+        <div className="absolute top-6 left-0 right-0 h-0.5 bg-[var(--color-surface-border)] -z-0 mx-12" />
+        
+        {/* Active Progress Line */}
+        <div 
+          className="absolute top-6 left-0 h-0.5 bg-emerald-500 -z-0 mx-12 transition-all duration-700 ease-out shadow-[0_0_8px_-2px_rgba(16,185,129,0.5)]" 
+          style={{ 
+            width: currentStatus === "pending" ? "0%" : 
+                   currentStatus === "confirmed" ? "33.33%" : 
+                   currentStatus === "active" ? "66.66%" : "100%" 
+          }} 
+        />
+
+        {/* Steps */}
         {steps.map((step, index) => {
           const state = getStepState(step.id);
           const Icon = step.icon;
           
-          let nodeColor = "bg-surface-hover text-ink-subtle border-surface-border";
-          if (state === "completed") nodeColor = "bg-success text-white border-success";
-          if (state === "current") nodeColor = "bg-accent-dark text-white border-accent-dark ring-4 ring-accent-light/20";
-          if (state === "waiting") nodeColor = "bg-warning text-white border-warning ring-4 ring-warning/20";
+          let nodeClass = "bg-[var(--color-surface-hover)] text-[var(--color-ink-subtle)] border-[var(--color-surface-border)]";
+          let labelClass = "text-[var(--color-ink-subtle)]";
+          
+          if (state === "completed") {
+            nodeClass = "bg-emerald-500 text-white border-emerald-500 shadow-sm shadow-emerald-500/20";
+            labelClass = "text-emerald-600 dark:text-emerald-400";
+          } else if (state === "current") {
+            nodeClass = "bg-[var(--color-primary)] text-white border-[var(--color-primary)] ring-4 ring-[var(--color-primary)]/20 shadow-sm shadow-[var(--color-primary)]/20";
+            labelClass = "text-[var(--color-ink)]";
+          } else if (state === "waiting") {
+            nodeClass = "bg-amber-500 text-white border-amber-500 ring-4 ring-amber-500/20 shadow-sm shadow-amber-500/20";
+            labelClass = "text-amber-600 dark:text-amber-400";
+          }
 
           return (
-            <div key={step.id} className="flex-1 flex flex-col items-center relative z-10">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${nodeColor}`}>
+            <div key={step.id} className="flex-1 flex flex-col items-center relative z-10 group">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 transition-all duration-300 ${nodeClass}`}>
                 {state === "completed" ? <CheckCircle2 size={22} /> : <Icon size={20} />}
               </div>
-              <p className={`text-xs font-bold mt-3 uppercase tracking-wider ${
-                state === "completed" ? "text-success-text" : 
-                state === "current" || state === "waiting" ? "text-ink" : "text-ink-subtle"
-              }`}>
+              
+              <p className={`text-[10px] font-bold mt-3 uppercase tracking-wider transition-colors duration-300 ${labelClass}`}>
                 {step.label}
               </p>
+              
               {state === "waiting" && (
-                <span className="text-[9px] text-warning-text font-semibold mt-1 animate-pulse">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[9px] font-bold uppercase tracking-wider mt-1.5 animate-pulse">
                   Awaiting Client
                 </span>
               )}
             </div>
           );
         })}
-        
-        {/* Connecting Lines */}
-        <div className="absolute top-6 left-0 right-0 h-0.5 bg-surface-border -z-0 mx-12" />
-        <div 
-          className="absolute top-6 left-0 h-0.5 bg-success -z-0 mx-12 transition-all duration-500" 
-          style={{ 
-            width: currentStatus === "pending" ? "0%" : 
-                   currentStatus === "confirmed" ? "33%" : 
-                   currentStatus === "active" ? "66%" : "100%" 
-          }} 
-        />
       </div>
     </div>
   );

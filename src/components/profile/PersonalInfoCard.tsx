@@ -2,8 +2,7 @@
 "use client";
 
 import { useState } from "react";
-// ✅ FIXED: Replaced IdCard with CreditCard, and Edit2 with Pencil
-import { User, Mail, Phone, CreditCard, Pencil, Save, X } from "lucide-react";
+import { User, Mail, Phone, CreditCard, Pencil, Save, X, Camera } from "lucide-react";
 import type { Client } from "@/lib/types";
 
 interface PersonalInfoCardProps {
@@ -20,6 +19,16 @@ export default function PersonalInfoCard({ client, onSave }: PersonalInfoCardPro
     id_number: client.id_number || "",
   });
 
+  // ✅ Generate initials for avatar fallback
+  const getInitials = (name: string) => {
+    if (!name) return "C";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const initials = getInitials(client.full_name);
+
   const handleSave = () => {
     onSave(formData);
     setIsEditing(false);
@@ -35,73 +44,80 @@ export default function PersonalInfoCard({ client, onSave }: PersonalInfoCardPro
     setIsEditing(false);
   };
 
+  // ✅ EDIT MODE
   if (isEditing) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl p-6 shadow-[var(--shadow-card)]">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-              <User size={20} className="text-blue-600 dark:text-blue-400" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center">
+              <User size={20} className="text-[var(--color-primary)]" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-bold text-[var(--color-ink)]">
                 Personal Information
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[var(--color-ink-muted)]">
                 Edit client details
               </p>
             </div>
           </div>
           <button
             onClick={handleCancel}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+            className="p-2 rounded-xl hover:bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors"
           >
-            <X size={16} className="text-slate-500" />
+            <X size={16} />
           </button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Full Name</label>
+            <label className="block text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1.5">Full Name</label>
             <input
               type="text"
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
+            <label className="block text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1.5">Email</label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Phone Number</label>
+            <label className="block text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1.5">Phone Number</label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">ID Number</label>
+            <label className="block text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1.5">ID Number</label>
             <input
               type="text"
               value={formData.id_number}
               onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
             />
           </div>
           <div className="flex justify-end gap-2 pt-4">
-            <button onClick={handleCancel} className="px-4 py-2 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <button 
+              onClick={handleCancel} 
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-colors"
+            >
               Cancel
             </button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-1.5">
+            <button 
+              onClick={handleSave} 
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 transition-all shadow-sm shadow-[var(--color-primary)]/20 active:scale-95 flex items-center gap-2"
+            >
               <Save size={14} /> Save Changes
             </button>
           </div>
@@ -110,60 +126,98 @@ export default function PersonalInfoCard({ client, onSave }: PersonalInfoCardPro
     );
   }
 
+  // ✅ VIEW MODE WITH AVATAR
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+    <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl p-6 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-            <User size={20} className="text-blue-600 dark:text-blue-400" />
+          <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center">
+            <User size={20} className="text-[var(--color-primary)]" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-sm font-bold text-[var(--color-ink)]">
               Personal Information
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-[var(--color-ink-muted)]">
               Client details and contact information
             </p>
           </div>
         </div>
         <button
           onClick={() => setIsEditing(true)}
-          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+          className="p-2 rounded-xl hover:bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors"
         >
-          {/* ✅ FIXED: Changed Edit2 to Pencil */}
-          <Pencil size={16} className="text-slate-500" />
+          <Pencil size={16} />
         </button>
       </div>
 
+      {/* Avatar + Details Layout */}
+      <div className="flex items-start gap-5 mb-6 pb-6 border-b border-[var(--color-surface-border)]">
+        {/* Client Avatar */}
+        <div className="relative shrink-0">
+          {client.avatar_image ? (
+            <div className="w-16 h-16 rounded-2xl overflow-hidden ring-4 ring-[var(--color-surface)] shadow-sm">
+              <img 
+                src={client.avatar_image} 
+                alt={client.full_name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-purple-600 flex items-center justify-center text-xl font-bold text-white ring-4 ring-[var(--color-surface)] shadow-sm">
+              {initials}
+            </div>
+          )}
+          {/* Upload hint overlay (visual only) */}
+          <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+            <Camera size={20} className="text-white" />
+          </div>
+        </div>
+
+        {/* Client Name & Basic Info */}
+        <div className="flex-1 min-w-0 pt-1">
+          <h4 className="text-base font-bold text-[var(--color-ink)] mb-1 truncate">
+            {client.full_name}
+          </h4>
+          <p className="text-sm text-[var(--color-ink-muted)] truncate">
+            {client.email || "No email provided"}
+          </p>
+          <p className="text-xs text-[var(--color-ink-subtle)] mt-0.5 font-mono">
+            {client.phone}
+          </p>
+        </div>
+      </div>
+
+      {/* Detailed Information Grid */}
       <div className="space-y-4">
-        <div className="flex items-start gap-3">
-          <User size={16} className="text-slate-400 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold">Full Name</p>
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{client.full_name}</p>
+        <div className="flex items-start gap-3 p-3 rounded-xl bg-[var(--color-surface-hover)]/30 border border-[var(--color-surface-border)]">
+          <div className="p-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
+            <Mail size={14} className="text-[var(--color-ink-subtle)]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-0.5">Email Address</p>
+            <p className="text-sm font-medium text-[var(--color-ink)] truncate">{client.email || "Not provided"}</p>
           </div>
         </div>
-        <div className="flex items-start gap-3">
-          <Mail size={16} className="text-slate-400 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold">Email Address</p>
-            <p className="text-sm text-slate-900 dark:text-slate-100">{client.email || "Not provided"}</p>
+
+        <div className="flex items-start gap-3 p-3 rounded-xl bg-[var(--color-surface-hover)]/30 border border-[var(--color-surface-border)]">
+          <div className="p-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
+            <Phone size={14} className="text-[var(--color-ink-subtle)]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-0.5">Phone Number</p>
+            <p className="text-sm font-medium text-[var(--color-ink)] truncate">{client.phone || "Not provided"}</p>
           </div>
         </div>
-        <div className="flex items-start gap-3">
-          <Phone size={16} className="text-slate-400 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold">Phone Number</p>
-            <p className="text-sm text-slate-900 dark:text-slate-100">{client.phone}</p>
-          </div>
-        </div>
+
         {client.id_number && (
-          <div className="flex items-start gap-3">
-            {/* ✅ FIXED: Changed IdCard to CreditCard */}
-            <CreditCard size={16} className="text-slate-400 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold">ID Number</p>
-              <p className="text-sm text-slate-900 dark:text-slate-100">{client.id_number}</p>
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-[var(--color-surface-hover)]/30 border border-[var(--color-surface-border)]">
+            <div className="p-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
+              <CreditCard size={14} className="text-[var(--color-ink-subtle)]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-0.5">ID Number</p>
+              <p className="text-sm font-medium text-[var(--color-ink)] font-mono truncate">{client.id_number}</p>
             </div>
           </div>
         )}

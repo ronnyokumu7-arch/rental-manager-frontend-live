@@ -4,7 +4,7 @@ import { tenantsApi } from '@/lib/api/tenants';
 import type { Tenant } from '@/lib/types';
 
 // Define the exact tabs we support for strict typing
-export type TenantProfileTab = 'profile' | 'subscription' | 'settings';
+export type TenantProfileTab = 'profile' | 'subscription' | 'health';
 
 export interface UseTenantProfileReturn {
   tenant: Tenant | null;

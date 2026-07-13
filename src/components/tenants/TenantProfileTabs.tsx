@@ -1,5 +1,5 @@
 // src/components/tenants/TenantProfileTabs.tsx
-import { Building2, CreditCard, Settings } from 'lucide-react';
+import { Building2, CreditCard, Activity } from 'lucide-react'; // ✅ Changed Settings to Activity
 import { type TenantProfileTab } from '@/hooks/useTenantProfile';
 
 interface TenantProfileTabsProps {
@@ -10,13 +10,11 @@ interface TenantProfileTabsProps {
 const tabs = [
   { id: 'profile' as TenantProfileTab, label: 'Agency Profile', icon: Building2 },
   { id: 'subscription' as TenantProfileTab, label: 'Subscription', icon: CreditCard },
-  { id: 'settings' as TenantProfileTab, label: 'Settings', icon: Settings },
+  { id: 'health' as TenantProfileTab, label: 'Health', icon: Activity }, // ✅ Renamed & new icon
 ];
 
 export function TenantProfileTabs({ activeTab, setActiveTab }: TenantProfileTabsProps) {
   return (
-    // ✅ Removed sticky top-0 for now to ensure it sits flush under the header. 
-    // Added matching padding (px-6 md:px-8) to align with the page layout.
     <div className="border-b border-[var(--color-surface-border)] bg-[var(--color-surface)] px-6 md:px-8">
       <nav className="flex space-x-8" aria-label="Tabs">
         {tabs.map((tab) => {

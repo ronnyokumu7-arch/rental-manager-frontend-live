@@ -1,10 +1,12 @@
+// src/components/layout/TopBar.tsx
 "use client";
+
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Search, Bell, Sun, Moon, User, Settings,
-  LogOut, Globe, CreditCard, ChevronRight, Command,
+  LogOut, ChevronRight, Command,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 
@@ -14,6 +16,21 @@ export default function Topbar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // ✅ ROBUST THEME INITIALIZATION: Prevents "stuck" dark mode
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    const isCurrentlyDark = savedTheme === "dark" || (!savedTheme && prefersDark);
+    setIsDark(isCurrentlyDark);
+    
+    if (isCurrentlyDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
   useEffect(() => {
     function handle(e: MouseEvent) {
@@ -28,8 +45,16 @@ export default function Topbar() {
   useEffect(() => { setShowUserMenu(false); }, [pathname]);
 
   const toggleTheme = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle("dark");
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    
+    if (newIsDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
   };
 
   const companyName = user?.role === "super_admin" ? "Rental Manager" : tenant?.name || "Agency";
@@ -45,7 +70,8 @@ export default function Topbar() {
   const isSuperAdmin = user?.role === "super_admin";
 
   return (
-    <header className="h-14 flex items-center gap-4 px-5 sticky top-0 z-30 border-b border-[var(--color-surface-border)] bg-[var(--color-surface)]/80 backdrop-blur-xl">
+    // ✅ RELIES 100% ON CSS VARIABLE. No hardcoded dark overrides.
+    <header className="h-14 flex items-center gap-4 px-5 sticky top-0 z-30 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)] backdrop-blur-xl transition-colors duration-300">
       {/* Left: Greeting */}
       <p className="hidden lg:block text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap flex-shrink-0">
         {greeting()}
@@ -53,14 +79,14 @@ export default function Topbar() {
 
       {/* Center: Search */}
       <div className="flex-1 max-w-xl mx-auto">
-        <div className="flex items-center gap-3 h-9 px-3.5 rounded-xl cursor-text border border-[var(--color-surface-border)] bg-[var(--color-bg)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface)] transition-all duration-200 group">
+        <div className="flex items-center gap-3 h-9 px-3.5 rounded-xl cursor-text border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-hover)] transition-all duration-200 group">
           <Search size={14} strokeWidth={2} className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-ink-muted)] flex-shrink-0 transition-colors" />
           <span className="text-[13px] text-[var(--color-ink-subtle)] flex-1 select-none">Search anything...</span>
           <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
-            <kbd className="flex items-center justify-center w-5 h-5 rounded-md text-[10px] font-semibold text-[var(--color-ink-subtle)] border border-[var(--color-surface-border)] bg-[var(--color-surface)]">
+            <kbd className="flex items-center justify-center w-5 h-5 rounded-md text-[10px] font-semibold text-[var(--color-ink-subtle)] border border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]">
               <Command size={9} strokeWidth={2.5} />
             </kbd>
-            <kbd className="flex items-center justify-center px-1.5 h-5 rounded-md text-[10px] font-semibold text-[var(--color-ink-subtle)] border border-[var(--color-surface-border)] bg-[var(--color-surface)]">
+            <kbd className="flex items-center justify-center px-1.5 h-5 rounded-md text-[10px] font-semibold text-[var(--color-ink-subtle)] border border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]">
               K
             </kbd>
           </div>
@@ -81,7 +107,7 @@ export default function Topbar() {
         {/* Notifications */}
         <button className="relative w-9 h-9 rounded-xl flex items-center justify-center text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all duration-150">
           <Bell size={17} strokeWidth={1.8} />
-          <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[var(--color-danger)] ring-2 ring-[var(--color-surface)]" />
+          <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[var(--color-danger)] ring-2 ring-[var(--color-bg)]" />
         </button>
 
         {/* Divider */}
@@ -97,7 +123,7 @@ export default function Topbar() {
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-semibold text-xs select-none bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)]">
                 {user?.full_name?.[0] || "U"}
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[var(--color-success)] ring-2 ring-[var(--color-surface)]" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[var(--color-success)] ring-2 ring-[var(--color-bg)]" />
             </div>
             <span className="hidden md:block text-[13px] font-medium text-[var(--color-ink)] max-w-[100px] truncate">
               {user?.full_name?.split(" ")[0]}
