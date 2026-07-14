@@ -28,10 +28,11 @@ export function AdminSnapshotSection({ tenant, onChangeEmailClick }: AdminSnapsh
 
   const emailChangeInfo = getEmailChangeInfo();
 
-  // ✅ Smart data resolution: prefer profile contact info, fallback to admin snapshot, then base tenant
-  const displayName = tenant.admin_name || tenant.profile?.company_name || tenant.name;
-  const displayEmail = tenant.profile?.email || tenant.admin_email || tenant.email;
-  const displayPhone = tenant.profile?.phone || tenant.admin_phone || tenant.phone_number;
+  // ✅ STRICT: Use only the denormalized admin snapshot (synced from the User table).
+  // This ensures we display the actual administrator's personal details, not the business profile.
+  const displayName = tenant.admin_name || '—';
+  const displayEmail = tenant.admin_email || tenant.email || '—'; // Fallback to base tenant email only as a safety net
+  const displayPhone = tenant.admin_phone || '—';
 
   return (
     <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden h-full flex flex-col">
@@ -68,7 +69,7 @@ export function AdminSnapshotSection({ tenant, onChangeEmailClick }: AdminSnapsh
               <User size={12} /> Full Name
             </label>
             <p className="text-sm font-semibold text-[var(--color-ink)] truncate">
-              {displayName || '—'}
+              {displayName}
             </p>
           </div>
 
@@ -78,7 +79,7 @@ export function AdminSnapshotSection({ tenant, onChangeEmailClick }: AdminSnapsh
               <Mail size={12} /> Email Address
             </label>
             <p className="text-sm font-semibold text-[var(--color-ink)] break-all">
-              {displayEmail || '—'}
+              {displayEmail}
             </p>
           </div>
 
@@ -88,7 +89,7 @@ export function AdminSnapshotSection({ tenant, onChangeEmailClick }: AdminSnapsh
               <Phone size={12} /> Phone Number
             </label>
             <p className="text-sm font-semibold text-[var(--color-ink)]">
-              {displayPhone || '—'}
+              {displayPhone}
             </p>
           </div>
         </div>

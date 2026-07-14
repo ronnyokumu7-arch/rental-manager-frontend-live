@@ -4,12 +4,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
-import { usersApi } from "@/lib/api/users";
+import { usersApi, type UserUpdatePayload } from "@/lib/api/users";
 import type { User } from "@/lib/types";
 
 export function useUserProfile() {
   const params = useParams();
-  const userId = params.id ? Number(params.id) : null;
+  // Safely parse the ID, handling cases where params.id might be an array or undefined
+  const userId = params.id ? Number(Array.isArray(params.id) ? params.id[0] : params.id) : null;
   
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,14 +33,20 @@ export function useUserProfile() {
     fetchData();
   }, [fetchData]);
 
-  const handleUpdateUser = async (data: any) => {
+  // ✅ IMPROVED: Strictly typed payload instead of 'any'
+  const handleUpdateUser = async (data: UserUpdatePayload) => {
+    if (!userId) return;
     setActionLoading(true);
     try {
-      const updated = await usersApi.update(userId!, data);
+      const updated = await usersApi.update(userId, data);
       setUser(updated);
       toast.success("User details updated successfully");
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || "Failed to update user");
+      const detail = error.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) 
+        ? detail.map((e: any) => e.msg).join(", ") 
+        : (detail || "Failed to update user");
+      toast.error(errorMsg);
     } finally {
       setActionLoading(false);
     }
@@ -71,5 +78,6 @@ export function useUserProfile() {
     actionLoading,
     handleUpdateUser,
     handleStatusAction,
+    refetch: fetchData, // Exposed in case parent components need to force a refresh
   };
 }

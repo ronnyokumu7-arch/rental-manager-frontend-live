@@ -6,7 +6,6 @@ import {
   User, Mail, Phone, Building2, Briefcase, 
   Pencil, Save, X, ShieldAlert, Camera 
 } from "lucide-react";
-import SectionCard from "@/components/ui/SectionCard";
 import type { User as UserType } from "@/lib/types";
 
 const ADMIN_TITLES = ["Director", "Manager", "HR"];
@@ -36,16 +35,18 @@ export default function UserPersonalInfoCard({
     job_title: user.job_title || "",
   });
 
-  // Sync form state with props
+  // ✅ FIX: Only sync form state with props when NOT actively editing
   useEffect(() => {
-    setFormData({
-      full_name: user.full_name,
-      email: user.email,
-      phone_number: user.phone_number || "",
-      department: user.department || "",
-      job_title: user.job_title || "",
-    });
-  }, [user, isEditing]);
+    if (!isEditing) {
+      setFormData({
+        full_name: user.full_name,
+        email: user.email,
+        phone_number: user.phone_number || "",
+        department: user.department || "",
+        job_title: user.job_title || "",
+      });
+    }
+  }, [user]);
 
   const handleSave = () => {
     if (!formData.full_name.trim() || !formData.email.trim()) return;
@@ -80,12 +81,12 @@ export default function UserPersonalInfoCard({
   const valueClass = "text-sm font-medium text-[var(--color-ink)] truncate";
   const emptyClass = "text-sm text-[var(--color-ink-subtle)] italic truncate";
   
-  // Premium input that matches read-only height exactly
   const inputBase = "w-full bg-transparent text-sm font-medium text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:outline-none transition-colors";
   const fieldRow = "flex items-center gap-3 px-3 py-2.5 rounded-xl border border-transparent hover:bg-[var(--color-surface-hover)] transition-all duration-200 group";
 
   return (
-    <SectionCard className="!p-0 overflow-hidden">
+    // ✅ FIX: Replaced SectionCard with a standard div to prevent import/export mismatch errors
+    <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden">
       
       {/* ✅ UNIFIED IDENTITY HEADER: No Background, Thin Border Only */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-6 pb-5 border-b border-[var(--color-surface-border)]">
@@ -266,6 +267,6 @@ export default function UserPersonalInfoCard({
         </div>
 
       </div>
-    </SectionCard>
+    </div>
   );
 }

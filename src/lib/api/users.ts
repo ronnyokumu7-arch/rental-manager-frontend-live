@@ -45,8 +45,9 @@ export interface UserUpdatePayload {
   role?: "super_admin" | "tenant_admin" | "tenant_staff";
   is_active?: boolean;
   password?: string;
-  phone_number?: string;
-  department?: string;
+  phone_number?: string | null;
+  department?: string | null;
+  job_title?: string | null; // ✅ ADDED: Required by UserPersonalInfoCard.tsx
   permissions?: string[];
   two_factor_enabled?: boolean;
   id_number?: string | null;
@@ -59,10 +60,10 @@ export interface UserUpdatePayload {
 // ---------------------------------------------------------------------------
 export const usersApi = {
   create: (data: UserCreatePayload) =>
-    apiClient.post<User>("/users", data).then((r) => r.data),
+    apiClient.post<User>("/users/", data).then((r) => r.data),
 
   list: (params?: { tenant_id?: number; role?: string; is_active?: boolean; is_suspended?: boolean }) =>
-    apiClient.get<User[]>("/users", { params }).then((r) => r.data),
+    apiClient.get<User[]>("/users/", { params }).then((r) => r.data),
 
   get: (id: number) =>
     apiClient.get<User>(`/users/${id}`).then((r) => r.data),
