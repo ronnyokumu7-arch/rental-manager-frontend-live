@@ -1,8 +1,8 @@
 // src/components/tenants/BusinessIdentitySection.tsx
-import { useState } from 'react';
-import { Building2, Mail, Phone, Hash, MapPin, Edit3, Save, X, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Building2, Mail, Phone, Hash, MapPin, Edit3, Save, X, Loader2, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { tenantsApi } from '@/lib/api/tenants';
+import { tenantProfileApi } from '@/lib/api/tenant-profile';
 import type { Tenant } from '@/lib/types';
 
 interface BusinessIdentitySectionProps {
@@ -14,34 +14,52 @@ export function BusinessIdentitySection({ tenant, onUpdated }: BusinessIdentityS
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Local state for editable fields
-  const [formData, setFormData] = useState({
-    name: tenant.name,
-    email: tenant.email,
-    phone_number: tenant.phone_number || '',
+  // ✅ FIX: Prioritize tenant.profile data, fallback to base tenant data
+  const getInitialData = () => ({
+    company_name: tenant.profile?.company_name || tenant.name,
+    email: tenant.profile?.email || tenant.admin_email || tenant.email,
+    phone: tenant.profile?.phone || tenant.admin_phone || tenant.phone_number || '',
+    business_location: tenant.profile?.address || '',
+    website: tenant.profile?.website || '',
+    kra_pin: tenant.profile?.tax_number || '',
   });
+
+  const [formData, setFormData] = useState(getInitialData());
+
+  // ✅ FIX: Reset form when tenant data changes (e.g., after parent refetches)
+  useEffect(() => {
+    setFormData(getInitialData());
+  }, [tenant]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await tenantsApi.update(tenant.id, formData);
-      toast.success('Business identity updated successfully');
+      // ✅ FIX: Update the TenantProfile, not the base Tenant
+      await tenantProfileApi.update({
+        company_name: formData.company_name,
+        email: formData.email,
+        phone: formData.phone,
+        business_location: formData.business_location,
+        website: formData.website || undefined,
+        kra_pin: formData.kra_pin || undefined,
+      });
+      
+      toast.success('Business profile updated successfully');
       setIsEditing(false);
       onUpdated(); // Refresh parent data
     } catch (error: any) {
-      toast.error(error?.response?.data?.detail || 'Failed to update business identity');
+      const detail = error?.response?.data?.detail;
+      const errorMsg = Array.isArray(detail) 
+        ? detail.map((e: any) => e.msg).join(', ') 
+        : (detail || 'Failed to update business profile');
+      toast.error(errorMsg);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    // Reset form to original values
-    setFormData({
-      name: tenant.name,
-      email: tenant.email,
-      phone_number: tenant.phone_number || '',
-    });
+    setFormData(getInitialData());
     setIsEditing(false);
   };
 
@@ -100,12 +118,12 @@ export function BusinessIdentitySection({ tenant, onUpdated }: BusinessIdentityS
           {isEditing ? (
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={formData.company_name}
+              onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]"
             />
           ) : (
-            <p className="text-sm font-medium text-[var(--color-ink)] py-2">{tenant.name}</p>
+            <p className="text-sm font-medium text-[var(--color-ink)] py-2">{formData.company_name || '—'}</p>
           )}
         </div>
 
@@ -122,7 +140,7 @@ export function BusinessIdentitySection({ tenant, onUpdated }: BusinessIdentityS
               className="w-full px-3 py-2 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]"
             />
           ) : (
-            <p className="text-sm font-medium text-[var(--color-ink)] py-2">{tenant.email}</p>
+            <p className="text-sm font-medium text-[var(--color-ink)] py-2">{formData.email || '—'}</p>
           )}
         </div>
 
@@ -134,33 +152,66 @@ export function BusinessIdentitySection({ tenant, onUpdated }: BusinessIdentityS
           {isEditing ? (
             <input
               type="tel"
-              value={formData.phone_number}
-              onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]"
             />
           ) : (
-            <p className="text-sm font-medium text-[var(--color-ink)] py-2">{tenant.phone_number || '—'}</p>
+            <p className="text-sm font-medium text-[var(--color-ink)] py-2">{formData.phone || '—'}</p>
           )}
         </div>
 
-        {/* KRA PIN (Read-only for now) */}
+        {/* Website */}
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center gap-1.5">
-            <Hash size={12} /> KRA PIN
+            <Globe size={12} /> Website
           </label>
-          <p className="text-sm font-medium text-[var(--color-ink)] py-2">
-            {tenant.profile?.tax_number || '—'}
-          </p>
+          {isEditing ? (
+            <input
+              type="url"
+              value={formData.website}
+              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]"
+              placeholder="https://example.com"
+            />
+          ) : (
+            <p className="text-sm font-medium text-[var(--color-ink)] py-2">{formData.website || '—'}</p>
+          )}
         </div>
 
-        {/* Business Location (Read-only for now) */}
+        {/* Business Location */}
         <div className="space-y-1.5 md:col-span-2">
           <label className="text-xs font-medium text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center gap-1.5">
             <MapPin size={12} /> Business Location
           </label>
-          <p className="text-sm font-medium text-[var(--color-ink)] py-2">
-            {tenant.profile?.address || '—'}
-          </p>
+          {isEditing ? (
+            <input
+              type="text"
+              value={formData.business_location}
+              onChange={(e) => setFormData({ ...formData, business_location: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]"
+            />
+          ) : (
+            <p className="text-sm font-medium text-[var(--color-ink)] py-2">{formData.business_location || '—'}</p>
+          )}
+        </div>
+
+        {/* KRA PIN */}
+        <div className="space-y-1.5 md:col-span-2">
+          <label className="text-xs font-medium text-[var(--color-ink-muted)] uppercase tracking-wider flex items-center gap-1.5">
+            <Hash size={12} /> KRA PIN (Tax ID)
+          </label>
+          {isEditing ? (
+            <input
+              type="text"
+              value={formData.kra_pin}
+              onChange={(e) => setFormData({ ...formData, kra_pin: e.target.value.toUpperCase() })}
+              className="w-full px-3 py-2 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)]"
+              placeholder="A012345678B"
+            />
+          ) : (
+            <p className="text-sm font-medium text-[var(--color-ink)] py-2 font-mono">{formData.kra_pin || '—'}</p>
+          )}
         </div>
       </div>
     </div>

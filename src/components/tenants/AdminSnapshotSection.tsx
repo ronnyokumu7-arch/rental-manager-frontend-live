@@ -1,5 +1,5 @@
 // src/components/tenants/AdminSnapshotSection.tsx
-import { User, Mail, Phone, Shield, AlertCircle, Edit3, Calendar } from 'lucide-react';
+import { User, Mail, Phone, Shield, AlertCircle, Edit3 } from 'lucide-react';
 import type { Tenant } from '@/lib/types';
 
 interface AdminSnapshotSectionProps {
@@ -27,6 +27,11 @@ export function AdminSnapshotSection({ tenant, onChangeEmailClick }: AdminSnapsh
   };
 
   const emailChangeInfo = getEmailChangeInfo();
+
+  // ✅ Smart data resolution: prefer profile contact info, fallback to admin snapshot, then base tenant
+  const displayName = tenant.admin_name || tenant.profile?.company_name || tenant.name;
+  const displayEmail = tenant.profile?.email || tenant.admin_email || tenant.email;
+  const displayPhone = tenant.profile?.phone || tenant.admin_phone || tenant.phone_number;
 
   return (
     <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden h-full flex flex-col">
@@ -63,7 +68,7 @@ export function AdminSnapshotSection({ tenant, onChangeEmailClick }: AdminSnapsh
               <User size={12} /> Full Name
             </label>
             <p className="text-sm font-semibold text-[var(--color-ink)] truncate">
-              {tenant.admin_name || '—'}
+              {displayName || '—'}
             </p>
           </div>
 
@@ -73,7 +78,7 @@ export function AdminSnapshotSection({ tenant, onChangeEmailClick }: AdminSnapsh
               <Mail size={12} /> Email Address
             </label>
             <p className="text-sm font-semibold text-[var(--color-ink)] break-all">
-              {tenant.admin_email || '—'}
+              {displayEmail || '—'}
             </p>
           </div>
 
@@ -83,7 +88,7 @@ export function AdminSnapshotSection({ tenant, onChangeEmailClick }: AdminSnapsh
               <Phone size={12} /> Phone Number
             </label>
             <p className="text-sm font-semibold text-[var(--color-ink)]">
-              {tenant.admin_phone || '—'}
+              {displayPhone || '—'}
             </p>
           </div>
         </div>
