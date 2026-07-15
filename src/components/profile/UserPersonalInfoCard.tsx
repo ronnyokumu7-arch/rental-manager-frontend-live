@@ -49,8 +49,23 @@ export default function UserPersonalInfoCard({
   }, [user]);
 
   const handleSave = () => {
-    if (!formData.full_name.trim() || !formData.email.trim()) return;
-    onSave(formData);
+    const trimmedName = formData.full_name.trim();
+    const trimmedEmail = formData.email.trim();
+    
+    // Prevent save if required fields are empty
+    if (!trimmedName || !trimmedEmail) return;
+    
+    // ✅ CRITICAL FIX: Sanitize payload. Convert empty strings to null 
+    // to match backend DB schema and prevent validation blockers.
+    const payload: Partial<UserType> = {
+      full_name: trimmedName,
+      email: trimmedEmail,
+      phone_number: formData.phone_number.trim() || null,
+      department: formData.department.trim() || null,
+      job_title: formData.job_title.trim() || null,
+    };
+    
+    onSave(payload);
     setIsEditing(false);
   };
 
@@ -85,7 +100,6 @@ export default function UserPersonalInfoCard({
   const fieldRow = "flex items-center gap-3 px-3 py-2.5 rounded-xl border border-transparent hover:bg-[var(--color-surface-hover)] transition-all duration-200 group";
 
   return (
-    // ✅ FIX: Replaced SectionCard with a standard div to prevent import/export mismatch errors
     <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden">
       
       {/* ✅ UNIFIED IDENTITY HEADER: No Background, Thin Border Only */}
