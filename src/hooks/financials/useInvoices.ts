@@ -1,5 +1,5 @@
 // src/hooks/financials/useInvoices.ts
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
 import { invoicesApi } from "@/lib/api/invoices";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
@@ -10,52 +10,71 @@ export function useInvoices() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 7;
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {
       const params = statusFilter !== "all" ? { status: statusFilter } : undefined;
       const data = await invoicesApi.list(params);
+      
+      // ✅ REMOVED: Old data normalization logic that was overriding backend status
+      // Now we trust the backend's status field completely
       setInvoices(data);
     } catch (error) {
       toast.error("Failed to load invoices");
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchInvoices();
-  }, [statusFilter]);
+  }, [fetchInvoices]);
 
-  // Client-side filtering for search
+  // Client-side filtering
   const filteredInvoices = useMemo(() => {
-    if (!search) return invoices;
-    const q = search.toLowerCase();
-    return invoices.filter(
-      (inv) =>
-        inv.invoice_number.toLowerCase().includes(q) ||
-        inv.booking_id?.toString().includes(q)
-    );
-  }, [invoices, search]);
+    let result = invoices;
+    
+    if (statusFilter !== "all") {
+      result = result.filter(i => i.status === statusFilter);
+    }
+    
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (i) =>
+          i.invoice_number.toLowerCase().includes(q) ||
+          i.booking_id?.toString().includes(q) ||
+          ('booking_ref' in i && String((i as any).booking_ref).toLowerCase().includes(q)) ||
+          ('client_name' in i && String((i as any).client_name).toLowerCase().includes(q))
+      );
+    }
+    
+    return result;
+  }, [invoices, search, statusFilter]);
 
   const totalPages = Math.ceil(filteredInvoices.length / pageSize);
   const paginatedInvoices = filteredInvoices.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
+  // Reset to page 1 when filters change
+  useEffect(() => { 
+    setCurrentPage(1); 
+  }, [search, statusFilter]);
 
   // Actions
   const handleDownload = async (id: number) => {
     try {
       toast.loading("Generating PDF...");
       const res = await invoicesApi.downloadPdf(id);
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      // ✅ FIX: Removed the hidden trailing newline character that was corrupting the filename
       link.download = `Invoice-${id}.pdf`; 
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       toast.dismiss();
       toast.success("PDF downloaded");
@@ -69,51 +88,48 @@ export function useInvoices() {
     try {
       const res = await invoicesApi.generateShareLink(id);
       await navigator.clipboard.writeText(res.share_url);
-      toast.success("Share link copied to clipboard!");
-    } catch (error) {
-      toast.error("Failed to generate link");
+      
+      setInvoices(prev => prev.map(i => 
+        i.id === id ? { ...i, share_token: res.share_token } : i
+      ));
+      
+      toast.success("Invoice share link copied to clipboard!");
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || "Failed to generate link");
     }
   };
 
   const handleVoid = async (id: number) => {
-    if (!confirm("Are you sure you want to void this invoice?")) return;
+    if (!confirm("Are you sure you want to void this invoice? This action cannot be undone.")) return;
     try {
-      await invoicesApi.void(id);
+      const updated = await invoicesApi.void(id);
+      
+      setInvoices(prev => prev.map(i => i.id === id ? updated : i));
+      
       toast.success("Invoice voided successfully");
-      fetchInvoices();
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Failed to void invoice");
     }
   };
 
-  const handleRecordPayment = async (id: number, amount: number) => {
-    try {
-      // Using update to mark as paid and update amount_paid
-      await invoicesApi.update(id, {
-        status: "paid",
-        amount_paid: amount, // Note: In a real app, we'd calculate current + new amount
-      });
-      toast.success("Payment recorded successfully!");
-      fetchInvoices();
-      return true;
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || "Failed to record payment");
-      return false;
-    }
-  };
-
+  // ✅ REMOVED: handleRecordPayment is no longer needed here
+  // The RecordPaymentModal calls invoicesApi.recordPayment directly and triggers refetch
+  
   return {
     invoices: paginatedInvoices,
     loading,
-    search, setSearch,
-    statusFilter, setStatusFilter,
-    currentPage, setCurrentPage,
+    search, 
+    setSearch,
+    statusFilter, 
+    setStatusFilter,
+    currentPage, 
+    setCurrentPage,
     totalPages,
     totalItems: filteredInvoices.length,
     handleDownload,
     handleCopyLink,
     handleVoid,
-    handleRecordPayment,
+    // ✅ REMOVED: handleRecordPayment
     refetch: fetchInvoices,
   };
 }

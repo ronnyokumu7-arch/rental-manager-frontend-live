@@ -22,6 +22,11 @@ export interface User {
   dl_number?: string | null;
   dl_expiry?: string | null;
   
+  // ✅ ADDED: Invite & Onboarding Lifecycle Fields
+  invite_token?: string | null;
+  invite_expires_at?: string | null;
+  is_onboarded?: boolean;
+
   // ✅ NEW: Recovery & Security Audit Fields (Synced with backend UserOut)
   phone_verified?: boolean;
   failed_login_attempts?: number;
@@ -159,12 +164,13 @@ export interface VehicleUpdate {
 }
 
 // ─── Bookings ────────────────────────────────────────────────────────────────
-export type BookingStatus =
-  | "pending"
-  | "confirmed"
-  | "active"
-  | "completed"
-  | "cancelled"
+export type BookingStatus = 
+  | "pending" 
+  | "confirmed" 
+  | "active" 
+  | "awaiting_mileage"
+  | "completed" 
+  | "cancelled" 
   | "no_show";
 
 export interface Booking {

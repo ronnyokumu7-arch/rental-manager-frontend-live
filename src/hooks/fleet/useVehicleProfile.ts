@@ -45,7 +45,7 @@ export function useVehicleProfile(vehicleId: number) {
     }
   };
 
-  const handleStatusAction = async (action: "activate" | "maintenance" | "reactivate" | "retire" | "archive") => {
+  const handleStatusAction = async (action: "activate" | "maintenance" | "reactivate" | "retire" | "archive" | "restore") => {
     setActionLoading(action);
     try {
       let updated: Vehicle;
@@ -71,6 +71,10 @@ export function useVehicleProfile(vehicleId: number) {
           toast.success("Vehicle archived");
           router.push("/dashboard/fleet");
           return;
+        case "restore":
+          updated = await vehiclesApi.restore(vehicleId);
+          toast.success("Vehicle restored to active fleet");
+          break;
       }
       setVehicle(updated);
     } catch (error: any) {

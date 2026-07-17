@@ -8,7 +8,11 @@ import {
   Globe, Lock, Zap, BarChart3, UserCheck, Receipt, Landmark,
   Shield, HardDrive, Activity, Webhook,
 } from "lucide-react";
+
 import BusinessProfileSettings from "@/components/settings/BusinessProfileSettings";
+import AppearanceSettings from "@/components/settings/AppearanceSettings";
+import TeamRolesSettings from "@/components/settings/TeamRolesSettings";
+   import UserManagementSettings from "@/components/settings/UserManagementSettings";
 
 type TabId = "general" | "team" | "financials" | "system" | "advanced";
 
@@ -155,7 +159,10 @@ export default function SettingsPage() {
                   </div>
                   <p className="text-sm text-[var(--color-ink-muted)] mt-0.5 line-clamp-2">{module.description}</p>
                 </div>
-                <ChevronRight size={18} className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all duration-200 flex-shrink-0" />
+                <ChevronRight 
+                  size={18} 
+                  className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all duration-200 flex-shrink-0" 
+                />
               </div>
             );
           })}
@@ -164,9 +171,15 @@ export default function SettingsPage() {
         // ── THE WORKSPACE: Individual Module View ──
         <div className="animate-in slide-in-from-right-4 fade-in duration-300">
           
-          {/* ✅ DYNAMIC ROUTING: Render Business Profile, or fallback placeholder */}
+          {/* ✅ DYNAMIC ROUTING: Render specific module components, or fallback placeholder */}
           {activeModule.id === "business" ? (
             <BusinessProfileSettings />
+          ) : activeModule.id === "appearance" ? (
+            <AppearanceSettings />
+          ) : activeModule.id === "roles" ? (
+            <TeamRolesSettings />
+          ) : activeModule.id === "users" ? (
+            <UserManagementSettings />
           ) : (
             <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl shadow-[var(--shadow-card)] p-8 min-h-[400px] flex flex-col items-center justify-center text-center">
               <div className={`w-16 h-16 rounded-2xl ${getThemeClasses(activeModule.theme).iconBg} flex items-center justify-center mb-4`}>

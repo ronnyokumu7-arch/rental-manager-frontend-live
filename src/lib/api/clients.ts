@@ -5,7 +5,7 @@ import type { Client, ClientCreate, ClientUpdate, Booking } from "@/lib/types";
 export const clientsApi = {
   // ── Core CRUD ──────────────────────────────────────────────────────────────
   list: (params?: { search?: string; status?: string }) =>
-    apiClient.get<Client[]>("/clients", { params }).then((r) => r.data),
+    apiClient.get<Client[]>("/clients/", { params }).then((r) => r.data),
   listArchived: () =>
     apiClient.get<Client[]>("/clients/archived").then((r) => r.data),
   get: (id: number) =>

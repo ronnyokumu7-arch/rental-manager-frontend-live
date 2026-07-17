@@ -25,7 +25,7 @@ export interface UserRecoveryOptions {
 export interface UserCreatePayload {
   full_name: string;
   email: string;
-  password: string;
+  password?: string; // ✅ Made optional to support "Invite Mode" (passwordless creation)
   role: "super_admin" | "tenant_admin" | "tenant_staff";
   tenant_id?: number | null;
   is_active?: boolean;
@@ -44,15 +44,18 @@ export interface UserUpdatePayload {
   email?: string;
   role?: "super_admin" | "tenant_admin" | "tenant_staff";
   is_active?: boolean;
+  is_suspended?: boolean;
+  suspension_reason?: string | null;
   password?: string;
   phone_number?: string | null;
   department?: string | null;
-  job_title?: string | null; // ✅ ADDED: Required by UserPersonalInfoCard.tsx
+  job_title?: string | null;
   permissions?: string[];
   two_factor_enabled?: boolean;
   id_number?: string | null;
   dl_number?: string | null;
   dl_expiry?: string | null;
+  is_onboarded?: boolean; // ✅ ADDED: Required for the "Verify User" action
 }
 
 // ---------------------------------------------------------------------------

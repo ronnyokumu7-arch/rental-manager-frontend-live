@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react"; // ✅ Ensure ArrowLeft is imported here
 import { useVehicleProfile } from "@/hooks/fleet/useVehicleProfile";
 import VehicleHeader from "@/components/fleet/VehicleHeader";
 import VehicleSpecsCard from "@/components/fleet/VehicleSpecsCard";
@@ -46,7 +46,9 @@ export default function VehicleProfilePage() {
         >
           <ArrowLeft size={18} />
         </button>
-        <span className="text-sm font-medium text-[var(--color-ink-muted)]">Fleet / {vehicle.plate_number}</span>
+        <span className="text-sm font-medium text-[var(--color-ink-muted)]">
+          Fleet / {vehicle.plate_number}
+        </span>
       </div>
 
       {/* 1. Header: Identity & Actions */}
@@ -61,12 +63,13 @@ export default function VehicleProfilePage() {
       {/* 2. Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left: Telemetry & Specs (Takes more space for forms/tables) */}
+        {/* Left: Telemetry & Specs */}
         <div className="lg:col-span-7">
           <VehicleSpecsCard 
             vehicle={vehicle} 
             isEditing={isEditing} 
             onSave={handleUpdate} 
+            onCancel={() => setIsEditing(false)} 
             actionLoading={actionLoading} 
           />
         </div>

@@ -8,8 +8,7 @@ import {
   Mail, CreditCard, Briefcase, Lock, AlertCircle, Loader2
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { usersApi } from "@/lib/api/users";
-import type { UserCreate } from "@/lib/types";
+import { usersApi, type UserCreatePayload } from "@/lib/api/users";
 
 // ── Design System Constants ─────────────────────────────────────────────────
 const inputClass = "w-full px-4 py-3 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all duration-200 text-sm";
@@ -55,16 +54,21 @@ export default function NewUserPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // ✅ PREVENT AUTO-SUBMIT: Move focus to next input on Enter
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+  // ✅ PREVENT AUTO-SUBMIT: Move focus to next input on Enter (Form Level)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === 'Enter' && e.target instanceof HTMLElement) {
+      // Prevent default form submission
       e.preventDefault();
-      const form = e.currentTarget.form;
-      if (form) {
-        const inputs = Array.from(form.querySelectorAll('input, select'));
-        const currentIndex = inputs.indexOf(e.currentTarget);
-        if (currentIndex < inputs.length - 1) {
-          inputs[currentIndex + 1].focus();
+      
+      // Only jump if the target is an input or select (ignore buttons/textareas)
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+        const form = e.currentTarget;
+        // Get all focusable elements in the form
+        const inputs = Array.from(form.querySelectorAll('input:not([type="submit"]), select'));
+        const currentIndex = inputs.indexOf(e.target as HTMLElement);
+        
+        if (currentIndex > -1 && currentIndex < inputs.length - 1) {
+          (inputs[currentIndex + 1] as HTMLElement).focus();
         }
       }
     }
@@ -98,17 +102,17 @@ export default function NewUserPage() {
 
     setLoading(true);
     try {
-      const payload: UserCreate = {
+      const payload: UserCreatePayload = {
         full_name: formData.full_name,
         email: formData.email,
         password: formData.password,
         role: roleType === "admin" ? "tenant_admin" : "tenant_staff",
-        phone_number: formData.phone_number || null,
+        phone_number: formData.phone_number || undefined,
         department: roleType === "admin" ? "Executive" : department, 
         job_title: jobTitle,
-        id_number: formData.id_number || null,
-        dl_number: formData.dl_number || null,
-        dl_expiry: formData.dl_expiry || null,
+        id_number: formData.id_number || undefined,
+        dl_number: formData.dl_number || undefined,
+        dl_expiry: formData.dl_expiry || undefined,
       };
       await usersApi.create(payload);
       toast.success("Team member added successfully!");
@@ -291,7 +295,6 @@ export default function NewUserPage() {
                         type="text"
                         value={formData.full_name}
                         onChange={(e) => updateField("full_name", e.target.value)}
-                        onKeyDown={handleKeyDown}
                         placeholder="e.g. Jane Doe"
                         className={`${inputClass} pl-11`}
                         required
@@ -306,7 +309,6 @@ export default function NewUserPage() {
                         type="email"
                         value={formData.email}
                         onChange={(e) => updateField("email", e.target.value)}
-                        onKeyDown={handleKeyDown}
                         placeholder="jane@agency.com"
                         className={`${inputClass} pl-11`}
                         required
@@ -321,7 +323,6 @@ export default function NewUserPage() {
                         type="tel"
                         value={formData.phone_number}
                         onChange={(e) => updateField("phone_number", e.target.value)}
-                        onKeyDown={handleKeyDown}
                         placeholder="+254 7..."
                         className={`${inputClass} pl-11`}
                       />
@@ -335,7 +336,6 @@ export default function NewUserPage() {
                         type="password"
                         value={formData.password}
                         onChange={(e) => updateField("password", e.target.value)}
-                        onKeyDown={handleKeyDown}
                         placeholder="Min 8 characters"
                         className={`${inputClass} pl-11`}
                         required
@@ -365,7 +365,6 @@ export default function NewUserPage() {
                         type="text"
                         value={formData.id_number}
                         onChange={(e) => updateField("id_number", e.target.value)}
-                        onKeyDown={handleKeyDown}
                         placeholder="e.g. 12345678"
                         className={`${inputClass} pl-11`}
                       />
@@ -382,7 +381,6 @@ export default function NewUserPage() {
                             type="text"
                             value={formData.dl_number}
                             onChange={(e) => updateField("dl_number", e.target.value)}
-                            onKeyDown={handleKeyDown}
                             placeholder="e.g. DL-01234"
                             className={`${inputClass} pl-11`}
                           />
@@ -394,7 +392,6 @@ export default function NewUserPage() {
                           type="date"
                           value={formData.dl_expiry}
                           onChange={(e) => updateField("dl_expiry", e.target.value)}
-                          onKeyDown={handleKeyDown}
                           className={inputClass}
                         />
                       </div>

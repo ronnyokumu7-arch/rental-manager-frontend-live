@@ -50,17 +50,18 @@ export default function NewClientPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // ✅ PREVENT AUTO-SUBMIT: Only allow submit via button click
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      // Move to next input or do nothing
-      const form = e.currentTarget.form;
+      // ✅ FIX: Cast currentTarget to HTMLInputElement to access .form
+      const input = e.currentTarget as HTMLInputElement;
+      const form = input.form;
+      
       if (form) {
-        const inputs = Array.from(form.querySelectorAll('input'));
-        const currentIndex = inputs.indexOf(e.currentTarget);
-        if (currentIndex < inputs.length - 1) {
-          inputs[currentIndex + 1].focus();
+        const inputs = Array.from(form.querySelectorAll('input, select, textarea'));
+        const currentIndex = inputs.indexOf(input);
+        if (currentIndex > -1 && currentIndex < inputs.length - 1) {
+          (inputs[currentIndex + 1] as HTMLElement).focus();
         }
       }
     }

@@ -1,8 +1,10 @@
 // src/components/financials/invoices/InvoicesTable.tsx
 "use client";
 
-import { Receipt, Download, Link2, Banknote, XCircle } from "lucide-react";
-import type { Invoice, InvoiceStatus } from "@/lib/types";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { FileText, Download, Copy, DollarSign, XCircle, MoreVertical } from "lucide-react";
+import type { Invoice } from "@/lib/types";
 
 interface InvoicesTableProps {
   data: Invoice[];
@@ -10,122 +12,216 @@ interface InvoicesTableProps {
   onCopyLink: (id: number) => void;
   onVoid: (id: number) => void;
   onRecordPayment: (invoice: Invoice) => void;
+  onCreate?: () => void;
 }
 
-export default function InvoicesTable({ data, onDownload, onCopyLink, onVoid, onRecordPayment }: InvoicesTableProps) {
+const statusStyles: Record<string, { bg: string; text: string }> = {
+  draft: { bg: "bg-[var(--color-surface-hover)]", text: "text-[var(--color-ink-muted)]" },
+  sent: { bg: "bg-[var(--color-primary-muted)]", text: "text-[var(--color-primary-text)]" },
+  partially_paid: { bg: "bg-[var(--color-warning-bg)]", text: "text-[var(--color-warning-text)]" }, // ✅ NEW
+  paid: { bg: "bg-[var(--color-success-bg)]", text: "text-[var(--color-success-text)]" },
+  overdue: { bg: "bg-[var(--color-danger-bg)]", text: "text-[var(--color-danger-text)]" },
+  void: { bg: "bg-[var(--color-surface-hover)]", text: "text-[var(--color-ink-muted)]" },
+};
+
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+};
+
+export default function InvoicesTable({ data, onDownload, onCopyLink, onVoid, onRecordPayment, onCreate }: InvoicesTableProps) {
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  const [portalPosition, setPortalPosition] = useState<{ top: number; right: number } | null>(null);
   
-  const getStatusStyle = (status: InvoiceStatus) => {
-    switch (status) {
-      case "paid": return "bg-[var(--color-success-bg)] text-[var(--color-success-text)]";
-      case "overdue": return "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]";
-      case "void": return "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]";
-      case "sent": return "bg-[var(--color-primary-muted)] text-[var(--color-primary-text)]";
-      case "draft": return "bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]";
-      default: return "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]";
+  const buttonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // ✅ Click outside to close
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (openDropdownId !== null) {
+        const button = buttonRefs.current.get(openDropdownId);
+        const dropdown = dropdownRef.current;
+        
+        if (
+          button &&
+          dropdown &&
+          !button.contains(event.target as Node) &&
+          !dropdown.contains(event.target as Node)
+        ) {
+          setOpenDropdownId(null);
+          setPortalPosition(null);
+        }
+      }
     }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openDropdownId]);
+
+  // ✅ Portal positioning to escape overflow-x-auto
+const handleToggleMenu = (e: React.MouseEvent<HTMLButtonElement>, id: number) => {
+  e.stopPropagation();
+  if (openDropdownId === id) {
+    setOpenDropdownId(null);
+    setPortalPosition(null);
+  } else {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuHeight = 200; // Approximate height of the dropdown menu
+    const viewportBottom = window.innerHeight;
+    const spaceBelow = viewportBottom - rect.bottom;
+    
+    // ✅ SMART POSITIONING: Flip above if not enough space below
+    const positionAbove = spaceBelow < menuHeight;
+    
+    setPortalPosition({
+      top: positionAbove 
+        ? rect.top + window.scrollY - menuHeight - 4 // Position above with 4px gap
+        : rect.bottom + window.scrollY + 4, // Position below with 4px gap
+      right: window.innerWidth - rect.right,
+    });
+    setOpenDropdownId(id);
+  }
+};
+
+  const setButtonRef = (id: number) => (el: HTMLButtonElement | null) => {
+    if (el) buttonRefs.current.set(id, el);
+    else buttonRefs.current.delete(id);
   };
 
   return (
-    <div className="overflow-x-auto dark:bg-[var(--color-surface-hover)]">
+    <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        {/* Header: Slightly darker in dark mode for contrast */}
-        <thead className="bg-[var(--color-surface-hover)] dark:bg-[var(--color-surface)] border-b border-[var(--color-surface-border)]">
+        <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
           <tr>
             <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Invoice</th>
+            <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Booking Ref</th>
+            <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Date Created</th>
+            <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Due Date</th>
             <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Amount</th>
             <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Status</th>
-            <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Due Date</th>
             <th className="px-6 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Manage</th>
           </tr>
         </thead>
-        
-        {/* Body: Rows inherit the dark wrapper background, hover adjusts for dark mode */}
         <tbody className="divide-y divide-[var(--color-surface-border)]">
-          {data.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-6 py-12 text-center text-[var(--color-ink-muted)]">
-                No invoices found.
-              </td>
-            </tr>
-          ) : (
-            data.map((inv) => {
-              const date = new Date(inv.due_date);
-              const isOverdue = date < new Date() && inv.status !== "paid" && inv.status !== "void";
-              const isPaidOrVoid = inv.status === "paid" || inv.status === "void";
-              const statusStyle = getStatusStyle(inv.status);
+          {data.map((invoice) => {
+            const style = statusStyles[invoice.status] || statusStyles.draft;
+            
+            return (
+              <tr key={invoice.id} className="hover:bg-[var(--color-surface-hover)] transition-colors group">
+                {/* Invoice */}
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
+                      <FileText size={16} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[var(--color-ink)]">{invoice.invoice_number}</p>
+                    </div>
+                  </div>
+                </td>
 
-              return (
-                <tr 
-                  key={inv.id} 
-                  className="hover:bg-[var(--color-surface-hover)] dark:hover:bg-[var(--color-surface)] transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] flex-shrink-0">
-                        <Receipt size={16} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-[var(--color-ink)]">{inv.invoice_number}</p>
-                        <p className="text-xs text-[var(--color-ink-muted)]">Booking #{inv.booking_id || "N/A"}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-bold text-[var(--color-ink)] tabular-nums">
-                      {inv.currency_code} {Number(inv.amount_due).toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${statusStyle}`}>
-                      {inv.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className={`text-sm font-medium ${isOverdue ? "text-[var(--color-danger-text)]" : "text-[var(--color-ink)]"}`}>
-                      {date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                      {isOverdue && <span className="block text-[10px] font-bold uppercase text-[var(--color-danger-text)] mt-0.5">Overdue</span>}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-1">
-                      <button 
-                        onClick={() => onDownload(inv.id)} 
-                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all" 
-                        title="Download PDF"
+                {/* Booking Ref */}
+                <td className="px-6 py-4">
+                  <p className="text-sm font-medium text-[var(--color-ink)]">
+                    {'booking_ref' in invoice ? (invoice as any).booking_ref || "—" : `Booking #${invoice.booking_id || "N/A"}`}
+                  </p>
+                </td>
+
+                {/* Date Created */}
+                <td className="px-6 py-4">
+                  <p className="text-sm text-[var(--color-ink-muted)]">{formatDate(invoice.created_at)}</p>
+                </td>
+
+                {/* Due Date */}
+                <td className="px-6 py-4">
+                  <p className="text-sm text-[var(--color-ink-muted)]">{formatDate(invoice.due_date)}</p>
+                </td>
+
+                {/* Amount */}
+                <td className="px-6 py-4">
+                  <p className="text-sm font-bold text-[var(--color-ink)]">
+                    {invoice.currency_code} {Number(invoice.amount_due).toLocaleString()}
+                  </p>
+                </td>
+
+                {/* Status */}
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style.bg} ${style.text}`}>
+                    {invoice.status.replace("_", " ")}
+                  </span>
+                </td>
+
+                {/* Manage */}
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      ref={setButtonRef(invoice.id)}
+                      onClick={(e) => handleToggleMenu(e, invoice.id)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-all"
+                      title="More Actions"
+                    >
+                      <MoreVertical size={14} />
+                    </button>
+
+                    {/* ✅ Portal Dropdown */}
+                    {openDropdownId === invoice.id && portalPosition && typeof window !== "undefined" && createPortal(
+                      <div 
+                        ref={dropdownRef}
+                        className="fixed w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-lg)] z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                        style={{ 
+                          top: `${portalPosition.top}px`, 
+                          right: `${portalPosition.right}px` 
+                        }}
                       >
-                        <Download size={14} />
-                      </button>
-                      <button 
-                        onClick={() => onCopyLink(inv.id)} 
-                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all" 
-                        title="Copy Share Link"
-                      >
-                        <Link2 size={14} />
-                      </button>
-                      {!isPaidOrVoid && (
-                        <>
-                          <button 
-                            onClick={() => onRecordPayment(inv)} 
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-success)] hover:text-white transition-all" 
-                            title="Record Payment"
+                        {onCreate && (
+                          <button
+                            onClick={() => { onCreate(); setOpenDropdownId(null); setPortalPosition(null); }}
+                            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
                           >
-                            <Banknote size={14} />
+                            <FileText size={14} /> Create New Invoice
                           </button>
-                          <button 
-                            onClick={() => onVoid(inv.id)} 
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-danger)] hover:text-white transition-all" 
-                            title="Void Invoice"
-                          >
-                            <XCircle size={14} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })
-          )}
+                        )}
+
+                        <button
+                          onClick={() => { onDownload(invoice.id); setOpenDropdownId(null); setPortalPosition(null); }}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors border-t border-[var(--color-surface-border)]"
+                        >
+                          <Download size={14} /> Download PDF
+                        </button>
+                        
+                        <button
+                          onClick={() => { onCopyLink(invoice.id); setOpenDropdownId(null); setPortalPosition(null); }}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors border-t border-[var(--color-surface-border)]"
+                        >
+                          <Copy size={14} /> Copy Share Link
+                        </button>
+                        
+                        {invoice.status !== "paid" && invoice.status !== "void" && (
+                          <>
+                            <button
+                              onClick={() => { onRecordPayment(invoice); setOpenDropdownId(null); setPortalPosition(null); }}
+                              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-success-text)] hover:bg-[var(--color-success-bg)] transition-colors border-t border-[var(--color-surface-border)]"
+                            >
+                              <DollarSign size={14} /> Record Offline Payment
+                            </button>
+                            
+                            <button
+                              onClick={() => { onVoid(invoice.id); setOpenDropdownId(null); setPortalPosition(null); }}
+                              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-danger-text)] hover:bg-[var(--color-danger-bg)] transition-colors border-t border-[var(--color-surface-border)]"
+                            >
+                              <XCircle size={14} /> Void Invoice
+                            </button>
+                          </>
+                        )}
+                      </div>,
+                      document.body
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

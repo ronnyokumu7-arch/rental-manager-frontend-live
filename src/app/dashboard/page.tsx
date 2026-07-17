@@ -2,9 +2,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Activity, BarChart3,
-  Car, Users, TrendingUp, Clock, CheckCircle2, Wrench
+  Car, Users, TrendingUp, Clock, CheckCircle2, Wrench, Plus
 } from "lucide-react";
 import { useDashboard } from "@/hooks/useDashboard";
 import ActionCenterWidget from "@/components/dashboard/ActionCenterWidget";
@@ -17,6 +18,7 @@ const TABS = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
   const { loading, stats, alerts, vehicles } = useDashboard();
 
@@ -29,7 +31,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       
       {/* Premium Header & Tab Switcher */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -244,6 +246,19 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* 🚀 PREMIUM FLOATING ACTION BUTTON */}
+      <button
+        onClick={() => router.push("/dashboard/bookings/new")}
+        className="fixed bottom-8 right-8 z-50 group flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-110 hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 ease-out"
+        title="Create New Booking"
+      >
+        <Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
+        <span className="absolute right-full mr-4 px-3 py-1.5 bg-[var(--color-surface)] text-[var(--color-ink)] text-xs font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-[var(--color-surface-border)]">
+          New Booking
+        </span>
+      </button>
+
     </div>
   );
 }

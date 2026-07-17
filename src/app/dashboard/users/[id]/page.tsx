@@ -60,12 +60,11 @@ export default function UserProfilePage() {
 
   const initials = getInitials(user.full_name);
   
-  // Determine role badge styling using opacity-based tokens
   const getRoleBadge = () => {
     switch (user.role) {
       case 'super_admin':
         return { label: 'System', class: 'bg-purple-500/5 text-purple-600 dark:text-purple-400 border border-purple-500/10' };
-      case 'admin':
+      case 'tenant_admin':
         return { label: 'Admin', class: 'bg-[var(--color-primary)]/5 text-[var(--color-primary)] border border-[var(--color-primary)]/10' };
       default:
         return { label: 'Staff', class: 'bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]' };

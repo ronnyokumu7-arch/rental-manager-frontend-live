@@ -1,245 +1,64 @@
 // src/app/dashboard/clients/page.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ColumnDef } from "@tanstack/react-table";
 import {
   Users,
   Plus,
   Mail,
   Phone,
-  User,
-  CreditCard,
+  User as UserIcon,
   ChevronRight,
   Archive,
+  Shield,
+  ShieldAlert,
+  MoreVertical,
+  Loader2,
+  Link,
+  Search,
+  Filter,
+  ChevronDown, // ✅ ADDED
 } from "lucide-react";
-import toast from "react-hot-toast";
-import { clientsApi } from "@/lib/api/clients";
-import type { Client } from "@/lib/types";
-
-type ViewMode = "active" | "vault";
-
-const CLIENT_FILTER_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "pending", label: "Pending" },
-  { value: "suspended", label: "Suspended" },
-  { value: "inactive", label: "Inactive" },
-];
+import { useClientsList } from "@/hooks/clients/useClientsList";
 
 export default function ClientsPage() {
   const router = useRouter();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<ViewMode>("active");
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  
-  // ✅ LOCKED DOWN: Exactly 7 rows per page to eliminate internal scrolling
-  const pageSize = 7;
-
-  const fetchClients = async () => {
-    setLoading(true);
-    try {
-      const data = view === "active" ? await clientsApi.list() : await clientsApi.listArchived();
-      setClients(data);
-    } catch (error) {
-      toast.error("Failed to load clients");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchClients();
-  }, [view]);
-
-  const filteredClients = useMemo(() => {
-    let result = clients;
-    if (view === "active" && statusFilter) {
-      result = result.filter((c) => c.status === statusFilter);
-    }
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (c) =>
-          c.full_name.toLowerCase().includes(q) ||
-          c.email?.toLowerCase().includes(q) ||
-          c.phone.toLowerCase().includes(q) ||
-          c.id_number?.toLowerCase().includes(q) ||
-          c.dl_number?.toLowerCase().includes(q)
-      );
-    }
-    return result;
-  }, [clients, view, statusFilter, search]);
-
-  const totalPages = Math.ceil(filteredClients.length / pageSize);
-  const paginatedClients = filteredClients.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, statusFilter, view]);
-
-  // ✅ Counter calculations
-  const totalClients = clients.length;
-  const activeClients = clients.filter(c => c.status === 'active').length;
-  const suspendedClients = clients.filter(c => c.status === 'suspended').length;
-
-  const columns: ColumnDef<Client>[] = [
-    {
-      accessorKey: "full_name",
-      header: "Client",
-      cell: ({ row }) => {
-        const c = row.original;
-        const initials = c.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        
-        return (
-          <div className="flex items-center gap-3 min-w-0">
-            {/* ✅ DEFAULT AVATAR ONLY: Real avatars live in the profile */}
-            <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] font-bold text-xs flex-shrink-0">
-              {initials || <User size={16} />}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{c.full_name}</p>
-              {c.email ? (
-                <a href={`mailto:${c.email}`} className="flex items-center gap-1.5 text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors truncate">
-                  <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                  <span className="truncate">{c.email}</span>
-                </a>
-              ) : (
-                <p className="text-xs text-[var(--color-ink-muted)] truncate">No email</p>
-              )}
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "phone",
-      header: "Contact",
-      cell: ({ row }) => {
-        const c = row.original;
-        return (
-          <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
-            <Phone size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-            <span className="font-medium">{c.phone}</span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "id_number",
-      header: "National ID",
-      cell: ({ row }) => {
-        const c = row.original;
-        if (!c.id_number) return <span className="text-sm text-[var(--color-ink-subtle)] italic">Not provided</span>;
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-muted)] flex-shrink-0">
-              <CreditCard size={14} />
-            </div>
-            <span className="text-sm font-semibold text-[var(--color-ink)] tracking-wide font-mono">{c.id_number}</span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "dl_number",
-      header: "Driver's License",
-      cell: ({ row }) => {
-        const c = row.original;
-        if (!c.dl_number) return <span className="text-sm text-[var(--color-ink-subtle)] italic">Not provided</span>;
-        
-        let color = "bg-[var(--color-ink-subtle)]";
-        let labelBg = "bg-[var(--color-surface-hover)]";
-        let labelText = "text-[var(--color-ink-muted)]";
-        let healthLabel = "No expiry set";
-
-        if (c.dl_expiry) {
-          const expiryDate = new Date(c.dl_expiry);
-          const today = new Date();
-          const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          if (daysUntilExpiry < 0) {
-            color = "bg-[var(--color-danger)]"; labelBg = "bg-[var(--color-danger-bg)]"; labelText = "text-[var(--color-danger-text)]"; healthLabel = "Expired";
-          } else if (daysUntilExpiry < 30) {
-            color = "bg-[var(--color-danger)]"; labelBg = "bg-[var(--color-danger-bg)]"; labelText = "text-[var(--color-danger-text)]"; healthLabel = `${daysUntilExpiry}d left`;
-          } else if (daysUntilExpiry < 60) {
-            color = "bg-[var(--color-warning)]"; labelBg = "bg-[var(--color-warning-bg)]"; labelText = "text-[var(--color-warning-text)]"; healthLabel = `${daysUntilExpiry}d left`;
-          } else {
-            color = "bg-[var(--color-success)]"; labelBg = "bg-[var(--color-success-bg)]"; labelText = "text-[var(--color-success-text)]"; healthLabel = `${daysUntilExpiry}d left`;
-          }
-        }
-
-        return (
-          <div className="flex items-center gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-[var(--color-ink)] truncate font-mono">{c.dl_number}</p>
-              <p className="text-xs text-[var(--color-ink-muted)]">
-                {c.dl_expiry ? new Date(c.dl_expiry).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "No expiry"}
-              </p>
-            </div>
-            <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${labelBg} ${labelText} flex items-center gap-1.5`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${color}`} />
-              {healthLabel}
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        const c = row.original;
-        if (c.is_archived) return <span className="text-xs text-[var(--color-ink-subtle)] italic">Archived</span>;
-        const statusColors: Record<string, string> = {
-          active: "bg-[var(--color-success-bg)] text-[var(--color-success-text)]",
-          pending: "bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]",
-          suspended: "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]",
-          inactive: "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]",
-        };
-        return (
-          <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${statusColors[c.status] || statusColors.inactive}`}>
-            {c.status}
-          </span>
-        );
-      },
-    },
-    {
-      id: "actions",
-      header: "Manage",
-      cell: ({ row }) => {
-        const c = row.original;
-        return (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/dashboard/clients/${c.id}`);
-            }}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all active:scale-95"
-            title="View Client Profile"
-          >
-            <ChevronRight size={14} />
-          </button>
-        );
-      },
-    },
-  ];
+  const {
+    loading,
+    view,
+    setView,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    filteredClients,
+    paginatedClients,
+    totalPages,
+    totalClients,
+    activeClients,
+    suspendedClients,
+    actionLoadingId,
+    openDropdownId,
+    setOpenDropdownId,
+    handleVerify,
+    handleSuspend,
+    handleReactivate,
+    handleArchive,
+  } = useClientsList();
 
   return (
     <div className="space-y-6">
       {/* Premium Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
               <Users size={20} />
             </div>
-            Clients
+            Manage Clients
           </h1>
           <p className="text-sm text-[var(--color-ink-muted)] mt-1">
             {view === "active" ? "Manage your client database and relationships" : "Archived client records"}
@@ -247,82 +66,105 @@ export default function ClientsPage() {
         </div>
         
         {view === "active" && (
-          <button
-            onClick={() => router.push("/dashboard/clients/new")}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all active:scale-95"
-          >
-            <Plus size={16} /> New Client
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {/* TODO: Wire intake form link logic */}}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--color-ink)] bg-[var(--color-surface)] border border-[var(--color-surface-border)] hover:bg-[var(--color-surface-hover)] shadow-sm transition-all active:scale-95"
+            >
+              <Link size={16} /> Share Intake Form
+            </button>
+            <button
+              onClick={() => router.push("/dashboard/clients/new")}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all active:scale-95"
+            >
+              <Plus size={16} /> New Client
+            </button>
+          </div>
         )}
       </div>
 
       {/* Premium Card Container */}
       <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden">
         {/* Toolbar */}
-        <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col sm:flex-row gap-3 items-center justify-between">
-          <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)]">
-            <button
-              onClick={() => setView("active")}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                view === "active" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-              }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => setView("vault")}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                view === "vault" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-              }`}
-            >
-              <Archive size={12} /> Vault
-            </button>
+        <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div className="flex items-center gap-4 w-full lg:w-auto">
+            <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] flex-shrink-0">
+              <button
+                onClick={() => setView("active")}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  view === "active" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+                }`}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setView("vault")}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  view === "vault" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+                }`}
+              >
+                <Archive size={12} /> Archived
+              </button>
+            </div>
+
+            {view === "active" && (
+              <div className="hidden md:flex items-center gap-4 px-4 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
+                  <span className="text-xs font-medium text-[var(--color-ink-muted)]">Registered</span>
+                  <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{totalClients}</span>
+                </div>
+                <div className="w-px h-3 bg-[var(--color-surface-border)]" />
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
+                  <span className="text-xs font-medium text-[var(--color-ink-muted)]">Active Now</span>
+                  <span className="text-xs font-bold text-[var(--color-success-text)] tabular-nums">{activeClients}</span>
+                </div>
+                <div className="w-px h-3 bg-[var(--color-surface-border)]" />
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[var(--color-danger)]" />
+                  <span className="text-xs font-medium text-[var(--color-ink-muted)]">Suspended</span>
+                  <span className="text-xs font-bold text-[var(--color-danger-text)] tabular-nums">{suspendedClients}</span>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* ✅ CLIENT COUNTERS: Integrated into toolbar, minimal design */}
-          {view === "active" && (
-            <div className="flex items-center gap-6 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-[var(--color-ink-muted)] font-medium">Registered Clients</span>
-                <span className="text-[var(--color-ink)] font-bold tabular-nums">{totalClients}</span>
-              </div>
-              <div className="w-px h-4 bg-[var(--color-surface-border)]" />
-              <div className="flex items-center gap-2">
-                <span className="text-[var(--color-ink-muted)] font-medium">Active Now</span>
-                <span className="text-[var(--color-success-text)] font-bold tabular-nums">{activeClients}</span>
-              </div>
-              <div className="w-px h-4 bg-[var(--color-surface-border)]" />
-              <div className="flex items-center gap-2">
-                <span className="text-[var(--color-ink-muted)] font-medium">Suspended</span>
-                <span className="text-[var(--color-danger-text)] font-bold tabular-nums">{suspendedClients}</span>
-              </div>
+          {/* ✅ UPDATED: Standardized Filter Padding (pl-9 pr-9) with custom ChevronDown for perfect symmetry */}
+          <div className="flex items-center gap-2 w-full lg:w-auto">
+            <div className="relative w-full lg:w-64">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search clients..."
+                className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
+              />
             </div>
-          )}
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search clients..."
-              className="w-full sm:w-64 px-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
-            />
-            <select
-              value={statusFilter || ""}
-              onChange={(e) => setStatusFilter(e.target.value || null)}
-              className="px-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm appearance-none"
-            >
-              <option value="">All Statuses</option>
-              {CLIENT_FILTER_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+            <div className="relative w-full lg:w-48">
+              <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none z-10" />
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none z-10" />
+              <select
+                value={statusFilter || ""}
+                onChange={(e) => setStatusFilter(e.target.value || null)}
+                className="w-full pl-9 pr-9 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm appearance-none cursor-pointer"
+              >
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="suspended">Suspended</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Content Area */}
         {loading ? (
-          <div className="p-12 text-center text-[var(--color-ink-muted)]">Loading clients...</div>
+          <div className="p-12 text-center text-[var(--color-ink-muted)] flex items-center justify-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" /> Loading clients...
+          </div>
         ) : filteredClients.length === 0 ? (
           <div className="p-12 text-center">
             <div className="w-16 h-16 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center mx-auto mb-4">
@@ -335,10 +177,7 @@ export default function ClientsPage() {
               {search || statusFilter ? "Try adjusting your search or filters." : view === "active" ? "Get started by adding your first client." : "Archived clients will appear here."}
             </p>
             {view === "active" && !search && !statusFilter && (
-              <button
-                onClick={() => router.push("/dashboard/clients/new")}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-all active:scale-95"
-              >
+              <button onClick={() => router.push("/dashboard/clients/new")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-all active:scale-95">
                 <Plus size={16} /> Add Client
               </button>
             )}
@@ -349,41 +188,165 @@ export default function ClientsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
                   <tr>
-                    {columns.map((col) => (
-                      <th key={String(col.accessorKey || col.id)} className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                        {typeof col.header === 'string' ? col.header : ''}
-                      </th>
-                    ))}
+                    <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Client</th>
+                    <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Contact</th>
+                    <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">National ID</th>
+                    <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Driver's License</th>
+                    <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Status</th>
+                    <th className="px-6 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Manage</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-surface-border)]">
-                  {paginatedClients.map((client) => (
-                    <tr key={client.id} onClick={() => router.push(`/dashboard/clients/${client.id}`)} className="hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors">
-                      {columns.map((col) => (
-                        <td key={String(col.accessorKey || col.id)} className="px-6 py-4">
-                          {col.cell && typeof col.cell === 'function' 
-                            ? col.cell({ row: { original: client }, getValue: () => null, renderValue: () => null, column: col, table: {} } as any) 
-                            : null}
+                  {paginatedClients.map((client) => {
+                    // Status Logic
+                    const statusLabel = client.status === 'pending' ? 'Pending' : client.status;
+                    const statusColors: Record<string, string> = {
+                      active: "bg-[var(--color-success-bg)] text-[var(--color-success-text)]",
+                      pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                      suspended: "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]",
+                      inactive: "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]",
+                    };
+
+                    // ✅ UPDATED: Background removed, only semantic text color + hover background
+                    let ActionIcon = ShieldAlert;
+                    let actionColor = "text-amber-600 hover:bg-amber-500/10";
+                    let actionTitle = "Suspend Client";
+                    let actionHandler = () => handleSuspend(client.id);
+
+                    if (client.status === 'pending') {
+                      ActionIcon = Shield;
+                      actionColor = "text-blue-600 hover:bg-blue-500/10";
+                      actionTitle = "Verify Client";
+                      actionHandler = () => handleVerify(client.id);
+                    } else if (client.status === 'suspended') {
+                      ActionIcon = Shield;
+                      actionColor = "text-emerald-600 hover:bg-emerald-500/10";
+                      actionTitle = "Reactivate Client";
+                      actionHandler = () => handleReactivate(client.id);
+                    }
+
+                    return (
+                      <tr
+                        key={client.id}
+                        onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                        className="hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors group"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
+                              <UserIcon size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{client.full_name}</p>
+                              {client.email ? (
+                                <a href={`mailto:${client.email}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors truncate">
+                                  <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                                  <span className="truncate">{client.email}</span>
+                                </a>
+                              ) : (
+                                <p className="text-xs text-[var(--color-ink-muted)] truncate">No email</p>
+                              )}
+                            </div>
+                          </div>
                         </td>
-                      ))}
-                    </tr>
-                  ))}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
+                            <Phone size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                            <span className="font-medium">{client.phone}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {client.id_number ? (
+                            <span className="text-sm font-semibold text-[var(--color-ink)] tracking-wide font-mono">{client.id_number}</span>
+                          ) : (
+                            <span className="text-sm text-[var(--color-ink-subtle)] italic">Not provided</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {client.dl_number ? (
+                            <span className="text-sm font-semibold text-[var(--color-ink)] tracking-wide font-mono">{client.dl_number}</span>
+                          ) : (
+                            <span className="text-sm text-[var(--color-ink-subtle)] italic">Not provided</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${statusColors[client.status] || statusColors.inactive}`}>
+                            {statusLabel}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                            {/* ✅ UPDATED: Background removed, only hover effect */}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); actionHandler(); }}
+                              disabled={actionLoadingId === client.id}
+                              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all disabled:opacity-50 ${actionColor}`}
+                              title={actionTitle}
+                            >
+                              {actionLoadingId === client.id ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <ActionIcon size={14} />
+                              )}
+                            </button>
+
+                            {/* ✅ UPDATED: Background removed, only hover effect */}
+                            <div className="relative">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setOpenDropdownId(openDropdownId === client.id ? null : client.id); }}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-all"
+                                title="More Actions"
+                              >
+                                <MoreVertical size={14} />
+                              </button>
+
+                              {openDropdownId === client.id && (
+                                <div className="absolute right-0 top-full mt-1 w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-lg)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                                  <button
+                                    onClick={() => { router.push(`/dashboard/clients/${client.id}`); setOpenDropdownId(null); }}
+                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                                  >
+                                    <UserIcon size={14} /> View Full Profile
+                                  </button>
+                                  <button
+                                    onClick={() => { handleArchive(client.id); setOpenDropdownId(null); }}
+                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors border-t border-[var(--color-surface-border)]"
+                                  >
+                                    <Archive size={14} /> Archive Client
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
+            {/* Pagination */}
             <div className="p-4 border-t border-[var(--color-surface-border)] flex items-center justify-between">
               <p className="text-xs text-[var(--color-ink-muted)]">
                 Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredClients.length)} of {filteredClients.length} clients
               </p>
               <div className="flex items-center gap-1">
-                <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95"
+                >
                   Previous
                 </button>
                 <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-primary)] text-white">
                   {currentPage} / {totalPages || 1}
                 </span>
-                <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95"
+                >
                   Next
                 </button>
               </div>
