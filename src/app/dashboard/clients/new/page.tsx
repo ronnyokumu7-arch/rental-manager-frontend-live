@@ -1,7 +1,7 @@
 // src/app/dashboard/clients/new/page.tsx
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, ArrowRight, User, Shield, Phone, CheckCircle,
@@ -53,7 +53,6 @@ export default function NewClientPage() {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      // ✅ FIX: Cast currentTarget to HTMLInputElement to access .form
       const input = e.currentTarget as HTMLInputElement;
       const form = input.form;
       
@@ -76,7 +75,7 @@ export default function NewClientPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // ✅ Prevent default form submission
+    e.preventDefault();
     
     if (!formData.full_name || !formData.phone) {
       toast.error("Full Name and Phone are required");
@@ -85,7 +84,7 @@ export default function NewClientPage() {
 
     setLoading(true);
     try {
-      // 1. Create Client Record
+      // ✅ 1. Create Client Record (Strictly aligned with ClientCreate type)
       const payload: ClientCreate = {
         full_name: formData.full_name,
         email: formData.email || null,
@@ -97,13 +96,13 @@ export default function NewClientPage() {
         work_address: formData.work_address || null,
         next_of_kin_name: formData.next_of_kin_name || null,
         next_of_kin_phone: formData.next_of_kin_phone || null,
-        status: "pending",
+        // ✅ REMOVED: status: "pending" (Backend assigns this automatically)
       };
 
       const newClient = await clientsApi.create(payload);
       toast.success("Client profile created!");
 
-      // 2. Handle File Uploads (Sequential)
+      // ✅ 2. Handle File Uploads (Sequential)
       const uploadPromises = [];
       if (avatarFile) uploadPromises.push(clientsApi.uploadAvatar(newClient.id, avatarFile));
       if (idFrontFile) uploadPromises.push(clientsApi.uploadIdFront(newClient.id, idFrontFile));
@@ -124,7 +123,6 @@ export default function NewClientPage() {
   };
 
   // ── UI Components ─────────────────────────────────────────────────────────
-
   const FileUploadCard = ({ 
     label, icon: Icon, file, setFile, accept = "image/*" 
   }: { label: string; icon: any; file: File | null; setFile: (f: File | null) => void; accept?: string }) => (
@@ -172,7 +170,7 @@ export default function NewClientPage() {
         {/* Wizard Card */}
         <div className="bg-[var(--color-surface)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--color-surface-border)] overflow-hidden">
           
-          {/* Step Indicator - Compact */}
+          {/* Step Indicator */}
           <div className="px-6 py-3 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50">
             <div className="flex items-center justify-between">
               {steps.map((step, index) => {
@@ -208,7 +206,7 @@ export default function NewClientPage() {
             </div>
           </div>
 
-          {/* Form Content - Compact */}
+          {/* Form Content */}
           <form onSubmit={handleSubmit} className="p-6">
             
             {/* STEP 1: IDENTITY */}

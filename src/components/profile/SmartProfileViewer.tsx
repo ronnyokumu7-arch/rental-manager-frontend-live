@@ -75,7 +75,7 @@ export default function SmartProfileViewer({ task }: SmartProfileViewerProps) {
       } else if (task.target_type === "vehicle") {
         setVehicleData(await vehiclesApi.get(task.target_id));
       } else if (task.target_type === "booking") {
-        setBookingData(await bookingsApi.getById(task.target_id));
+        setBookingData(await bookingsApi.get(task.target_id));
       }
     } catch (err) {
       console.error(err);

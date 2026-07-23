@@ -1,4 +1,3 @@
-// src/components/profile/ClientStatusCard.tsx
 "use client";
 
 import { useState } from "react";
@@ -20,47 +19,47 @@ export default function ClientStatusCard({
 }: ClientStatusCardProps) {
   const [isActionLoading, setIsActionLoading] = useState(false);
 
-  // ✅ DL Health Logic with Semantic States
+  // DL Health Logic
   const getDlHealth = () => {
-    if (!client.dl_expiry) return { label: "Not Set", color: "neutral", icon: Clock };
+    if (!client.dl_expiry) return { label: "Not Set", variant: "neutral", icon: Clock };
     
     const daysLeft = Math.ceil(
       (new Date(client.dl_expiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
     );
     
-    if (daysLeft < 0) return { label: "Expired", color: "danger", icon: AlertCircle };
-    if (daysLeft < 30) return { label: `${daysLeft}d Left`, color: "warning", icon: AlertCircle };
-    return { label: "Active", color: "success", icon: CheckCircle2 };
+    if (daysLeft < 0) return { label: "Expired", variant: "danger", icon: AlertCircle };
+    if (daysLeft < 30) return { label: `${daysLeft}d Left`, variant: "warning", icon: AlertCircle };
+    return { label: "Active", variant: "success", icon: CheckCircle2 };
   };
 
   const dlHealth = getDlHealth();
 
-  // ✅ Action Config with Semantic Styling
+  // Action Config
   const getActionConfig = () => {
     switch (client.status) {
       case "pending":
         return { 
           label: "Verify Client", 
-          variant: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20",
+          badgeClass: "badge-success",
           action: "reactivate" as const,
           icon: UserCheck
         };
       case "active":
         return { 
-          label: "Suspend", 
-          variant: "text-amber-600 dark:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20",
+          label: "Suspend Account", 
+          badgeClass: "badge-warning",
           action: "suspend" as const,
           icon: Ban
         };
       case "suspended":
         return { 
-          label: "Reactivate", 
-          variant: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20",
+          label: "Reactivate Client", 
+          badgeClass: "badge-success",
           action: "reactivate" as const,
           icon: UserCheck
         };
       default:
-        return { label: "Manage", variant: "", action: null, icon: null };
+        return { label: "Manage", badgeClass: "badge-neutral", action: null, icon: null };
     }
   };
 
@@ -76,84 +75,79 @@ export default function ClientStatusCard({
     }
   };
 
-  // ✅ BRAND TOKENS: Consistent with all profile components
-  const labelClass = "text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1 block";
-  const valueClass = "text-sm font-semibold text-[var(--color-ink)]";
-  const rowClass = "flex items-center justify-between py-4 border-b border-[var(--color-surface-border)] last:border-b-0";
-
   return (
-    <SectionCard className="!p-0 overflow-hidden">
-      
-      {/* Unified Header */}
-      <div className="flex items-center gap-3 p-6 pb-5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/20">
-        <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center">
-          <Shield size={18} className="text-[var(--color-primary)]" />
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-[var(--color-ink)]">Status & Verification</h3>
-          <p className="text-[11px] text-[var(--color-ink-muted)]">Account health and compliance status</p>
+    <SectionCard className="card p-0 overflow-hidden">
+      {/* Header Bar */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border bg-surface-hover/30">
+        <div className="flex items-center gap-2.5">
+          <Shield size={16} className="text-primary" />
+          <h3 className="text-ink font-semibold tracking-tight">
+            Status & Compliance
+          </h3>
         </div>
       </div>
 
-      {/* Dense Data Rows */}
-      <div className="px-6 divide-y divide-[var(--color-surface-border)]">
+      {/* Clean Content */}
+      <div className="p-5 space-y-5">
         
         {/* Account Status Row */}
-        <div className={rowClass}>
+        <div className="flex items-center justify-between">
           <div>
-            <p className={labelClass}>Account Status</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <div className={`w-2 h-2 rounded-full ${
-                client.status === 'active' ? 'bg-emerald-500' : 
-                client.status === 'suspended' ? 'bg-amber-500' : 'bg-slate-400'
+            <span className="label mb-1">Account Status</span>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${
+                client.status === 'active' ? 'bg-success' : 
+                client.status === 'suspended' ? 'bg-warning' : 'bg-ink-subtle'
               }`} />
-              <p className={`text-sm font-semibold ${
-                client.status === 'active' ? 'text-emerald-600 dark:text-emerald-400' : 
-                client.status === 'suspended' ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--color-ink)]'
-              }`}>
-                {client.status === 'active' ? 'Verified & Active' : client.status}
-              </p>
+              <span className="text-ink font-semibold capitalize">
+                {client.status === 'active' ? 'Verified' : client.status}
+              </span>
             </div>
           </div>
-          
+
+          {/* ✅ Action Button: Added before:content-none to hide the stray dot */}
           {actionConfig.action && (
             <button
               onClick={handleButtonClick}
               disabled={isActionLoading}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 ${actionConfig.variant}`}
+              className={`badge before:content-none ${actionConfig.badgeClass} cursor-pointer transition-all hover:opacity-80 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {isActionLoading ? (
                 <Loader2 size={12} className="animate-spin" />
               ) : actionConfig.icon ? (
                 <actionConfig.icon size={12} />
               ) : null}
-              {isActionLoading ? "Processing..." : actionConfig.label}
+              <span>{isActionLoading ? "Processing..." : actionConfig.label}</span>
             </button>
           )}
         </div>
 
-        {/* DL Health Status Row */}
-        <div className={`${rowClass} border-b-0`}>
+        {/* Divider */}
+        <div className="divider" />
+
+        {/* DL Health Row */}
+        <div className="flex items-center justify-between">
           <div>
-            <p className={labelClass}>Driver's License</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <CreditCard size={14} className="text-[var(--color-ink-subtle)]" />
-              <p className="text-sm font-semibold text-[var(--color-ink)]">
+            <span className="label mb-1">Driving License Expiry</span>
+            <div className="flex items-center gap-2">
+              <CreditCard size={14} className="text-ink-subtle" />
+              <span className="text-ink font-medium">
                 {client.dl_expiry 
                   ? new Date(client.dl_expiry).toLocaleDateString("en-GB") 
                   : "Not Provided"}
-              </p>
+              </span>
             </div>
           </div>
-          
-          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
-            dlHealth.color === "success" ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border-emerald-500/10" :
-            dlHealth.color === "warning" ? "text-amber-600 dark:text-amber-400 bg-amber-500/5 border-amber-500/10" :
-            dlHealth.color === "danger" ? "text-rose-600 dark:text-rose-400 bg-rose-500/5 border-rose-500/10" :
-            "text-[var(--color-ink-muted)] bg-[var(--color-surface-hover)] border-[var(--color-surface-border)]"
+
+          {/* ✅ DL Badge: before:content-none hides the dot */}
+          <div className={`badge before:content-none ${
+            dlHealth.variant === 'success' ? 'badge-success' :
+            dlHealth.variant === 'warning' ? 'badge-warning' :
+            dlHealth.variant === 'danger' ? 'badge-danger' :
+            'badge-neutral'
           }`}>
             <dlHealth.icon size={12} /> 
-            {dlHealth.label}
+            <span>{dlHealth.label}</span>
           </div>
         </div>
 

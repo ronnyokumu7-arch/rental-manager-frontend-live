@@ -3,8 +3,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { 
-  CheckCircle2, Circle, Clock, AlertCircle, 
-  Tag, Calendar, Eye, UserPlus, MoreVertical,
+  CheckCircle2, Clock, Tag, Calendar, Eye, UserPlus, 
   Users, Shield, Briefcase, DollarSign, Car, ArrowUpRight
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
@@ -25,7 +24,6 @@ interface ActionCenterListProps {
   onAssignTask: (taskId: number, userId: number) => void;
 }
 
-// ✅ BRAND TOKENS: Semantic category icons
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   compliance: Shield,
   fleet: Car,
@@ -35,12 +33,11 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   operations: Tag,
 };
 
-// Priority dot colors using opacity-based tokens
 const PRIORITY_DOT_COLORS: Record<string, string> = {
+  urgent: "bg-rose-500 shadow-[0_0_8px_-2px_rgba(244,63,94,0.6)]",
+  high: "bg-amber-500 shadow-[0_0_8px_-2px_rgba(245,158,11,0.6)]",
+  medium: "bg-blue-500 shadow-[0_0_8px_-2px_rgba(59,130,246,0.6)]",
   low: "bg-[var(--color-ink-subtle)]",
-  medium: "bg-blue-500",
-  high: "bg-amber-500",
-  urgent: "bg-rose-500",
 };
 
 export default function ActionCenterList({
@@ -52,7 +49,6 @@ export default function ActionCenterList({
   const [showMenuFor, setShowMenuFor] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -63,12 +59,16 @@ export default function ActionCenterList({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter tasks by tab
   const displayTasks = activeTab === "pool" 
     ? unassignedTasks 
     : activeTab === "done" 
       ? tasks.filter(t => t.status === "completed")
       : tasks.filter(t => t.status === "pending");
+
+  // ✅ Calculate counts for each tab
+  const pendingCount = tasks.filter(t => t.status === "pending").length;
+  const completedCount = tasks.filter(t => t.status === "completed").length;
+  const unassignedCount = unassignedTasks.length;
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return { text: "No due date", isOverdue: false };
@@ -94,35 +94,72 @@ export default function ActionCenterList({
   return (
     <div className="flex flex-col h-full bg-[var(--color-surface)]">
       
-      {/* Unified Header with Integrated Tabs */}
-      <div className="px-6 py-5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/20">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-[var(--color-ink)]">Action Center</h3>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] bg-[var(--color-surface-hover)] px-2 py-1 rounded-lg">
-            {displayTasks.length} Items
-          </span>
-        </div>
-        
-        {/* Premium Tab Switcher */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
-          {(["pending", "done", "pool"] as const).map((tab) => (
+      {/* ✅ REDESIGNED HEADER: Heading + Tabs with counts */}
+      <div className="px-5 py-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/20 shrink-0">
+        <div className="flex items-center justify-between mb-2.5">
+          <h3 className="text-lg font-bold text-[var(--color-ink)]">Action Center</h3>
+          
+          {/* ✅ PREMIUM PURPLE TAB SWITCHER WITH COUNTS */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10">
             <button
-              key={tab}
-              onClick={() => onTabChange(tab)}
-              className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                activeTab === tab
-                  ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm ring-1 ring-[var(--color-surface-border)]"
-                  : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)]/50"
+              onClick={() => onTabChange("pending")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === "pending"
+                  ? "bg-[var(--color-primary)] text-white shadow-sm shadow-[var(--color-primary)]/30"
+                  : "text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
               }`}
             >
-              {tab === "pending" ? "Pending" : tab === "done" ? "Completed" : "Unassigned Pool"}
+              Pending
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === "pending" 
+                  ? "bg-white/20 text-white" 
+                  : "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]"
+              }`}>
+                {pendingCount}
+              </span>
             </button>
-          ))}
+            
+            <button
+              onClick={() => onTabChange("done")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === "done"
+                  ? "bg-[var(--color-primary)] text-white shadow-sm shadow-[var(--color-primary)]/30"
+                  : "text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
+              }`}
+            >
+              Completed
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === "done" 
+                  ? "bg-white/20 text-white" 
+                  : "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]"
+              }`}>
+                {completedCount}
+              </span>
+            </button>
+            
+            <button
+              onClick={() => onTabChange("pool")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === "pool"
+                  ? "bg-[var(--color-primary)] text-white shadow-sm shadow-[var(--color-primary)]/30"
+                  : "text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5"
+              }`}
+            >
+              Unassigned Pool
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === "pool" 
+                  ? "bg-white/20 text-white" 
+                  : "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]"
+              }`}>
+                {unassignedCount}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Task List */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
+      {/* TASK LIST */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full text-[var(--color-ink-muted)]">
             <Clock size={24} className="animate-spin mb-3 text-[var(--color-primary)]" />
@@ -146,44 +183,32 @@ export default function ActionCenterList({
             const CategoryIcon = CATEGORY_ICONS[task.category] || Tag;
             const isOverdue = dateInfo.isOverdue && !isCompleted;
             const isUnassigned = activeTab === "pool";
-            const priorityDotColor = PRIORITY_DOT_COLORS[task.priority] || "bg-[var(--color-ink-subtle)]";
+            const priorityDotColor = PRIORITY_DOT_COLORS[task.priority] || PRIORITY_DOT_COLORS.low;
 
             return (
               <div
                 key={task.id}
                 onClick={() => onSelectTask(task)}
-                className={`group relative p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${
+                className={`group relative p-3.5 rounded-xl border cursor-pointer transition-all duration-200 ${
                   isSelected
                     ? "bg-[var(--color-primary)]/5 border-[var(--color-primary)]/20 ring-1 ring-[var(--color-primary)]/10"
                     : "bg-[var(--color-surface)] border-[var(--color-surface-border)] hover:border-[var(--color-surface-border)]/80 hover:shadow-sm"
                 } ${isCompleted ? "opacity-70" : ""}`}
               >
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3">
                   
-                  {/* Left Indicator: Checkbox or Priority Dot */}
-                  <div className="mt-0.5 flex-shrink-0">
-                    {isUnassigned ? (
-                      <div className={`w-2.5 h-2.5 rounded-full ${priorityDotColor} shadow-sm ring-2 ring-[var(--color-surface)] mt-1`} />
+                  {/* Left: Priority Dot */}
+                  <div className="mt-1 flex-shrink-0">
+                    {isUnassigned || !isCompleted ? (
+                      <div className={`w-2.5 h-2.5 rounded-full ring-2 ring-[var(--color-surface)] ${priorityDotColor}`} />
                     ) : (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onToggleComplete(task.id); }}
-                        disabled={updatingId === task.id}
-                        className="transition-transform active:scale-90"
-                      >
-                        {isCompleted ? (
-                          <CheckCircle2 size={18} className="text-emerald-500" />
-                        ) : (
-                          <Circle size={18} className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-ink-muted)] transition-colors" />
-                        )}
-                      </button>
+                      <CheckCircle2 size={16} className="text-emerald-500" />
                     )}
                   </div>
 
-                  {/* Content Area */}
+                  {/* Content */}
                   <div className="flex-1 min-w-0">
-                    
-                    {/* Title + Priority Row */}
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div className="flex items-start justify-between gap-2 mb-1">
                       <p className={`text-sm font-semibold leading-tight ${
                         isCompleted 
                           ? "text-[var(--color-ink-subtle)] line-through decoration-[var(--color-ink-subtle)]/50" 
@@ -203,14 +228,12 @@ export default function ActionCenterList({
                       </Badge>
                     </div>
 
-                    {/* Description */}
                     {task.description && (
-                      <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed mb-2.5 line-clamp-2">
+                      <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed mb-2 line-clamp-2">
                         {task.description}
                       </p>
                     )}
 
-                    {/* Meta Row */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-subtle)]">
                       <span className="flex items-center gap-1">
                         <CategoryIcon size={11} />
@@ -224,39 +247,46 @@ export default function ActionCenterList({
                     </div>
                   </div>
 
-                  {/* Right Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                    
-                    {/* Pool Tab: Claim / Assign */}
+                  {/* ✅ SWAPPED: Assign (left) + Claim (right) */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
                     {isUnassigned && isAdmin && (
-                      <div className="relative" ref={showMenuFor === task.id ? menuRef : undefined}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleClaim(task.id); }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 transition-all active:scale-95"
-                        >
-                          <UserPlus size={12} /> Claim
-                        </button>
-                        
+                      <div className="relative flex items-center gap-1.5" ref={showMenuFor === task.id ? menuRef : undefined}>
+                        {/* ✅ Assign Button (now on LEFT) */}
                         <button
                           onClick={(e) => { 
                             e.stopPropagation(); 
                             setShowMenuFor(showMenuFor === task.id ? null : task.id); 
                           }}
-                          className="p-1.5 rounded-xl text-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                          className="p-1.5 rounded-lg text-[var(--color-ink-subtle)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/20 transition-all active:scale-95"
+                          title="Assign to team member"
                         >
-                          <MoreVertical size={14} />
+                          <Users size={14} />
+                        </button>
+                        
+                        {/* ✅ Claim Button (now on RIGHT) */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleClaim(task.id); }}
+                          disabled={updatingId === task.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 transition-all active:scale-95 disabled:opacity-50"
+                        >
+                          {updatingId === task.id ? (
+                            <Clock size={12} className="animate-spin" />
+                          ) : (
+                            <UserPlus size={12} />
+                          )}
+                          Claim
                         </button>
                         
                         {/* Assign Dropdown */}
                         {showMenuFor === task.id && (
-                          <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                             <div className="p-2">
                               <p className="text-[10px] font-bold uppercase text-[var(--color-ink-muted)] px-2 py-1.5 mb-1">Assign To:</p>
                               {staffMembers.map((staff) => (
                                 <button
                                   key={staff.id}
                                   onClick={(e) => { e.stopPropagation(); handleAssign(task.id, staff.id); }}
-                                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors text-left group/item"
+                                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors text-left group/item"
                                 >
                                   <div className="w-6 h-6 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center text-[10px] font-bold text-[var(--color-primary)] flex-shrink-0 group-hover/item:bg-[var(--color-primary)]/20 transition-colors">
                                     {staff.full_name?.[0] || "U"}
@@ -271,12 +301,11 @@ export default function ActionCenterList({
                       </div>
                     )}
 
-                    {/* Pending Tab: Complete Button */}
                     {!isUnassigned && !isCompleted && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onToggleComplete(task.id); }}
                         disabled={updatingId === task.id}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 transition-all active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 transition-all active:scale-95 disabled:opacity-50"
                       >
                         {updatingId === task.id ? (
                           <Clock size={12} className="animate-spin" />
@@ -287,11 +316,10 @@ export default function ActionCenterList({
                       </button>
                     )}
 
-                    {/* Completed Tab: View Button */}
                     {isCompleted && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onSelectTask(task); }}
-                        className="p-2 rounded-xl text-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-primary)] transition-colors"
+                        className="p-2 rounded-lg text-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-primary)] transition-colors"
                         title="View details"
                       >
                         <Eye size={14} />

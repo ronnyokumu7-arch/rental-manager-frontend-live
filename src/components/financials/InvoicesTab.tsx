@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, FileText, Archive, Filter, ChevronDown, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Search, FileText, Filter, ChevronDown, CheckCircle2, Clock, AlertCircle, Plus } from "lucide-react";
 import { useInvoices } from "@/hooks/financials/useInvoices";
 import InvoicesTable from "./invoices/InvoicesTable";
 import RecordPaymentModal from "./invoices/RecordPaymentModal";
@@ -18,24 +18,16 @@ export default function InvoicesTab() {
     refetch
   } = useInvoices();
 
-  const [view, setView] = useState<"open" | "closed">("open");
+  // ✅ REMOVED: view state (open/closed toggle)
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const pageSize = 7;
 
-  // 1. Filter by View (Open vs Closed)
-  const filteredByView = useMemo(() => {
-    if (view === "closed") {
-      return invoices.filter(i => i.status === "paid" || i.status === "void");
-    }
-    return invoices.filter(i => i.status !== "paid" && i.status !== "void");
-  }, [invoices, view]);
-
-  // 2. Apply Search and Status Filter
+  // 1. Apply Search and Status Filter directly to ALL invoices
   const displayedInvoices = useMemo(() => {
-    return filteredByView.filter(invoice => {
+    return invoices.filter(invoice => {
       const searchLower = search.toLowerCase();
       const matchesSearch = 
         invoice.invoice_number.toLowerCase().includes(searchLower) ||
@@ -46,9 +38,9 @@ export default function InvoicesTab() {
       
       return matchesSearch && matchesStatus;
     });
-  }, [filteredByView, search, statusFilter]);
+  }, [invoices, search, statusFilter]);
 
-  // 3. Pagination Logic (7 per page)
+  // 2. Pagination Logic (7 per page)
   const paginatedInvoices = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return displayedInvoices.slice(start, start + pageSize);
@@ -56,16 +48,17 @@ export default function InvoicesTab() {
 
   const totalPages = Math.ceil(displayedInvoices.length / pageSize);
 
-  // Reset to page 1 when filters or view change
+  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, view, setCurrentPage]);
+  }, [search, statusFilter, setCurrentPage]);
 
-  // 4. Counters (Reflects the CURRENT view: Open or Closed)
-  const paidCount = useMemo(() => filteredByView.filter(i => i.status === "paid").length, [filteredByView]);
-  // ✅ UPDATED: Include partially_paid in pending count
-  const pendingCount = useMemo(() => filteredByView.filter(i => i.status === "sent" || i.status === "draft" || i.status === "partially_paid").length, [filteredByView]);
-  const overdueCount = useMemo(() => filteredByView.filter(i => i.status === "overdue").length, [filteredByView]);
+  // 3. Counters (Reflects ALL invoices, providing a complete financial overview)
+  const totalCount = useMemo(() => invoices.length, [invoices]);
+  const paidCount = useMemo(() => invoices.filter(i => i.status === "paid").length, [invoices]);
+  const pendingCount = useMemo(() => invoices.filter(i => i.status === "draft" || i.status === "sent" || i.status === "partially_paid").length, [invoices]);
+  const overdueCount = useMemo(() => invoices.filter(i => i.status === "overdue").length, [invoices]);
+  const voidCount = useMemo(() => invoices.filter(i => i.status === "void").length, [invoices]);
 
   const openPaymentModal = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
@@ -80,30 +73,15 @@ export default function InvoicesTab() {
         {/* Toolbar */}
         <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col lg:flex-row gap-4 items-center justify-between">
           
-          {/* Left Side: View Toggle & Counters */}
-          <div className="flex items-center gap-4 w-full lg:w-auto">
-            {/* View Toggle */}
-            <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] flex-shrink-0">
-              <button
-                onClick={() => setView("open")}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  view === "open" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-              >
-                Open
-              </button>
-              <button
-                onClick={() => setView("closed")}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                  view === "closed" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-              >
-                <Archive size={12} /> Closed
-              </button>
-            </div>
-
-            {/* Invoice Counters (Visible in BOTH tabs) */}
-            <div className="hidden md:flex items-center gap-4 px-4 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm backdrop-blur-sm">
+          {/* Left Side: Counters Only (Toggle Removed) */}
+          <div className="flex items-center gap-4 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 custom-scrollbar">
+            <div className="flex items-center gap-4 px-4 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm backdrop-blur-sm flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <FileText size={14} className="text-[var(--color-ink-muted)]" />
+                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Total</span>
+                <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{totalCount}</span>
+              </div>
+              <div className="w-px h-3 bg-[var(--color-surface-border)]" />
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={14} className="text-[var(--color-success-text)]" />
                 <span className="text-xs font-medium text-[var(--color-ink-muted)]">Paid</span>
@@ -121,12 +99,13 @@ export default function InvoicesTab() {
                 <span className="text-xs font-medium text-[var(--color-ink-muted)]">Overdue</span>
                 <span className="text-xs font-bold text-[var(--color-danger-text)] tabular-nums">{overdueCount}</span>
               </div>
+              {/* Optional: Add Void counter if needed, or rely on the filter */}
             </div>
           </div>
 
-          {/* Right Side: Search & Filter */}
+          {/* Right Side: Search, Filter & Create Invoice Button */}
           <div className="flex items-center gap-2 w-full lg:w-auto">
-            <div className="relative w-full lg:w-64">
+            <div className="relative w-full lg:w-56">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
               <input
                 type="text"
@@ -137,7 +116,7 @@ export default function InvoicesTab() {
               />
             </div>
             
-            <div className="relative w-full lg:w-48">
+            <div className="relative w-full lg:w-40">
               <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none z-10" />
               <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none z-10" />
               <select
@@ -148,12 +127,20 @@ export default function InvoicesTab() {
                 <option value="all">All Statuses</option>
                 <option value="draft">Draft</option>
                 <option value="sent">Sent</option>
-                <option value="partially_paid">Partially Paid</option> {/* ✅ NEW */}
+                <option value="partially_paid">Partially Paid</option>
                 <option value="paid">Paid</option>
                 <option value="overdue">Overdue</option>
                 <option value="void">Void</option>
               </select>
             </div>
+
+            {/* ✅ NEW: Create Invoice Button (Moved from 3-dots menu to top bar) */}
+            <button
+  onClick={() => setCreateModalOpen(true)}
+  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-all active:scale-95 flex-shrink-0 shadow-sm"
+>
+  Generate Invoice
+</button>
           </div>
         </div>
 
@@ -173,9 +160,7 @@ export default function InvoicesTab() {
             <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
               {search || statusFilter !== "all" 
                 ? "Try adjusting your filters." 
-                : view === "open" 
-                  ? "Invoices will automatically appear here when bookings are confirmed."
-                  : "Closed invoices will appear here once the trip has ended and they are paid or voided."}
+                : "Invoices are now created manually. Click 'Create Invoice' to generate one for an orphaned booking."}
             </p>
           </div>
         ) : (
@@ -186,7 +171,8 @@ export default function InvoicesTab() {
               onCopyLink={handleCopyLink}
               onVoid={handleVoid}
               onRecordPayment={openPaymentModal}
-              onCreate={() => setCreateModalOpen(true)}
+              // Note: Kept onCreate prop to prevent TS errors while you update the table file next
+              onCreate={() => setCreateModalOpen(true)} 
             />
             <div className="p-4 border-t border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50">
               <div className="flex items-center justify-between">
@@ -225,7 +211,6 @@ export default function InvoicesTab() {
         onCreated={refetch}
       />
 
-      {/* ✅ UPDATED: Wired to new RecordPaymentModal interface */}
       <RecordPaymentModal
         invoice={selectedInvoice}
         open={paymentModalOpen}

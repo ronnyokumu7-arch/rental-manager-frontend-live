@@ -3,8 +3,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, User, Shield, Bell, CheckCircle2, MoreVertical, Camera } from "lucide-react";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { ArrowLeft, User, Shield, Bell, CheckCircle2, Camera, Layers } from "lucide-react";
+import { useUserProfile } from "@/hooks/useUserProfile"; 
 
 // ✅ Import the modular components
 import UserPersonalInfoCard from "@/components/profile/UserPersonalInfoCard";
@@ -24,8 +24,15 @@ export default function UserProfilePage() {
   
   const { user, loading, handleUpdateUser, handleStatusAction } = useUserProfile();
   
-  // TODO: Replace with actual auth context check
-  const currentUserId = 1; 
+  const getCurrentUserId = () => {
+    if (typeof window !== "undefined") {
+      const storedId = localStorage.getItem("current_user_id");
+      if (storedId) return Number(storedId);
+    }
+    return null;
+  };
+
+  const currentUserId = getCurrentUserId();
   const isSelfView = user?.id === currentUserId;
 
   if (loading) {
@@ -50,7 +57,6 @@ export default function UserProfilePage() {
     );
   }
 
-  // Generate initials for avatar fallback
   const getInitials = (name: string) => {
     if (!name) return "U";
     const parts = name.trim().split(/\s+/);
@@ -73,35 +79,26 @@ export default function UserProfilePage() {
 
   const roleBadge = getRoleBadge();
 
-  return (
-    <div className="space-y-6 pb-20 max-w-7xl mx-auto">
-      
-      {/* ─ UNIFIED PREMIUM HEADER ── */}
-      <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] overflow-hidden shadow-[var(--shadow-card)]">
-        
-        {/* Top: Identity & Actions */}
-        <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-6 border-b border-[var(--color-surface-border)]">
-          
-          {/* Avatar with Status Dot */}
+  const renderDynamicHeader = () => {
+    if (activeTab === "profile") {
+      return (
+        <div className="flex items-center gap-4">
           <div className="relative group cursor-pointer shrink-0">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-purple-600 flex items-center justify-center text-2xl font-bold text-white shadow-lg ring-4 ring-[var(--color-surface)] transition-transform group-hover:scale-105">
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-purple-600 flex items-center justify-center text-xl font-bold text-white shadow-lg ring-4 ring-[var(--color-surface)] transition-transform group-hover:scale-105">
               {initials}
             </div>
-            {/* Upload hint overlay (visual only for now) */}
-            <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <Camera size={24} className="text-white" />
+            <div className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <Camera size={20} className="text-white" />
             </div>
-            {/* Live Status Indicator */}
-            <div className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-4 border-[var(--color-surface)] ${
+            <div className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-[var(--color-surface)] ${
               user.is_suspended ? 'bg-amber-500' : user.is_active ? 'bg-emerald-500' : 'bg-[var(--color-ink-subtle)]'
-            }`} title={user.is_suspended ? 'Suspended' : user.is_active ? 'Active' : 'Inactive'} />
+            }`} />
           </div>
 
-          {/* Identity Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-[var(--color-ink)] truncate">{user.full_name}</h1>
-              <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wide ${roleBadge.class}`}>
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h1 className="text-xl font-bold text-[var(--color-ink)] truncate">{user.full_name}</h1>
+              <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wide ${roleBadge.class}`}>
                 {roleBadge.label}
               </span>
             </div>
@@ -110,60 +107,95 @@ export default function UserProfilePage() {
             </p>
             <p className="text-xs text-[var(--color-ink-subtle)] mt-1 truncate font-mono">{user.email}</p>
           </div>
-
-          {/* Header Actions */}
-          <div className="flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
-            <button
-              onClick={() => router.push("/dashboard/users")}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-[var(--color-ink-muted)] bg-[var(--color-surface-hover)] hover:bg-[var(--color-surface-hover)]/80 border border-[var(--color-surface-border)] transition-all active:scale-95"
-            >
-              <ArrowLeft size={14} /> Back to Users
-            </button>
-            <button className="p-2 rounded-xl text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-colors">
-              <MoreVertical size={18} />
-            </button>
+        </div>
+      );
+    } else if (activeTab === "operations") {
+      return (
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 flex items-center justify-center text-[var(--color-primary)]">
+            <Layers size={22} />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-[var(--color-ink)]">Operations Command Center</h1>
+            <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">Manage tasks, assign actions, and execute workflows in real-time.</p>
           </div>
         </div>
-
-        {/* Bottom: Integrated Tab Switcher */}
-        <div className="px-6 pt-4 pb-0">
-          <div className="flex items-center gap-1 bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] p-1 rounded-xl w-fit">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-                    isActive
-                      ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm ring-1 ring-[var(--color-surface-border)]"
-                      : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)]/50"
-                  }`}
-                >
-                  <Icon size={14} />
-                  {tab.label}
-                </button>
-              );
-            })}
+      );
+    } else {
+      return (
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-500">
+            <Bell size={22} />
           </div>
+          <div>
+            <h1 className="text-lg font-bold text-[var(--color-ink)]">Preferences</h1>
+            <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">Customize your workspace appearance and layout</p>
+          </div>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="pb-8 max-w-7xl mx-auto relative">
+      
+      {/* ─ FLOATING BACK BUTTON (Bottom Right) ── */}
+      <button
+        onClick={() => router.push("/dashboard/users")}
+        // ✅ FIX: Added a premium soft dark outer shadow to bring it to life
+        className="fixed bottom-10 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[0_5px_10px_-5px_rgba(0,0,0,0.8)] hover:shadow-[0_5px_10px_-5px_rgba(0,0,0,0.95)] transition-all duration-300 group overflow-hidden min-w-[48px]"
+        title="Back to Users"
+      >
+        <ArrowLeft size={18} className="text-[var(--color-ink)] shrink-0 transition-transform group-hover:-translate-x-0.5" />
+        <span className="text-xs font-bold text-[var(--color-ink)] whitespace-nowrap opacity-0 w-0 group-hover:opacity-100 group-hover:w-auto transition-all duration-300 overflow-hidden">
+          Back to Users
+        </span>
+      </button>
+
+      {/* ─ PAGE HEADER WITH TABS ── */}
+      <div className="flex items-center justify-between gap-4 mb-6">
+        
+        <div className="flex-1 min-w-0">
+          {renderDynamicHeader()}
+        </div>
+
+        <div className="flex items-center gap-1 bg-[var(--color-surface)] border border-[var(--color-surface-border)] p-1 rounded-xl shrink-0">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
+                  isActive
+                    ? "bg-[var(--color-primary)] text-white shadow-sm"
+                    : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
+                }`}
+              >
+                <Icon size={14} />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* ── TAB CONTENT AREA ── */}
-      <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* ── TAB CONTENT AREA (Aligned with floating button) ── */}
+      {/* ✅ FIX: Reduced height by ~16px (approx 4mm) to eliminate page scrolling */}
+      <div className="h-[calc(100vh-226px)] overflow-hidden">
         
         {/* TAB 1: PROFILE & SECURITY */}
         {activeTab === "profile" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+          <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-5 animate-in fade-in duration-200">
+            <div className="lg:col-span-2 h-full overflow-y-auto custom-scrollbar pr-2">
               <UserPersonalInfoCard 
                 user={user} 
                 onSave={handleUpdateUser} 
                 isSelfView={isSelfView} 
               />
             </div>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 h-full overflow-y-auto custom-scrollbar pr-2">
               <UserStatusCard 
                 user={user} 
                 onStatusAction={handleStatusAction} 
@@ -175,17 +207,23 @@ export default function UserProfilePage() {
 
         {/* TAB 2: OPERATIONS */}
         {activeTab === "operations" && (
-          <OperationsTab 
-            userId={user.id}
-            currentUserRole={user.role}
-            isSelfView={isSelfView}
-          />
+          <div className="h-full animate-in fade-in duration-200">
+            <OperationsTab 
+              userId={user.id}
+              currentUserRole={user.role}
+              isSelfView={isSelfView}
+              hideHeader={true} 
+            />
+          </div>
         )}
 
         {/* TAB 3: PREFERENCES */}
         {activeTab === "preferences" && (
-          <div className="max-w-3xl">
-            <UserNotificationsCard user={user} />
+          <div className="h-full overflow-y-auto custom-scrollbar max-w-3xl animate-in fade-in duration-200">
+            <UserNotificationsCard 
+              user={user} 
+              onSave={handleUpdateUser} 
+            />
           </div>
         )}
 

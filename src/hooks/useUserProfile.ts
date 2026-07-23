@@ -9,8 +9,10 @@ import type { User } from "@/lib/types";
 
 export function useUserProfile() {
   const params = useParams();
-  // Safely parse the ID, handling cases where params.id might be an array or undefined
-  const userId = params.id ? Number(Array.isArray(params.id) ? params.id[0] : params.id) : null;
+  
+  // ✅ Safely parse the ID, handling cases where params.id might be an array or undefined
+  const rawId = params?.id;
+  const userId = rawId ? Number(Array.isArray(rawId) ? rawId[0] : rawId) : null;
   
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,7 @@ export function useUserProfile() {
     fetchData();
   }, [fetchData]);
 
-  // ✅ IMPROVED: Strictly typed payload instead of 'any'
+  // ✅ IMPROVED: Strictly typed payload matching our sanitized API client
   const handleUpdateUser = async (data: UserUpdatePayload) => {
     if (!userId) return;
     setActionLoading(true);

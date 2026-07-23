@@ -52,6 +52,7 @@ export function useContracts() {
       result = result.filter(
         (c) =>
           c.contract_number.toLowerCase().includes(q) ||
+          (c.booking_number && c.booking_number.toLowerCase().includes(q)) || // ✅ ADDED: Search by formatted booking number
           c.booking_id?.toString().includes(q) ||
           ('booking_ref' in c && String((c as any).booking_ref).toLowerCase().includes(q))
       );
@@ -94,9 +95,14 @@ export function useContracts() {
       const res = await contractsApi.generateShareLink(id);
       await navigator.clipboard.writeText(res.share_url);
       
-      setContracts(prev => prev.map(c => 
-        c.id === id ? { ...c, status: "sent" as ContractStatus, share_token: res.share_token } : c
-      ));
+      // ✅ FIX: Preserve existing status unless it's a draft
+      setContracts(prev => prev.map(c => {
+        if (c.id === id) {
+          const newStatus = c.status === "draft" ? "sent" : c.status;
+          return { ...c, status: newStatus, share_token: res.share_token };
+        }
+        return c;
+      }));
       
       toast.success("Contract share link copied to clipboard!");
     } catch (error: any) {

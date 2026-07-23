@@ -25,7 +25,7 @@ export interface UserRecoveryOptions {
 export interface UserCreatePayload {
   full_name: string;
   email: string;
-  password?: string; // ✅ Made optional to support "Invite Mode" (passwordless creation)
+  password?: string;
   role: "super_admin" | "tenant_admin" | "tenant_staff";
   tenant_id?: number | null;
   is_active?: boolean;
@@ -37,6 +37,10 @@ export interface UserCreatePayload {
   id_number?: string | null;
   dl_number?: string | null;
   dl_expiry?: string | null;
+  // ✅ NEW: Image URLs
+  avatar_url?: string | null;
+  id_image_url?: string | null;
+  dl_image_url?: string | null;
 }
 
 export interface UserUpdatePayload {
@@ -55,7 +59,45 @@ export interface UserUpdatePayload {
   id_number?: string | null;
   dl_number?: string | null;
   dl_expiry?: string | null;
-  is_onboarded?: boolean; // ✅ ADDED: Required for the "Verify User" action
+  
+  // ✅ Verification & Onboarding Lifecycle
+  is_onboarded?: boolean;
+  email_verified?: boolean;
+  phone_verified?: boolean;
+  
+  // ✅ NEW: Image URLs
+  avatar_url?: string | null;
+  id_image_url?: string | null;
+  dl_image_url?: string | null;
+}
+
+// ✅ COMPLETELY EXPANDED: Self-Service Onboarding Payload
+export interface AcceptInvitePayload {
+  invite_token: string;
+  password: string;
+  
+  // Identity
+  full_name: string;
+  email: string;
+  phone_number?: string | null;
+  avatar_url?: string | null;
+  
+  // Compliance
+  id_number?: string | null;
+  id_image_url?: string | null;
+  dl_number?: string | null;
+  dl_image_url?: string | null;
+  dl_expiry?: string | null;
+}
+
+// ✅ Verification Payloads
+export interface VerificationPayload {
+  channel: "email" | "phone";
+}
+
+export interface VerifyTokenPayload {
+  token: string;
+  channel: "email" | "phone";
 }
 
 // ---------------------------------------------------------------------------
@@ -89,4 +131,22 @@ export const usersApi = {
 
   sendResetLink: (id: number, payload: SendResetLinkPayload) =>
     apiClient.post<{ message: string }>(`/users/${id}/send-reset-link`, payload).then((r) => r.data),
+
+  // ✅ Accept Invite Endpoint
+  acceptInvite: (data: AcceptInvitePayload) =>
+    apiClient.post<User>("/users/accept-invite", data).then((r) => r.data),
+
+  // ✅ Verification Endpoints
+  sendVerification: (id: number, payload: VerificationPayload) =>
+    apiClient.post<{ 
+      message: string; 
+      verification_link?: string; 
+      shareable_message?: string 
+    }>(`/users/${id}/send-verification`, payload).then((r) => r.data),
+
+  verifyToken: (data: VerifyTokenPayload) =>
+    apiClient.post<User>("/users/verify", data).then((r) => r.data),
+
+  markVerified: (id: number, payload: VerificationPayload) =>
+    apiClient.post<User>(`/users/${id}/mark-verified`, payload).then((r) => r.data),
 };

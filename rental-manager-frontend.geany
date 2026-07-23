@@ -20,13 +20,18 @@ indent_mode=2
 [project]
 name=rental-manager-frontend
 base_path=/home/ronny-okumu/Documents/Projects/rental-manager-frontend
+description=
 
 [long line marker]
 long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=-1
+current_page=3
+FILE_NAME_0=23568;None;0;EUTF-8;0;1;0;%2Fhome%2Fronny-okumu%2FDocuments%2FProjects%2Frental-manager-frontend%2Fsrc%2Fcomponents%2Ffleet%2FFleetList.tsx;0;2
+FILE_NAME_1=0;CSS;0;EUTF-8;0;1;0;%2Fhome%2Fronny-okumu%2FDocuments%2FProjects%2Frental-manager-frontend%2Fsrc%2Fapp%2Fglobals.css;0;2
+FILE_NAME_2=0;None;0;EUTF-8;0;1;0;%2Fhome%2Fronny-okumu%2FDocuments%2FProjects%2Frental-manager-frontend%2Fsrc%2Fapp%2Flayout.tsx;0;2
+FILE_NAME_3=0;None;0;EUTF-8;0;1;0;%2Fhome%2Fronny-okumu%2FDocuments%2FWORKING%20TAB;0;2
 
 [VTE]
 last_dir=/home/ronny-okumu

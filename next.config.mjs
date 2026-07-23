@@ -67,6 +67,19 @@ const nextConfig = {
       },
     ];
   },
+
+  // ── ADDED CONFIGURATION: REWRITE RULES FOR FASTAPI PROXY ─────────────────
+  // Intercepts client-side requests matching '/api/v1/:path*' and silently 
+  // proxies them to the local FastAPI development server running on port 8000.
+  async rewrites() {
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: 'http://localhost:8000/api/v1/:path*',
+      },
+    ];
+  },
+  // ──────────────────────────────────────────────────────────────────────────
   
   // ESLint Configuration
   eslint: {

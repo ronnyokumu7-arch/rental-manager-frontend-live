@@ -1,12 +1,31 @@
-// src/app/layout.tsx
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { Toaster } from "react-hot-toast";
 
+// 1. Configure Sans-Serif Font (Primary UI) - Next.js optimizes this automatically (zero layout shift)
+const sansFont = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+// 2. Configure Monospace Font (Technical IDs, code, license plates, etc.)
+const monoFont = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+  weight: ["400", "500"],
+});
+
 export const metadata: Metadata = {
   title: "Rental Manager",
-  description: "Professional vehicle rental management platform",
+  description: "Enterprise-grade vehicle rental and fleet management platform.",
+  icons: {
+    icon: "/favicon.ico", // Update with your actual favicon path
+  },
 };
 
 export default function RootLayout({
@@ -15,20 +34,49 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      {/* 
-        ✅ CRITICAL FIX: 
-        1. Use --color-bg for the true canvas background (premium off-white in light, rich charcoal in dark).
-        2. Explicitly lock dark mode to #0B0D14 to guarantee it matches the sidebar/topbar perfectly.
-        3. Smooth transition for theme switching.
-      */}
-      <body className="antialiased bg-[var(--color-bg)] dark:bg-[#0B0D14] text-[var(--color-ink)] transition-colors duration-300">
+    <html 
+      lang="en" 
+      suppressHydrationWarning
+      className={`${sansFont.variable} ${monoFont.variable}`}
+    >
+      <body className="
+        font-sans 
+        antialiased 
+        bg-[var(--color-bg)] 
+        text-[var(--color-ink)] 
+        selection:bg-[var(--color-primary-muted)] 
+        selection:text-[var(--color-primary-text)]
+        scroll-smooth
+        transition-colors duration-300 ease-in-out
+      ">
         <AuthProvider>
           <Toaster 
             position="top-right" 
             toastOptions={{
-              // Ensure toasts also adapt perfectly to the theme
-              className: "bg-[var(--color-surface)] text-[var(--color-ink)] border border-[var(--color-surface-border)] shadow-[var(--shadow-dropdown)] rounded-xl",
+              // Premium Toaster styling that perfectly matches your design system
+              className: `
+                font-sans 
+                bg-[var(--color-surface)] 
+                text-[var(--color-ink)] 
+                border border-[var(--color-surface-border)] 
+                shadow-[var(--shadow-dropdown)] 
+                rounded-xl 
+                px-4 py-3
+              `,
+              // Success toast specific override
+              success: {
+                iconTheme: {
+                  primary: "var(--color-success)",
+                  secondary: "var(--color-surface)",
+                },
+              },
+              // Error toast specific override
+              error: {
+                iconTheme: {
+                  primary: "var(--color-danger)",
+                  secondary: "var(--color-surface)",
+                },
+              },
             }}
           />
           {children}

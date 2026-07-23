@@ -3,7 +3,6 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import BookingWizard from "@/components/bookings/BookingWizard";
 
 export default function NewBookingPage() {
   const router = useRouter();
@@ -25,7 +24,6 @@ export default function NewBookingPage() {
         </div>
 
         {/* The Wizard Container */}
-        <BookingWizard onComplete={() => router.push("/dashboard/bookings")} />
         
       </div>
     </div>

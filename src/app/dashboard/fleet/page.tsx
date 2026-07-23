@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Car, Plus, BarChart3, Wrench, Archive } from "lucide-react";
+import { Car, Plus, BarChart3, Wrench } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useFleetList } from "@/hooks/fleet/useFleetList";
 import FleetList from "@/components/fleet/FleetList";
@@ -22,15 +22,13 @@ export default function FleetPage() {
 
   const fleetData = useFleetList();
 
-  // ✅ DYNAMIC HEADER INFO: Reacts to both the active tab AND the Active/Vault view state
+  // ✅ DYNAMIC HEADER INFO: Synchronized to adapt immediately on tab change
   const currentTabInfo = useMemo(() => {
     if (activeTab === "fleet") {
       return {
-        title: fleetData.view === "active" ? "Fleet Management" : "Fleet Vault",
-        description: fleetData.view === "active" 
-          ? "Oversee your active vehicles, track performance, and manage garage operations." 
-          : "Archived and retired vehicle records.",
-        icon: fleetData.view === "active" ? <Car size={20} /> : <Archive size={20} />,
+        title: "Fleet Management",
+        description: "Oversee your vehicles, track performance statuses, and manage your garage pipelines.",
+        icon: <Car size={20} />,
       };
     }
     if (activeTab === "performance") {
@@ -45,12 +43,12 @@ export default function FleetPage() {
       description: "Onboard new vehicles, manage maintenance, and track service schedules.",
       icon: <Wrench size={20} />,
     };
-  }, [activeTab, fleetData.view]);
+  }, [activeTab]);
 
   return (
     <div className="space-y-6">
       
-      {/* Premium Header with Tab Switcher */}
+      {/* Premium Header with Dynamic Tab Switcher */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
@@ -65,7 +63,7 @@ export default function FleetPage() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
+        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-xs overflow-x-auto custom-scrollbar">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -87,67 +85,77 @@ export default function FleetPage() {
         </div>
       </div>
 
-      {/* Tab Content */}
+      {/* Conditional Segment View Engine */}
       {activeTab === "fleet" ? (
-        <FleetList {...fleetData} />
+        <div className="animate-in fade-in duration-300">
+          <FleetList {...fleetData} />
+        </div>
       ) : activeTab === "performance" ? (
-        <div className="p-12 text-center bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] animate-in fade-in duration-300">
+        <div className="card p-12 text-center animate-in fade-in duration-300">
           <BarChart3 size={48} className="mx-auto text-[var(--color-ink-subtle)] mb-4" />
           <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Performance Analytics</h3>
-          <p className="text-sm text-[var(--color-ink-muted)]">Advanced fleet performance metrics and ROI tracking coming soon.</p>
+          <p className="text-sm text-[var(--color-ink-muted)] max-w-md mx-auto">
+            Advanced fleet performance metrics, real-time vehicle utilization analysis, and customized profitability timelines coming soon.
+          </p>
         </div>
       ) : (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Garage Hub Content */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
             {/* Quick Garage Card */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-6">
-              <div className="w-12 h-12 rounded-xl bg-[var(--color-warning-bg)] flex items-center justify-center text-[var(--color-warning-text)] mb-4">
+            <div 
+              className="card p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all"
+              onClick={() => {
+                // Optional: Add logic to open Quick Garage modal or navigate
+              }}
+            >
+              <div className="w-12 h-12 rounded-xl bg-[var(--color-warning-bg)] flex items-center justify-center text-[var(--color-warning-text)] mb-4 group-hover:scale-110 transition-transform duration-300">
                 <Wrench size={24} />
               </div>
               <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Quick Garage</h3>
               <p className="text-sm text-[var(--color-ink-muted)] mb-4">
                 Update mileage and service status for vehicles awaiting inspection.
               </p>
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary-text)]">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary)]">
                 <span>{fleetData.filteredVehicles.filter(v => v.status === "awaiting_mileage").length} vehicles pending</span>
-                <span>→</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
               </div>
             </div>
 
             {/* Maintenance Queue Card */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-6">
-              <div className="w-12 h-12 rounded-xl bg-[var(--color-danger-bg)] flex items-center justify-center text-[var(--color-danger-text)] mb-4">
+            <div className="card p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all">
+              <div className="w-12 h-12 rounded-xl bg-[var(--color-danger-bg)] flex items-center justify-center text-[var(--color-danger-text)] mb-4 group-hover:scale-110 transition-transform duration-300">
                 <Car size={24} />
               </div>
               <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Maintenance Queue</h3>
               <p className="text-sm text-[var(--color-ink-muted)] mb-4">
                 Track vehicles currently in service and their repair status.
               </p>
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary-text)]">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary)]">
                 <span>{fleetData.filteredVehicles.filter(v => v.status === "maintenance").length} in maintenance</span>
-                <span>→</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
               </div>
             </div>
 
             {/* Service Due Card */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-6">
-              <div className="w-12 h-12 rounded-xl bg-[var(--color-primary-muted)] flex items-center justify-center text-[var(--color-primary-text)] mb-4">
+            <div className="card p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all">
+              <div className="w-12 h-12 rounded-xl bg-[var(--color-primary-muted)] flex items-center justify-center text-[var(--color-primary-text)] mb-4 group-hover:scale-110 transition-transform duration-300">
                 <BarChart3 size={24} />
               </div>
               <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Service Due Soon</h3>
               <p className="text-sm text-[var(--color-ink-muted)] mb-4">
                 Vehicles approaching their next scheduled service interval.
               </p>
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary-text)]">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary)]">
                 <span>View schedule</span>
-                <span>→</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
               </div>
             </div>
           </div>
 
           {/* Coming Soon Message */}
-          <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-10 flex flex-col items-center justify-center text-center">
+          <div className="card p-10 flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 rounded-2xl bg-[var(--color-warning-bg)] flex items-center justify-center mb-4">
               <Wrench size={32} className="text-[var(--color-warning-text)]" />
             </div>
@@ -172,15 +180,15 @@ export default function FleetPage() {
         onSave={fleetData.handleGarageSave}
       />
 
-      {/* PREMIUM FLOATING ACTION BUTTON - Bottom Right (Garage Tab Only) */}
+      {/* ✅ PREMIUM FLOATING ACTION BUTTON - Bottom Right (Garage Tab Only) */}
       {activeTab === "garage" && (
         <button
           onClick={() => router.push("/dashboard/fleet/new")}
-          className="fixed bottom-8 right-8 z-50 group flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-110 hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 ease-out"
+          className="fixed bottom-8 right-8 z-50 group flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-full shadow-[var(--shadow-xl)] hover:scale-105 active:scale-95 transition-all duration-300 ease-out"
           title="Add New Vehicle"
         >
           <Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
-          <span className="absolute right-full mr-4 px-3 py-1.5 bg-[var(--color-surface)] text-[var(--color-ink)] text-xs font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-[var(--color-surface-border)]">
+          <span className="absolute right-full mr-4 px-3 py-1.5 bg-[var(--color-surface)] text-[var(--color-ink)] text-xs font-bold rounded-lg shadow-[var(--shadow-dropdown)] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-[var(--color-surface-border)]">
             Add Vehicle
           </span>
         </button>

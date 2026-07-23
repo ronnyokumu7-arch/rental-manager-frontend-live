@@ -1,7 +1,6 @@
-// src/components/profile/DocumentUploadCard.tsx
 "use client";
 
-import { Upload, User, CreditCard, Car, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, User, CreditCard, Car, CheckCircle2 } from "lucide-react";
 import SectionCard from "@/components/ui/SectionCard";
 import type { Client } from "@/lib/types";
 
@@ -25,15 +24,6 @@ export default function DocumentUploadCard({
     }
   };
 
-  // ✅ BRAND TOKENS: Semantic upload slot styling
-  const getSlotStyle = (hasFile: boolean) => hasFile
-    ? "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/30 hover:bg-emerald-500/10"
-    : "border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/5";
-
-  const getIconContainerStyle = (hasFile: boolean) => hasFile
-    ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-    : "bg-[var(--color-surface-hover)] text-[var(--color-ink-subtle)] border border-[var(--color-surface-border)] group-hover:bg-[var(--color-primary)]/10 group-hover:text-[var(--color-primary)] group-hover:border-[var(--color-primary)]/20";
-
   const UploadSlot = ({ 
     type, 
     label, 
@@ -47,7 +37,11 @@ export default function DocumentUploadCard({
     icon: React.ElementType; 
     hasFile: boolean; 
   }) => (
-    <label className={`relative flex flex-col items-center justify-center p-5 border-2 border-dashed rounded-2xl transition-all duration-200 cursor-pointer group ${getSlotStyle(hasFile)}`}>
+    <label className={`relative flex items-center justify-between p-2.5 rounded-lg border transition-all duration-150 cursor-pointer group ${
+      hasFile 
+        ? "border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10" 
+        : "border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30 hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/5"
+    }`}>
       <input
         type="file"
         className="hidden"
@@ -55,53 +49,60 @@ export default function DocumentUploadCard({
         onChange={(e) => handleFileChange(type, e)}
       />
       
-      {/* Status Indicator */}
-      <div className={`p-3 rounded-xl mb-3 transition-all duration-200 ${getIconContainerStyle(hasFile)}`}>
-        {hasFile ? <CheckCircle2 size={20} /> : <Icon size={20} />}
-      </div>
-      
-      {/* Labels */}
-      <span className={`text-xs font-bold text-center transition-colors ${
-        hasFile ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--color-ink)] group-hover:text-[var(--color-primary)]'
-      }`}>
-        {label}
-      </span>
-      <span className={`text-[10px] text-center mt-1 transition-colors ${
-        hasFile ? 'text-emerald-500/70' : 'text-[var(--color-ink-muted)] group-hover:text-[var(--color-ink-subtle)]'
-      }`}>
-        {hasFile ? "Verified ✓" : sublabel}
-      </span>
-
-      {/* Hover Overlay Hint */}
-      {!hasFile && (
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          <div className="bg-[var(--color-surface)]/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm border border-[var(--color-surface-border)]">
-            <span className="text-[10px] font-bold text-[var(--color-primary)] flex items-center gap-1">
-              <Upload size={10} /> Choose File
-            </span>
-          </div>
+      {/* Left side: Icon + Text */}
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className={`p-1.5 rounded-md transition-colors shrink-0 ${
+          hasFile
+            ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+            : "bg-[var(--color-surface)] text-[var(--color-ink-subtle)] border border-[var(--color-surface-border)] group-hover:text-[var(--color-primary)] group-hover:border-[var(--color-primary)]/20"
+        }`}>
+          <Icon size={14} />
         </div>
-      )}
+        
+        <div className="min-w-0">
+          <span className={`block text-xs font-bold truncate leading-tight ${
+            hasFile ? 'text-emerald-600 dark:text-emerald-400' : 'text-[var(--color-ink)] group-hover:text-[var(--color-primary)]'
+          }`}>
+            {label}
+          </span>
+          <span className={`block text-[10px] font-mono truncate leading-tight mt-0.5 ${
+            hasFile ? 'text-emerald-500/70 font-semibold' : 'text-[var(--color-ink-muted)]'
+          }`}>
+            {hasFile ? "Uploaded ✓" : sublabel}
+          </span>
+        </div>
+      </div>
+
+      {/* Right side: Action / Indicator */}
+      <div className="shrink-0 ml-2">
+        {hasFile ? (
+          <CheckCircle2 size={15} className="text-emerald-500" />
+        ) : (
+          <div className="p-1 rounded-md text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] group-hover:bg-[var(--color-surface)] transition-all">
+            <Upload size={13} />
+          </div>
+        )}
+      </div>
     </label>
   );
 
   return (
-    <SectionCard className="!p-0 overflow-hidden">
-      
-      {/* Unified Header */}
-      <div className="flex items-center gap-3 p-6 pb-5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/20">
-        <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center">
-          <Upload size={18} className="text-[var(--color-primary)]" />
+    <SectionCard className="!p-0 overflow-hidden shadow-2xs border-[var(--color-surface-border)] rounded-xl">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/20">
+        <div className="flex items-center gap-2">
+          <Upload size={14} className="text-[var(--color-primary)]" />
+          <h3 className="text-xs font-bold text-[var(--color-ink)] uppercase tracking-wider">
+            Document Verification
+          </h3>
         </div>
-        <div>
-          <h3 className="text-sm font-bold text-[var(--color-ink)]">Document Verification</h3>
-          <p className="text-[11px] text-[var(--color-ink-muted)]">Identity proofs and compliance documents</p>
-        </div>
+        <span className="text-[10px] font-mono text-[var(--color-ink-muted)]">
+          PDF or Image format
+        </span>
       </div>
 
-      {/* Dense Upload Grid */}
-      <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        
+      {/* Compact Grid */}
+      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <UploadSlot 
           type="avatar" 
           label="Avatar Photo" 
@@ -113,7 +114,7 @@ export default function DocumentUploadCard({
         <UploadSlot 
           type="id_front" 
           label="ID Front" 
-          sublabel="Government issued"
+          sublabel="Government ID"
           icon={CreditCard} 
           hasFile={!!client.id_image_front} 
         />
@@ -133,7 +134,6 @@ export default function DocumentUploadCard({
           icon={Car} 
           hasFile={!!client.dl_image_front} 
         />
-
       </div>
     </SectionCard>
   );

@@ -4,20 +4,15 @@ import toast from "react-hot-toast";
 import { vehiclesApi } from "@/lib/api/vehicles";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 
-type ViewMode = "active" | "vault";
-
 export function useFleetList() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // UI State
-  const [view, setView] = useState<ViewMode>("active");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<VehicleStatus | "">("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 7;
 
-  // Modal & Action State
   const [garageVehicle, setGarageVehicle] = useState<Vehicle | null>(null);
   const [garageModalOpen, setGarageModalOpen] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
@@ -26,58 +21,51 @@ export function useFleetList() {
   const fetchVehicles = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
-      if (statusFilter) params.status = statusFilter;
-      
-      // ✅ Explicitly route to the correct endpoint based on view state
-      if (view === "vault") {
-        const data = await vehiclesApi.listArchived(params);
-        setVehicles(data);
-      } else {
-        const data = await vehiclesApi.list(params);
-        setVehicles(data);
+      // ✅ FIXED: Strictly typed, no 'any'. Only sends status if it's a valid enum.
+      const params: Record<string, string> = {};
+      if (statusFilter && statusFilter !== "") {
+        params.status = statusFilter;
       }
+      
+      const data = await vehiclesApi.list(params);
+      setVehicles(data);
     } catch (error) {
       toast.error("Failed to load fleet data");
     } finally {
       setLoading(false);
     }
-  }, [view, statusFilter]);
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchVehicles();
   }, [fetchVehicles]);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, view]);
+  }, [search, statusFilter]);
 
-  // Filtering Logic
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((v) => {
-      const matchesSearch = 
-        v.make.toLowerCase().includes(search.toLowerCase()) ||
-        v.model.toLowerCase().includes(search.toLowerCase()) ||
-        v.plate_number.toLowerCase().includes(search.toLowerCase());
-      return matchesSearch;
+      const searchLower = search.toLowerCase();
+      return (
+        v.make.toLowerCase().includes(searchLower) ||
+        v.model.toLowerCase().includes(searchLower) ||
+        v.plate_number.toLowerCase().includes(searchLower)
+      );
     });
   }, [vehicles, search]);
 
-  // Pagination Logic
   const paginatedVehicles = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredVehicles.slice(start, start + pageSize);
   }, [filteredVehicles, currentPage]);
 
   const totalPages = Math.ceil(filteredVehicles.length / pageSize);
-
-  // Counters
   const totalVehicles = vehicles.length;
   const availableVehicles = vehicles.filter((v) => v.status === "available").length;
   const rentedVehicles = vehicles.filter((v) => v.status === "rented").length;
 
-  // Action Handlers
+  // ✅ SANITIZED: Perfectly aligned with backend lifecycle endpoints & robust error handling
   const handleStatusAction = async (id: number, action: string) => {
     setActionLoadingId(id);
     try {
@@ -91,18 +79,24 @@ export function useFleetList() {
         await vehiclesApi.reactivate(id);
         toast.success("Vehicle reactivated successfully");
       } else if (action === "awaiting_mileage") {
-        await vehiclesApi.update(id, { status: "awaiting_mileage" as VehicleStatus });
+        await vehiclesApi.update(id, { status: "awaiting_mileage" });
         toast.success("Trip ended. Vehicle awaiting mileage update.");
       } else if (action === "restore") {
         await vehiclesApi.restore(id);
         toast.success("Vehicle restored to active fleet");
+      } else if (action === "retire") {
+        await vehiclesApi.retire(id);
+        toast.success("Vehicle retired successfully");
       } else {
         await vehiclesApi.update(id, { status: action as VehicleStatus });
-        toast.success(`Vehicle status updated`);
+        toast.success("Vehicle status updated");
       }
-      fetchVehicles();
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || "Failed to update vehicle");
+      await fetchVehicles();
+    } catch (error: unknown) {
+      // ✅ FIXED: Robust error extraction for FastAPI HTTPExceptions
+      const err = error as { response?: { data?: { detail?: string } } };
+      const errorMsg = err.response?.data?.detail || "Failed to update vehicle";
+      toast.error(errorMsg);
     } finally {
       setActionLoadingId(null);
       setOpenDropdownId(null);
@@ -115,9 +109,10 @@ export function useFleetList() {
     try {
       await vehiclesApi.archive(id);
       toast.success("Vehicle archived");
-      fetchVehicles();
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || "Failed to archive vehicle");
+      await fetchVehicles();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
+      toast.error(err.response?.data?.detail || "Failed to archive vehicle");
     } finally {
       setActionLoadingId(null);
       setOpenDropdownId(null);
@@ -130,9 +125,10 @@ export function useFleetList() {
     try {
       await vehiclesApi.retire(id);
       toast.success("Vehicle retired");
-      fetchVehicles();
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || "Failed to retire vehicle");
+      await fetchVehicles();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
+      toast.error(err.response?.data?.detail || "Failed to retire vehicle");
     } finally {
       setActionLoadingId(null);
       setOpenDropdownId(null);
@@ -147,9 +143,10 @@ export function useFleetList() {
       toast.success("Mileage updated and vehicle is now available!");
       setGarageModalOpen(false);
       setGarageVehicle(null);
-      fetchVehicles();
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || "Failed to update mileage");
+      await fetchVehicles();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
+      toast.error(err.response?.data?.detail || "Failed to update mileage");
     } finally {
       setActionLoadingId(null);
     }
@@ -157,7 +154,6 @@ export function useFleetList() {
 
   return {
     loading,
-    view, setView,
     search, setSearch,
     statusFilter, setStatusFilter,
     currentPage, setCurrentPage,

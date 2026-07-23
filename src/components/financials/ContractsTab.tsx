@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, FileText, Archive, Filter, ChevronDown, FileSignature, Send, CheckCircle2, XCircle } from "lucide-react";
+import { Search, FileText, Filter, ChevronDown, FileSignature, Send, CheckCircle2, XCircle } from "lucide-react";
 import { useContracts } from "@/hooks/financials/useContracts";
 import ContractsTable from "./contracts/ContractsTable";
 import GenerateContractModal from "./contracts/GenerateContractModal";
@@ -16,23 +16,14 @@ export default function ContractsTab() {
     refetch
   } = useContracts();
 
-  const [view, setView] = useState<"open" | "closed">("open");
   const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [generateForId, setGenerateForId] = useState<number | null>(null); // ✅ Track which contract to generate for
+  const [generateForId, setGenerateForId] = useState<number | null>(null);
 
   const pageSize = 7;
 
-  // 1. Filter by View (Open vs Closed)
-  const filteredByView = useMemo(() => {
-    if (view === "closed") {
-      return contracts.filter(c => c.status === "signed" || c.status === "void");
-    }
-    return contracts.filter(c => c.status === "draft" || c.status === "sent");
-  }, [contracts, view]);
-
-  // 2. Apply Search and Status Filter
+  // 1. Apply Search and Status Filter directly to ALL contracts
   const displayedContracts = useMemo(() => {
-    return filteredByView.filter(contract => {
+    return contracts.filter(contract => {
       const searchLower = search.toLowerCase();
       const matchesSearch = 
         contract.contract_number.toLowerCase().includes(searchLower) ||
@@ -43,9 +34,9 @@ export default function ContractsTab() {
       
       return matchesSearch && matchesStatus;
     });
-  }, [filteredByView, search, statusFilter]);
+  }, [contracts, search, statusFilter]);
 
-  // 3. Pagination Logic (7 per page)
+  // 2. Pagination Logic (7 per page)
   const paginatedContracts = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return displayedContracts.slice(start, start + pageSize);
@@ -53,16 +44,16 @@ export default function ContractsTab() {
 
   const totalPages = Math.ceil(displayedContracts.length / pageSize);
 
-  // Reset to page 1 when filters or view change
+  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, view, setCurrentPage]);
+  }, [search, statusFilter, setCurrentPage]);
 
-  // 4. Counters (Reflects the CURRENT view: Open or Closed)
-  const draftCount = useMemo(() => filteredByView.filter(c => c.status === "draft").length, [filteredByView]);
-  const sentCount = useMemo(() => filteredByView.filter(c => c.status === "sent").length, [filteredByView]);
-  const signedCount = useMemo(() => filteredByView.filter(c => c.status === "signed").length, [filteredByView]);
-  const voidCount = useMemo(() => filteredByView.filter(c => c.status === "void").length, [filteredByView]);
+  // 3. Counters (Reflects ALL contracts, filtered by search/status)
+  const draftCount = useMemo(() => displayedContracts.filter(c => c.status === "draft").length, [displayedContracts]);
+  const sentCount = useMemo(() => displayedContracts.filter(c => c.status === "sent").length, [displayedContracts]);
+  const signedCount = useMemo(() => displayedContracts.filter(c => c.status === "signed").length, [displayedContracts]);
+  const voidCount = useMemo(() => displayedContracts.filter(c => c.status === "void").length, [displayedContracts]);
 
   return (
     <>
@@ -72,29 +63,9 @@ export default function ContractsTab() {
         {/* Toolbar */}
         <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col lg:flex-row gap-4 items-center justify-between">
           
-          {/* Left Side: View Toggle & Counters */}
+          {/* Left Side: Counters Only (Toggle Removed) */}
           <div className="flex items-center gap-4 w-full lg:w-auto">
-            {/* View Toggle */}
-            <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] flex-shrink-0">
-              <button
-                onClick={() => setView("open")}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  view === "open" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-              >
-                Open
-              </button>
-              <button
-                onClick={() => setView("closed")}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                  view === "closed" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-              >
-                <Archive size={12} /> Closed
-              </button>
-            </div>
-
-            {/* Contract Counters (Visible in BOTH tabs) */}
+            {/* Contract Counters */}
             <div className="hidden xl:flex items-center gap-4 px-4 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <FileSignature size={14} className="text-[var(--color-ink-muted)]" />
@@ -122,7 +93,7 @@ export default function ContractsTab() {
             </div>
           </div>
 
-          {/* Right Side: Search & Filter (Generate button removed from here) */}
+          {/* Right Side: Search & Filter */}
           <div className="flex items-center gap-2 w-full lg:w-auto">
             <div className="relative w-full lg:w-64">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
@@ -169,9 +140,7 @@ export default function ContractsTab() {
             <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
               {search || statusFilter !== "all" 
                 ? "Try adjusting your filters." 
-                : view === "open" 
-                  ? "Contracts will automatically appear here when bookings are confirmed."
-                  : "Closed contracts will appear here once they are signed or voided."}
+                : "Contracts will automatically appear here when bookings are confirmed."}
             </p>
           </div>
         ) : (
@@ -228,8 +197,6 @@ export default function ContractsTab() {
           setGenerateForId(null);
           refetch();
         }}
-        // Note: If your GenerateContractModal accepts a pre-filled ID, pass it here:
-        // initialContractId={generateForId || undefined} 
       />
     </>
   );

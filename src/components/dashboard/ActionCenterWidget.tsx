@@ -4,21 +4,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  CheckCircle2, 
-  UserPlus, 
-  Calendar, 
-  Clock, 
-  ArrowRight,
-  Zap,
-  Plus,
-  Sparkles,
-  Tag,
-  Loader2
+  CheckCircle2, UserPlus, Calendar, Clock, ArrowRight,
+  Zap, Plus, Sparkles, Tag, Loader2
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { useActionCenterTasks } from "@/hooks/dashboard/useActionCenterTasks";
 import { useUpcomingBookings } from "@/hooks/dashboard/useUpcomingBookings";
 import { useRecentActivity } from "@/hooks/dashboard/useRecentActivity";
+import type { Task } from "@/lib/types";
 
 type SubTab = "tasks" | "bookings" | "activity";
 
@@ -37,7 +31,6 @@ export default function ActionCenterWidget() {
     { id: "activity" as SubTab, label: "Activity", count: activities.length },
   ];
 
-  // ✅ Helpers for rich task details
   const getPriorityDotColor = (priority?: string) => {
     switch (priority?.toLowerCase()) {
       case 'urgent': return 'bg-rose-500 shadow-[0_0_8px_-2px_rgba(244,63,94,0.6)]';
@@ -57,13 +50,26 @@ export default function ActionCenterWidget() {
     return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  const handleClaimTask = async (taskId: number) => {
+  // ✅ DEFENSIVE: Force ID to a valid number and block execution if invalid
+  const handleClaimTask = async (rawId: number | string | undefined | null) => {
+    const taskId = Number(rawId);
+    if (!taskId || isNaN(taskId)) {
+      console.error("Attempted to claim task with invalid ID:", rawId);
+      toast.error("Invalid task ID");
+      return;
+    }
     setUpdatingId(taskId);
     await handleClaim(taskId);
     setUpdatingId(null);
   };
 
-  const handleCompleteTask = async (taskId: number) => {
+  const handleCompleteTask = async (rawId: number | string | undefined | null) => {
+    const taskId = Number(rawId);
+    if (!taskId || isNaN(taskId)) {
+      console.error("Attempted to complete task with invalid ID:", rawId);
+      toast.error("Invalid task ID");
+      return;
+    }
     setUpdatingId(taskId);
     await handleComplete(taskId);
     setUpdatingId(null);
@@ -72,11 +78,9 @@ export default function ActionCenterWidget() {
   return (
     <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden h-full flex flex-col">
       
-      {/* ✅ PREMIUM HEADER: Title + Tabs + Action Button */}
+      {/* PREMIUM HEADER */}
       <div className="p-5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          
-          {/* Left: Branding */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary)]/70 flex items-center justify-center text-white shadow-lg shadow-[var(--color-primary)]/20">
               <Zap size={20} />
@@ -90,7 +94,6 @@ export default function ActionCenterWidget() {
             </div>
           </div>
           
-          {/* Right: Tab Switcher + New Task Button */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)]">
               {subTabs.map((tab) => (
@@ -128,15 +131,16 @@ export default function ActionCenterWidget() {
         </div>
       </div>
 
-      {/* ✅ SCROLLABLE CONTENT AREA: No item limit, smooth custom scrollbar */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-5 max-h-[500px] space-y-3">
+      {/* SCROLLABLE CONTENT AREA */}
+      {/* ✅ UI/UX FIX: Changed max-h-[500px] to max-h-80 (320px) to display ~3 tasks, with overflow-y-auto for smooth scrolling */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-5 max-h-80 space-y-3">
         
-        {/* TAB 1: TASKS (Rich Design matching OperationsTab) */}
+        {/* TAB 1: TASKS */}
         {activeSubTab === "tasks" && (
           <div className="space-y-3 animate-in fade-in duration-200">
             {tasksLoading ? (
               <div className="flex flex-col items-center justify-center py-8 text-[var(--color-ink-muted)] text-sm">
-                <Clock size={20} className="animate-pulse mb-2" />
+                <Loader2 size={20} className="animate-spin mb-2 text-[var(--color-primary)]" />
                 Loading tasks...
               </div>
             ) : tasks.length === 0 ? (
@@ -149,31 +153,26 @@ export default function ActionCenterWidget() {
               </div>
             ) : (
               tasks.map((task) => {
-                const overdue = isOverdue(task.due_date);
+                const overdue = task.due_date ? isOverdue(task.due_date) : false;
+                const safeTaskId = (task as any).id ?? (task as any).task_id;
+
                 return (
                   <div 
-                    key={task.id} 
+                    key={safeTaskId} 
                     className="group relative p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200"
                   >
                     <div className="flex items-start gap-4">
-                      
-                      {/* Priority Dot */}
                       <div className={`mt-1.5 flex-shrink-0 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--color-surface)] ${getPriorityDotColor(task.priority)}`} />
                       
                       <div className="flex-1 min-w-0">
-                        {/* Title */}
                         <p className="text-sm font-semibold leading-tight text-[var(--color-ink)] mb-1">
                           {task.title}
                         </p>
-                        
-                        {/* Description */}
                         {task.description && (
                           <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed mb-2.5 line-clamp-2">
                             {task.description}
                           </p>
                         )}
-
-                        {/* Meta Row: Category/Department + Due Date */}
                         <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-subtle)]">
                           {task.category && (
                             <span className="flex items-center gap-1">
@@ -193,15 +192,17 @@ export default function ActionCenterWidget() {
                         </div>
                       </div>
 
-                      {/* Actions */}
                       <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                         {task.status === "unassigned" && (
                           <button 
-                            onClick={() => handleClaimTask(task.id)}
-                            disabled={updatingId === task.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClaimTask(safeTaskId);
+                            }}
+                            disabled={updatingId === safeTaskId || !safeTaskId}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 transition-all active:scale-95 disabled:opacity-50"
                           >
-                            {updatingId === task.id ? (
+                            {updatingId === safeTaskId ? (
                               <Loader2 size={12} className="animate-spin" />
                             ) : (
                               <UserPlus size={12} />
@@ -211,11 +212,14 @@ export default function ActionCenterWidget() {
                         )}
                         {task.status === "pending" && (
                           <button 
-                            onClick={() => handleCompleteTask(task.id)}
-                            disabled={updatingId === task.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCompleteTask(safeTaskId);
+                            }}
+                            disabled={updatingId === safeTaskId || !safeTaskId}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 transition-all active:scale-95 disabled:opacity-50"
                           >
-                            {updatingId === task.id ? (
+                            {updatingId === safeTaskId ? (
                               <Loader2 size={12} className="animate-spin" />
                             ) : (
                               <CheckCircle2 size={12} />
@@ -237,7 +241,7 @@ export default function ActionCenterWidget() {
           <div className="space-y-3 animate-in fade-in duration-200">
             {bookingsLoading ? (
               <div className="flex flex-col items-center justify-center py-8 text-[var(--color-ink-muted)] text-sm">
-                <Clock size={20} className="animate-pulse mb-2" />
+                <Loader2 size={20} className="animate-spin mb-2 text-[var(--color-primary)]" />
                 Loading bookings...
               </div>
             ) : bookings.length === 0 ? (
@@ -249,7 +253,7 @@ export default function ActionCenterWidget() {
                 <p className="text-xs text-[var(--color-ink-muted)] mt-1">Future reservations will appear here.</p>
               </div>
             ) : (
-              bookings.slice(0, 4).map((booking) => (
+              bookings.map((booking) => (
                 <div 
                   key={booking.id} 
                   className="group flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200"
@@ -283,7 +287,7 @@ export default function ActionCenterWidget() {
           <div className="space-y-3 animate-in fade-in duration-200">
             {activityLoading ? (
               <div className="flex flex-col items-center justify-center py-8 text-[var(--color-ink-muted)] text-sm">
-                <Clock size={20} className="animate-pulse mb-2" />
+                <Loader2 size={20} className="animate-spin mb-2 text-[var(--color-primary)]" />
                 Loading activity...
               </div>
             ) : activities.length === 0 ? (
@@ -295,7 +299,7 @@ export default function ActionCenterWidget() {
                 <p className="text-xs text-[var(--color-ink-muted)] mt-1">Your activity log will appear here.</p>
               </div>
             ) : (
-              activities.slice(0, 4).map((item) => (
+              activities.map((item) => (
                 <div key={item.id} className="group flex items-start gap-3 p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/40 transition-all duration-200">
                   <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--color-primary)]/5 group-hover:border-[var(--color-primary)]/20 transition-colors">
                     <Clock size={14} className="text-[var(--color-ink-muted)] group-hover:text-[var(--color-primary)] transition-colors" />

@@ -1,5 +1,3 @@
-// src/lib/types.ts
-
 // ─── Users & Auth ───────────────────────────────────────────────────────────
 export type UserRole = "super_admin" | "tenant_admin" | "tenant_staff";
 
@@ -9,29 +7,53 @@ export interface User {
   full_name: string;
   role: UserRole;
   tenant_id?: number | null;
+  
+  // Account Status
   is_active: boolean;
   is_suspended: boolean;
   suspension_reason?: string | null;
+  
+  // ✅ NEW: Tenant Ownership (Agency Owner)
+  is_tenant_owner?: boolean;
+  
+  // Contact & Role Details
   phone_number?: string | null;
   department?: string | null;
   job_title?: string | null;
+  
+  // Security & Access
   permissions?: string[];
   two_factor_enabled?: boolean;
   last_login_at?: string | null;
+  
+  // Compliance
   id_number?: string | null;
   dl_number?: string | null;
   dl_expiry?: string | null;
   
-  // ✅ ADDED: Invite & Onboarding Lifecycle Fields
+  // ✅ NEW: Media & Documents (Base64 or external URLs)
+  avatar_url?: string | null;
+  id_image_url?: string | null;
+  dl_image_url?: string | null;
+  
+  // Verification & Onboarding Lifecycle
+  email_verified?: boolean;
+  phone_verified?: boolean;
+  is_onboarded?: boolean;
+  
+  // Invite System
   invite_token?: string | null;
   invite_expires_at?: string | null;
-  is_onboarded?: boolean;
-
-  // ✅ NEW: Recovery & Security Audit Fields (Synced with backend UserOut)
-  phone_verified?: boolean;
+  
+  // Security Audit
   failed_login_attempts?: number;
   account_locked_until?: string | null;
   
+  // UI Preferences
+  theme_preference?: string | null;
+  density_preference?: string | null;
+  
+  // Timestamps
   created_at: string;
   updated_at: string;
 }
@@ -81,10 +103,13 @@ export interface Client {
   updated_at: string;
 }
 
+// ✅ Cleanly derives the creation payload by omitting backend-generated/read-only fields
+// Note: "status" is omitted here because the backend assigns it automatically on creation.
 export type ClientCreate = Omit<
   Client,
   | "id"
   | "tenant_id"
+  | "status" 
   | "created_at"
   | "updated_at"
   | "is_archived"
@@ -94,6 +119,9 @@ export type ClientCreate = Omit<
   | "id_image_back"
   | "dl_image_front"
 >;
+
+// ✅ Alias to instantly fix the import error in CreateClientWizard.tsx
+export type ClientCreatePayload = ClientCreate;
 
 export type ClientUpdate = Partial<
   Omit<Client, "id" | "tenant_id" | "created_at" | "updated_at">
@@ -105,6 +133,7 @@ export type VehicleStatus =
   | "available"
   | "rented"
   | "maintenance"
+  | "awaiting_mileage"
   | "retired";
 
 export interface Vehicle {
@@ -173,6 +202,29 @@ export type BookingStatus =
   | "cancelled" 
   | "no_show";
 
+export interface BookingClientRelation {
+  id: number;
+  full_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  company_name?: string | null;
+  company?: string | null;
+  avatar_url?: string | null;
+}
+
+export interface BookingVehicleRelation {
+  id: number;
+  make: string;
+  model: string;
+  year?: number | null;               // ✅ Added: Often included in nested responses
+  plate_number?: string | null;       // ✅ Aligned with backend Vehicle (replaces license_plate)
+  current_mileage?: number | null;    // ✅ Aligned with backend Vehicle (replaces mileage/odometer)
+  daily_rate?: number | null;
+  status?: VehicleStatus;             // ✅ Added: Helpful for UI status badges
+}
+
 export interface Booking {
   id: number;
   booking_number: string;
@@ -184,6 +236,7 @@ export interface Booking {
   return_location?: string | null;
   start_date: string;
   end_date: string;
+  daily_rate?: number | string | null;
   total_amount: number;
   currency_code: string;
   status: BookingStatus;
@@ -191,6 +244,10 @@ export interface Booking {
   archived_at: string | null;
   created_at: string;
   updated_at: string;
+
+  // Joined Relations
+  client?: BookingClientRelation | null;
+  vehicle?: BookingVehicleRelation | null;
 }
 
 export interface BookingCreate {
@@ -216,6 +273,7 @@ export interface BookingUpdate {
   status?: BookingStatus;
 }
 
+
 // ─── Contracts ───────────────────────────────────────────────────────────────
 export type ContractStatus = "draft" | "sent" | "signed" | "void";
 
@@ -226,17 +284,21 @@ export interface Contract {
   contract_number: string;
   status: ContractStatus;
   pdf_path: string | null;
-  signed_at: string | null;
+  signature_image_path?: string | null;
   share_token: string | null;
   share_token_expires_at: string | null;
   signed_by_client: boolean;
   client_signed_at: string | null;
+  signed_at: string | null; // ✅ ADD THIS LINE
   created_at: string;
   updated_at: string;
+  booking_number?: string | null;
+  client_id?: number | null;
+  client_name?: string | null;
 }
 
 // ─── Invoices ────────────────────────────────────────────────────────────────
-export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "void";
+export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "void" | "partially_paid";
 
 export interface Invoice {
   id: number;
@@ -245,6 +307,8 @@ export interface Invoice {
   booking_id: number | null;
   invoice_number: string;
   status: InvoiceStatus;
+  share_token?: string | null;
+  share_url?: string | null;
   amount_due: number;
   amount_paid: number;
   currency_code: string;
@@ -254,6 +318,9 @@ export interface Invoice {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  booking_number?: string | null;
+  client_id?: number | null;
+  client_name?: string | null;
 }
 
 export interface InvoiceCreate {
@@ -273,10 +340,10 @@ export interface InvoiceUpdate {
   status?: InvoiceStatus;
 }
 
+
 // ─── Payments ────────────────────────────────────────────────────────────────
-// ✅ UPDATED: Synced with backend unified PaymentMethod enum
 export type PaymentMethod = "mpesa" | "airtel_money" | "card" | "paypal" | "bank" | "manual";
-export type PaymentStatus = "pending" | "completed" | "failed";
+export type PaymentStatus = "pending" | "completed" | "failed" | "void";
 
 export interface Payment {
   id: number;
@@ -291,6 +358,12 @@ export interface Payment {
   recorded_by: number | null;
   notes: string | null;
   created_at: string;
+  
+  // ✅ ADDED: Computed fields from backend
+  booking_id?: number | null;
+  invoice_number?: string | null;
+  client_id?: number | null;
+  client_name?: string | null;
 }
 
 export interface PaymentCreate {
@@ -347,7 +420,7 @@ export interface Task {
   user_id: number | null;
   title: string;
   description: string | null;
-  category: TaskCategory;
+  category: TaskCategory; // Frontend strictness (backend accepts string)
   status: TaskStatus;
   priority: TaskPriority;
   due_date: string | null;
@@ -357,26 +430,45 @@ export interface Task {
   requires_role: string | null;
   target_type: string | null;
   target_id: number | null;
+  location_id: number | null; // ✅ Added to match backend TaskBase
   created_by: number | null;
   created_at: string;
   updated_at: string;
 }
 
+export interface TaskCreate {
+  title: string;
+  description?: string | null;
+  category: TaskCategory;
+  priority?: TaskPriority; // ✅ Backend defaults to "medium", so optional is safer
+  due_date?: string | null;
+  target_type?: string | null;
+  target_id?: number | null;
+  location_id?: number | null; // ✅ Added to match backend
+  user_id?: number | null;
+  created_by?: number | null; // ✅ Added to match backend
+  requires_role?: string | null; // ✅ Added to match backend
+  is_system_generated?: boolean; // ✅ Added to match backend
+}
+
 export interface TaskUpdate {
   status?: TaskStatus;
-  completed_at?: string;
+  completed_at?: string | null;
+  user_id?: number | null; // ✅ Added: Backend explicitly allows this for claiming/assigning
 }
 
 // ─── Tenants & Subscriptions ─────────────────────────────────────────────────
+
+// ✅ FIX 1: Added "pending_verification" to match backend enum
 export type SubscriptionStatus =
   | "trial"
   | "starter_trial"
+  | "pending_verification" 
   | "active"
   | "past_due"
   | "suspended"
   | "cancelled";
 
-// ✅ UPDATED: Added airtel_money to match backend PaymentMethodType enum
 export type PaymentMethodType = "mpesa" | "airtel_money" | "card" | "paypal" | "bank";
 
 export interface TenantProfile {
@@ -399,39 +491,48 @@ export interface Tenant {
   email: string;
   phone_number?: string | null;
   
-  // Denormalized Admin Snapshot
   admin_name?: string | null;
   admin_email?: string | null;
   admin_phone?: string | null;
   
-  // Lifecycle & Multi-Tenancy
   is_active: boolean;
   is_archived: boolean;
   suspended_at?: string | null;
   suspension_reason?: string | null;
   
-  // ✅ NEW: Recovery & Audit Trail (Synced with backend Tenant model)
   last_reset_request_at?: string | null;
   email_change_cooldown_until?: string | null;
   admin_email_changed_at?: string | null;
   admin_changed_by_user_id?: number | null;
   
-  // Subscription & Billing
   plan: string;
   subscription_status: SubscriptionStatus;
   trial_ends_at?: string | null;
   subscription_ends_at?: string | null;
   grace_period_ends_at?: string | null;
   
-  // Payment Gateway Readiness
   default_payment_method?: PaymentMethodType | null;
   stripe_customer_id?: string | null;
   paypal_payer_id?: string | null;
   payment_metadata?: Record<string, any> | null;
   
-  // Nested Profile Data
   profile?: TenantProfile | null;
   
+  created_at: string;
+  updated_at: string;
+}
+
+// ✅ FIX 2: Added the missing SubscriptionOut interface required by subscriptionClient.ts
+export interface SubscriptionOut {
+  id: number;
+  tenant_id: number;
+  plan: string;
+  billing_cycle: string;
+  status: SubscriptionStatus;
+  starts_at: string;
+  ends_at: string | null;
+  grace_period_ends_at: string | null;
+  auto_renew: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -471,9 +572,6 @@ export interface UpdateTenantPayload {
 }
 
 
-// src/lib/types.ts
-
-// ... existing types ...
 
 // ---------------------------------------------------------------------------
 // Agency Health Dashboard Types (Privacy-First Aggregates)
@@ -563,3 +661,4 @@ export interface AgencyHealthData {
   featureAdoption: FeatureAdoption;
   supportTickets: SupportTicketTrend; // ✅ Now properly typed
 }
+

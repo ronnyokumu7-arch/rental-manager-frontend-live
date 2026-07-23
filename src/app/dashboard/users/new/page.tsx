@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, ArrowRight, User, Shield, Phone, CheckCircle,
-  Mail, CreditCard, Briefcase, Lock, AlertCircle, Loader2
+  Mail, CreditCard, Briefcase, Lock, Loader2
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { usersApi, type UserCreatePayload } from "@/lib/api/users";
@@ -57,13 +57,9 @@ export default function NewUserPage() {
   // ✅ PREVENT AUTO-SUBMIT: Move focus to next input on Enter (Form Level)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
     if (e.key === 'Enter' && e.target instanceof HTMLElement) {
-      // Prevent default form submission
       e.preventDefault();
-      
-      // Only jump if the target is an input or select (ignore buttons/textareas)
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
         const form = e.currentTarget;
-        // Get all focusable elements in the form
         const inputs = Array.from(form.querySelectorAll('input:not([type="submit"]), select'));
         const currentIndex = inputs.indexOf(e.target as HTMLElement);
         
@@ -102,18 +98,20 @@ export default function NewUserPage() {
 
     setLoading(true);
     try {
+      // ✅ SANITIZED PAYLOAD: Ensures empty strings become undefined to match backend Optional[str]
       const payload: UserCreatePayload = {
-        full_name: formData.full_name,
-        email: formData.email,
+        full_name: formData.full_name.trim(),
+        email: formData.email.trim(),
         password: formData.password,
         role: roleType === "admin" ? "tenant_admin" : "tenant_staff",
-        phone_number: formData.phone_number || undefined,
-        department: roleType === "admin" ? "Executive" : department, 
-        job_title: jobTitle,
-        id_number: formData.id_number || undefined,
-        dl_number: formData.dl_number || undefined,
+        phone_number: formData.phone_number.trim() || undefined,
+        department: roleType === "admin" ? "Executive" : (department || undefined), 
+        job_title: jobTitle || undefined,
+        id_number: formData.id_number.trim() || undefined,
+        dl_number: formData.dl_number.trim() || undefined,
         dl_expiry: formData.dl_expiry || undefined,
       };
+      
       await usersApi.create(payload);
       toast.success("Team member added successfully!");
       router.push("/dashboard/users");

@@ -11,7 +11,7 @@ export function usePayments() {
   const [methodFilter, setMethodFilter] = useState<PaymentMethod | "all">("all");
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all">("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 7; // ✅ Aligned with the 7 items per page standard
+  const pageSize = 7;
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
@@ -29,7 +29,6 @@ export function usePayments() {
     fetchPayments();
   }, [fetchPayments]);
 
-  // Client-side filtering
   const filteredPayments = useMemo(() => {
     let result = payments;
     
@@ -44,9 +43,11 @@ export function usePayments() {
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
-        p => p.reference?.toLowerCase().includes(q) || 
-             p.invoice_id.toString().includes(q) ||
-             ('invoice_number' in p && String((p as any).invoice_number).toLowerCase().includes(q))
+        (p) =>
+          ((p as any).client_name && String((p as any).client_name).toLowerCase().includes(q)) ||
+          (p.reference && p.reference.toLowerCase().includes(q)) ||
+          p.invoice_id.toString().includes(q) ||
+          ((p as any).invoice_number && String((p as any).invoice_number).toLowerCase().includes(q))
       );
     }
     
@@ -56,7 +57,6 @@ export function usePayments() {
   const totalPages = Math.ceil(filteredPayments.length / pageSize);
   const paginatedPayments = filteredPayments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  // Reset to page 1 when filters change
   useEffect(() => { 
     setCurrentPage(1); 
   }, [search, methodFilter, statusFilter]);

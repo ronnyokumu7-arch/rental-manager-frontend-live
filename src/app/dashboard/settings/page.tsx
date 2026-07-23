@@ -1,4 +1,3 @@
-// src/app/dashboard/settings/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -12,7 +11,8 @@ import {
 import BusinessProfileSettings from "@/components/settings/BusinessProfileSettings";
 import AppearanceSettings from "@/components/settings/AppearanceSettings";
 import TeamRolesSettings from "@/components/settings/TeamRolesSettings";
-   import UserManagementSettings from "@/components/settings/UserManagementSettings";
+import UserManagementSettings from "@/components/settings/UserManagementSettings";
+import BillingSubscriptionSettings from "@/components/settings/BillingSubscriptionSettings";
 
 type TabId = "general" | "team" | "financials" | "system" | "advanced";
 
@@ -180,6 +180,8 @@ export default function SettingsPage() {
             <TeamRolesSettings />
           ) : activeModule.id === "users" ? (
             <UserManagementSettings />
+          ) : activeModule.id === "billing" ? (
+            <BillingSubscriptionSettings />
           ) : (
             <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl shadow-[var(--shadow-card)] p-8 min-h-[400px] flex flex-col items-center justify-center text-center">
               <div className={`w-16 h-16 rounded-2xl ${getThemeClasses(activeModule.theme).iconBg} flex items-center justify-center mb-4`}>

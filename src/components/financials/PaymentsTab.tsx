@@ -2,10 +2,9 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, Archive, Filter, ChevronDown, CheckCircle2, Clock, AlertCircle, Upload } from "lucide-react";
+import { Search, Filter, ChevronDown, CheckCircle2, Clock, AlertCircle, Upload } from "lucide-react";
 import { usePayments } from "@/hooks/financials/usePayments";
 import PaymentsTable from "./payments/PaymentsTable";
-import RecordPaymentModal from "./payments/RecordPaymentModal";
 
 export default function PaymentsTab() {
   const {
@@ -16,24 +15,11 @@ export default function PaymentsTab() {
     refetch
   } = usePayments();
 
-  const [view, setView] = useState<"open" | "closed">("open");
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
-
   const pageSize = 7;
 
-  // 1. Filter by View (Open vs Closed)
-  // Open = Pending. Closed = Completed or Failed.
-  const filteredByView = useMemo(() => {
-    if (view === "closed") {
-      return payments.filter(p => p.status === "completed" || p.status === "failed");
-    }
-    return payments.filter(p => p.status === "pending");
-  }, [payments, view]);
-
-  // 2. Apply Search, Method, and Status Filters
+  // 1. Apply Search, Method, and Status Filters directly to ALL payments
   const displayedPayments = useMemo(() => {
-    return filteredByView.filter(payment => {
+    return payments.filter(payment => {
       const searchLower = search.toLowerCase();
       const matchesSearch = 
         (payment.reference && payment.reference.toLowerCase().includes(searchLower)) ||
@@ -45,9 +31,9 @@ export default function PaymentsTab() {
       
       return matchesSearch && matchesMethod && matchesStatus;
     });
-  }, [filteredByView, search, methodFilter, statusFilter]);
+  }, [payments, search, methodFilter, statusFilter]);
 
-  // 3. Pagination Logic (7 per page)
+  // 2. Pagination Logic (7 per page)
   const paginatedPayments = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return displayedPayments.slice(start, start + pageSize);
@@ -55,34 +41,26 @@ export default function PaymentsTab() {
 
   const totalPages = Math.ceil(displayedPayments.length / pageSize);
 
-  // Reset to page 1 when filters or view change
+  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, methodFilter, statusFilter, view, setCurrentPage]);
+  }, [search, methodFilter, statusFilter, setCurrentPage]);
 
-  // 4. Counters (Reflects the CURRENT view: Open or Closed)
-  const pendingCount = useMemo(() => filteredByView.filter(p => p.status === "pending").length, [filteredByView]);
-  const completedCount = useMemo(() => filteredByView.filter(p => p.status === "completed").length, [filteredByView]);
-  const failedCount = useMemo(() => filteredByView.filter(p => p.status === "failed").length, [filteredByView]);
+  // 3. Counters (Reflects ALL payments, filtered by search/method/status)
+  const pendingCount = useMemo(() => displayedPayments.filter(p => p.status === "pending").length, [displayedPayments]);
+  const completedCount = useMemo(() => displayedPayments.filter(p => p.status === "completed").length, [displayedPayments]);
+  const failedCount = useMemo(() => displayedPayments.filter(p => p.status === "failed").length, [displayedPayments]);
 
-  // --- Action Handlers for PaymentsTable ---
-  const handleRecordPayment = (id: number) => {
-    setSelectedPaymentId(id);
-    setPaymentModalOpen(true);
-  };
-
+  // --- Action Handlers ---
   const handleDownloadPdf = (id: number) => {
-    // TODO: Wire up actual PDF download logic
     console.log(`Download PDF for payment ${id}`);
   };
 
   const handleIssueRefund = (id: number) => {
-    // TODO: Wire up actual refund logic
     console.log(`Issue refund for payment ${id}`);
   };
 
   const handleExportSingleCsv = (id: number) => {
-    // TODO: Wire up single payment receipt/CSV export
     console.log(`Export CSV/Receipt for payment ${id}`);
   };
 
@@ -123,29 +101,8 @@ export default function PaymentsTab() {
         {/* Toolbar */}
         <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col lg:flex-row gap-4 items-center justify-between">
           
-          {/* Left Side: View Toggle & Counters */}
+          {/* Left Side: Counters Only */}
           <div className="flex items-center gap-4 w-full lg:w-auto">
-            {/* View Toggle */}
-            <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] flex-shrink-0">
-              <button
-                onClick={() => setView("open")}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  view === "open" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-              >
-                Open
-              </button>
-              <button
-                onClick={() => setView("closed")}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                  view === "closed" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-              >
-                <Archive size={12} /> Closed
-              </button>
-            </div>
-
-            {/* Payment Counters (Visible in BOTH tabs) */}
             <div className="hidden md:flex items-center gap-4 px-4 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={14} className="text-[var(--color-success-text)]" />
@@ -212,10 +169,11 @@ export default function PaymentsTab() {
             <button 
               onClick={handleExportAllCsv}
               disabled={displayedPayments.length === 0}
-              className="p-2.5 rounded-xl text-[var(--color-ink-muted)] bg-[var(--color-surface)] border border-[var(--color-surface-border)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-primary)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-[var(--color-ink-muted)] bg-[var(--color-surface)] border border-[var(--color-surface-border)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-primary)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
               title="Export All to CSV"
             >
               <Upload size={16} />
+              Export CSV
             </button>
           </div>
         </div>
@@ -236,9 +194,7 @@ export default function PaymentsTab() {
             <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
               {search || methodFilter !== "all" || statusFilter !== "all"
                 ? "Try adjusting your filters."
-                : view === "open" 
-                  ? "Pending payment transactions will appear here."
-                  : "Completed and failed payment history will appear here."}
+                : "Payment transactions will appear here once recorded."}
             </p>
           </div>
         ) : (
@@ -246,7 +202,6 @@ export default function PaymentsTab() {
             <PaymentsTable 
               data={paginatedPayments}
               onExportCsv={handleExportSingleCsv}
-              onRecordPayment={handleRecordPayment}
               onDownloadPdf={handleDownloadPdf}
               onIssueRefund={handleIssueRefund}
             />
@@ -279,20 +234,6 @@ export default function PaymentsTab() {
           </>
         )}
       </div>
-
-      <RecordPaymentModal
-        open={paymentModalOpen}
-        onClose={() => {
-          setPaymentModalOpen(false);
-          setSelectedPaymentId(null);
-        }}
-        onPaymentRecorded={() => {
-          refetch();
-          setSelectedPaymentId(null);
-        }}
-        // Note: If your RecordPaymentModal accepts a pre-filled ID prop, pass it here:
-        // initialPaymentId={selectedPaymentId || undefined}
-      />
     </>
   );
 }
