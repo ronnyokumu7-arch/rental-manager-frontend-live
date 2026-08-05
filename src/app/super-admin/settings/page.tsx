@@ -1,106 +1,206 @@
-// src/app/dashboard/profile/page.tsx
 "use client";
 
-import { User, Mail, Phone, MapPin, Shield, Bell, Key } from "lucide-react";
-import PageHeader from "@/components/ui/PageHeader";
-import SectionCard from "@/components/ui/SectionCard";
+import { useState } from "react";
+import {
+  Building2, ShieldCheck, Palette, Bell, CreditCard, Settings,
+  ChevronRight, ChevronLeft, Puzzle, Database, Key, Users,
+  Globe, Lock, Zap, BarChart3, UserCheck, Receipt, Landmark,
+  Shield, HardDrive, Activity, Webhook,
+} from "lucide-react";
 
-export default function ProfilePage() {
+import BusinessProfileSettings from "@/components/settings/BusinessProfileSettings";
+import AppearanceSettings from "@/components/settings/AppearanceSettings";
+import TeamRolesSettings from "@/components/settings/TeamRolesSettings";
+import UsersPage from "@/app/dashboard/users/page";
+import BillingSubscriptionSettings from "@/components/settings/BillingSubscriptionSettings";
+
+type TabId = "general" | "team" | "financials" | "system" | "advanced";
+
+interface SettingModule {
+  id: string;
+  title: string;
+  description: string;
+  icon: any;
+  theme: string;
+  badge?: string;
+  tab: TabId;
+}
+
+const TABS = [
+  { id: "general", label: "General", icon: Settings },
+  { id: "team", label: "Team & Access", icon: Users },
+  { id: "financials", label: "Financials", icon: Landmark },
+  { id: "system", label: "System", icon: Zap },
+  { id: "advanced", label: "Advanced", icon: Shield },
+];
+
+const SETTINGS_MODULES: SettingModule[] = [
+  // General
+  { id: "business", title: "Business Profile", description: "Manage your agency details, logo, and official contact information.", icon: Building2, theme: "blue", tab: "general" },
+  { id: "appearance", title: "Appearance", description: "Customize dashboard themes, regional formats, and display preferences.", icon: Palette, theme: "purple", tab: "general" },
+  { id: "notifications", title: "Notifications", description: "Control email alerts, booking reminders, and system warnings.", icon: Bell, theme: "amber", tab: "general" },
+  { id: "regional", title: "Regional Settings", description: "Set timezone, currency, date formats, and language preferences.", icon: Globe, theme: "emerald", tab: "general" },
+  // Team
+  { id: "roles", title: "Team & Roles", description: "Configure staff access, job titles, and granular permission matrices.", icon: ShieldCheck, theme: "emerald", tab: "team" },
+  { id: "users", title: "User Management", description: "Invite, activate, suspend, and manage team member accounts.", icon: UserCheck, theme: "blue", tab: "team" },
+  { id: "auth", title: "Authentication", description: "Configure 2FA, session timeouts, and password policies.", icon: Lock, theme: "rose", tab: "team" },
+  // Financials
+  { id: "billing", title: "Billing & Subscription", description: "Manage your subscription plan, payment methods, and invoices.", icon: CreditCard, theme: "rose", tab: "financials" },
+  { id: "invoices", title: "Invoice Settings", description: "Configure invoice templates, tax rates, and payment terms.", icon: Receipt, theme: "blue", tab: "financials", badge: "New" },
+  { id: "payments", title: "Payment Methods", description: "Add and manage accepted payment methods and gateways.", icon: Landmark, theme: "emerald", tab: "financials" },
+  // System
+  { id: "integrations", title: "Integrations", description: "Connect external APIs, webhooks, and third-party services.", icon: Puzzle, theme: "slate", tab: "system" },
+  { id: "webhooks", title: "Webhooks", description: "Manage webhook endpoints and event subscriptions.", icon: Webhook, theme: "purple", tab: "system", badge: "Beta" },
+  { id: "api-keys", title: "API Keys", description: "Generate and manage API keys for external integrations.", icon: Key, theme: "amber", tab: "system" },
+  { id: "audit", title: "Audit Logs", description: "View system activity, user actions, and security events.", icon: Activity, theme: "blue", tab: "system" },
+  // Advanced
+  { id: "data", title: "Data Management", description: "Export, import, and manage your rental data and records.", icon: Database, theme: "blue", tab: "advanced" },
+  { id: "backup", title: "Backup & Recovery", description: "Configure automatic backups and disaster recovery settings.", icon: HardDrive, theme: "emerald", tab: "advanced" },
+  { id: "health", title: "System Health", description: "Monitor system performance, uptime, and resource usage.", icon: BarChart3, theme: "purple", tab: "advanced" },
+];
+
+const getThemeClasses = (theme: string) => {
+  const themes: Record<string, { iconBg: string; iconText: string }> = {
+    blue: { iconBg: "bg-[var(--color-primary-muted)]", iconText: "text-[var(--color-primary-text)]" },
+    emerald: { iconBg: "bg-[var(--color-success-bg)]", iconText: "text-[var(--color-success-text)]" },
+    purple: { iconBg: "bg-[var(--color-primary-muted)]", iconText: "text-[var(--color-primary-text)]" },
+    amber: { iconBg: "bg-[var(--color-warning-bg)]", iconText: "text-[var(--color-warning-text)]" },
+    rose: { iconBg: "bg-[var(--color-danger-bg)]", iconText: "text-[var(--color-danger-text)]" },
+    slate: { iconBg: "bg-[var(--color-surface-hover)]", iconText: "text-[var(--color-ink-muted)]" },
+  };
+  return themes[theme] || themes.blue;
+};
+
+export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState<TabId>("general");
+  const [activeModule, setActiveModule] = useState<SettingModule | null>(null);
+
+  const filteredModules = SETTINGS_MODULES.filter((m) => m.tab === activeTab);
+
   return (
     <div className="space-y-6">
-      {/* ── Header ── */}
-      <PageHeader 
-        title="My Profile" 
-        subtitle="Manage your account settings, contact information, and security preferences." 
-        icon={User}
-        breadcrumb={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Profile" }
-        ]}
-      />
-
-      {/* ── Profile Content Grid ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left Column: Personal Info */}
-        <div className="lg:col-span-2 space-y-6">
-          <SectionCard title="Personal Information" icon={User}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Full Name</label>
-                <input type="text" defaultValue="John Doe" className="input" readOnly />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Email Address</label>
-                <input type="email" defaultValue="admin@agency.com" className="input" readOnly />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Phone Number</label>
-                <input type="tel" defaultValue="+254 700 000 000" className="input" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Role</label>
-                <input type="text" defaultValue="Agency Administrator" className="input bg-surface-hover cursor-not-allowed" readOnly />
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Address & Location" icon={MapPin}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Street Address</label>
-                <input type="text" placeholder="Enter your street address" className="input" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">City</label>
-                <input type="text" placeholder="e.g. Nairobi" className="input" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink-muted mb-1.5">Country</label>
-                <input type="text" placeholder="e.g. Kenya" className="input" />
-              </div>
-            </div>
-          </SectionCard>
+      {/* Premium Header & Tab Switcher */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          {/* Back Button (Only shows when inside a module) */}
+          {activeModule && (
+            <button
+              onClick={() => setActiveModule(null)}
+              className="p-2.5 rounded-xl text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] transition-all active:scale-95"
+              title="Back to Settings Hub"
+            >
+              <ChevronLeft size={18} />
+            </button>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
+              {!activeModule && (
+                <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
+                  <Settings size={20} />
+                </div>
+              )}
+              {activeModule ? activeModule.title : "Settings"}
+            </h1>
+            <p className="text-sm text-[var(--color-ink-muted)] mt-1">
+              {activeModule ? activeModule.description : "Manage your agency configuration and system preferences"}
+            </p>
+          </div>
         </div>
 
-        {/* Right Column: Security & Preferences */}
-        <div className="space-y-6">
-          <SectionCard title="Security" icon={Shield}>
-            <div className="space-y-3">
-              <button className="w-full flex items-center justify-between p-3 rounded-lg border border-surface-border hover:bg-surface-hover transition-colors">
-                <div className="flex items-center gap-3">
-                  <Key size={16} className="text-ink-muted" />
-                  <span className="text-sm font-semibold text-ink">Change Password</span>
-                </div>
-              </button>
-              <button className="w-full flex items-center justify-between p-3 rounded-lg border border-surface-border hover:bg-surface-hover transition-colors">
-                <div className="flex items-center gap-3">
-                  <Shield size={16} className="text-ink-muted" />
-                  <span className="text-sm font-semibold text-ink">Two-Factor Auth</span>
-                </div>
-                <span className="text-xs font-bold text-success-text bg-success-bg px-2 py-0.5 rounded-full">Enabled</span>
-              </button>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Notifications" icon={Bell}>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-ink">Email Notifications</span>
-                <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-surface-border text-accent-dark focus:ring-accent-dark" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-ink">SMS Alerts</span>
-                <input type="checkbox" className="h-4 w-4 rounded border-surface-border text-accent-dark focus:ring-accent-dark" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-ink">Booking Reminders</span>
-                <input type="checkbox" defaultChecked className="h-4 w-4 rounded border-surface-border text-accent-dark focus:ring-accent-dark" />
-              </div>
-            </div>
-          </SectionCard>
-        </div>
+        {/* Unified Tab Switcher (Hidden when inside a module) */}
+        {!activeModule && (
+          <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as TabId)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                    isActive
+                      ? "bg-[var(--color-primary)] text-white shadow-sm"
+                      : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
+                  }`}
+                >
+                  <Icon size={14} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      {/* MAIN CONTENT AREA: Hub vs Workspace */}
+      {!activeModule ? (
+        // ── THE HUB: Grid of Modules ──
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in duration-300">
+          {filteredModules.map((module) => {
+            const Icon = module.icon;
+            const theme = getThemeClasses(module.theme);
+            return (
+              <div
+                key={module.id}
+                onClick={() => setActiveModule(module)}
+                className="group relative flex items-center gap-4 p-5 rounded-2xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] hover:border-[var(--color-primary)]/50 hover:shadow-[var(--shadow-lg)] transition-all duration-200 cursor-pointer"
+              >
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${theme.iconBg} ${theme.iconText} group-hover:scale-105 transition-transform duration-200`}>
+                  <Icon size={22} strokeWidth={1.8} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-[var(--color-ink)] truncate">{module.title}</h3>
+                    {module.badge && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--color-primary-muted)] text-[var(--color-primary-text)]">
+                        {module.badge}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-[var(--color-ink-muted)] mt-0.5 line-clamp-2">{module.description}</p>
+                </div>
+                <ChevronRight 
+                  size={18} 
+                  className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all duration-200 flex-shrink-0" 
+                />
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        // ── THE WORKSPACE: Individual Module View ──
+        <div className="animate-in slide-in-from-right-4 fade-in duration-300">
+          
+          {/* ✅ DYNAMIC ROUTING: Render specific module components, or fallback placeholder */}
+          {activeModule.id === "business" ? (
+            <BusinessProfileSettings />
+          ) : activeModule.id === "appearance" ? (
+            <AppearanceSettings />
+          ) : activeModule.id === "roles" ? (
+            <TeamRolesSettings />
+          ) : activeModule.id === "users" ? (
+            <UsersPage />
+          ) : activeModule.id === "billing" ? (
+            <BillingSubscriptionSettings />
+          ) : (
+            <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl shadow-[var(--shadow-card)] p-8 min-h-[400px] flex flex-col items-center justify-center text-center">
+              <div className={`w-16 h-16 rounded-2xl ${getThemeClasses(activeModule.theme).iconBg} flex items-center justify-center mb-4`}>
+                <activeModule.icon size={32} className={getThemeClasses(activeModule.theme).iconText} />
+              </div>
+              <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">{activeModule.title} Workspace</h3>
+              <p className="text-sm text-[var(--color-ink-muted)] max-w-md mb-6">
+                This module is currently under construction. Check back soon for updates!
+              </p>
+              <button
+                onClick={() => setActiveModule(null)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 transition-all active:scale-95"
+              >
+                <ChevronLeft size={14} /> Back to Settings Hub
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

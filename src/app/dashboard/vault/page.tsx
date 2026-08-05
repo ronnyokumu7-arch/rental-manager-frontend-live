@@ -1,0 +1,164 @@
+// src/app/dashboard/vault/page.tsx
+"use client";
+
+import { useState } from "react";
+import { 
+  CalendarDays, 
+  Users, 
+  Car, 
+  FileText, 
+  CreditCard, 
+  CheckSquare, 
+  Shield, 
+  Building2,
+  Archive
+} from "lucide-react";
+
+// ── Design System Constants ──────────────────────────────────────────────────
+const tabBaseClass = "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap";
+const tabActiveClass = "bg-[var(--color-primary)] text-white shadow-[var(--shadow-sm)]";
+const tabInactiveClass = "text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]";
+
+interface VaultTab {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+}
+
+const VAULT_TABS: VaultTab[] = [
+  { id: "bookings", label: "Bookings", icon: CalendarDays },
+  { id: "clients", label: "Clients", icon: Users },
+  { id: "vehicles", label: "Vehicles", icon: Car },
+  { id: "financials", label: "Financials", icon: FileText },
+  { id: "payments", label: "Payments", icon: CreditCard },
+  { id: "tasks", label: "Tasks", icon: CheckSquare },
+  { id: "users", label: "Users", icon: Shield },
+  { id: "tenants", label: "Tenants", icon: Building2 },
+];
+
+export default function VaultPage() {
+  const [activeTab, setActiveTab] = useState("bookings");
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <div className="p-3 rounded-2xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20">
+          <Archive size={24} className="text-[var(--color-primary)]" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-ink)]">History Library</h1>
+          <p className="text-sm text-[var(--color-ink-muted)] mt-1">
+            Access archived records, voided documents, and completed history.
+          </p>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden">
+        <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 overflow-x-auto custom-scrollbar">
+          <div className="flex items-center gap-2 min-w-max">
+            {VAULT_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`${tabBaseClass} ${isActive ? tabActiveClass : tabInactiveClass}`}
+                >
+                  <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tab Content Area */}
+        <div className="p-6 min-h-[400px]">
+          {/* We will replace these placeholders with the actual Tab components in the next steps */}
+          {activeTab === "bookings" && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CalendarDays size={48} className="text-[var(--color-ink-subtle)] mb-4" />
+              <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">Bookings Vault</h3>
+              <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
+                Loading archived and cancelled bookings...
+              </p>
+            </div>
+          )}
+          
+          {activeTab === "clients" && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Users size={48} className="text-[var(--color-ink-subtle)] mb-4" />
+              <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">Clients Vault</h3>
+              <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
+                Loading archived client records...
+              </p>
+            </div>
+          )}
+
+          {activeTab === "vehicles" && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Car size={48} className="text-[var(--color-ink-subtle)] mb-4" />
+              <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">Vehicles Vault</h3>
+              <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
+                Loading retired and archived vehicles...
+              </p>
+            </div>
+          )}
+
+          {activeTab === "financials" && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <FileText size={48} className="text-[var(--color-ink-subtle)] mb-4" />
+              <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">Financials Vault</h3>
+              <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
+                Loading voided invoices and contracts...
+              </p>
+            </div>
+          )}
+
+          {activeTab === "payments" && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CreditCard size={48} className="text-[var(--color-ink-subtle)] mb-4" />
+              <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">Payments History</h3>
+              <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
+                Loading completed and voided payment records...
+              </p>
+            </div>
+          )}
+
+          {activeTab === "tasks" && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CheckSquare size={48} className="text-[var(--color-ink-subtle)] mb-4" />
+              <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">Tasks Archive</h3>
+              <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
+                Loading completed and archived tasks...
+              </p>
+            </div>
+          )}
+
+          {activeTab === "users" && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Shield size={48} className="text-[var(--color-ink-subtle)] mb-4" />
+              <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">Users Vault</h3>
+              <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
+                Loading inactive and suspended user accounts...
+              </p>
+            </div>
+          )}
+
+          {activeTab === "tenants" && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Building2 size={48} className="text-[var(--color-ink-subtle)] mb-4" />
+              <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">Tenants Vault</h3>
+              <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
+                Loading archived and cancelled agency accounts...
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,381 +1,388 @@
-// src/components/settings/BillingSubscriptionSettings.tsx
 "use client";
 
-import React, { useState } from "react";
-import { 
-  CreditCard, CheckCircle2, ArrowLeft, ShieldCheck, Building2, Smartphone, 
-  Receipt, Send, Info, RefreshCw, AlertTriangle 
+import { useRef, useState } from "react";
+import {
+  Building2, Upload, Globe, Mail, Phone, MapPin, Hash, Shield,
+  FileText, User, Save, Loader2, CheckCircle2, Edit3, X, AlertCircle,
+  BadgeCheck, Image as ImageIcon,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { useBusinessSettings } from "@/hooks/settings/useBusinessSettings";
 
-import { useBillingSubscription } from "@/hooks/settings/useBillingSubscription";
-import { PricingGrid, PlanId, BillingCycle } from "@/components/billing/PricingGrid";
+export default function BusinessProfileSettings() {
+  const [isEditing, setIsEditing] = useState(false);
+  const hadInvalid = useRef(false);
+  const s = useBusinessSettings();
 
-// Helper to map UI PlanId to Backend PlanType string
-const mapPlanIdToBackend = (planId: PlanId): string => {
-  if (planId === "Professional") return "pro";
-  return planId.toLowerCase();
-};
-
-// Helper to map Backend PlanType string to UI PlanId
-const mapBackendToPlanId = (backendPlan: string | null): PlanId => {
-  if (backendPlan === "pro") return "Professional";
-  if (backendPlan === "starter") return "Starter";
-  if (backendPlan === "enterprise") return "Enterprise";
-  return "Starter";
-};
-
-export default function BillingSubscriptionSettings() {
-  const { 
-    activeSubscription, isLoading, isActionMutating, submitPaymentVerification, toggleAutoRenew, refreshData
-  } = useBillingSubscription();
-
-  const [step, setStep] = useState<"PLANS" | "PAYMENT">("PLANS");
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
-  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
-  
-  // Payment Form State
-  const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "bank">("mpesa");
-  const [referenceCode, setReferenceCode] = useState("");
-  const [notes, setNotes] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const currentPlanId = activeSubscription?.plan ? mapBackendToPlanId(activeSubscription.plan) : null;
-
-  const handleConfirmSelection = (planId: PlanId, cycle: BillingCycle) => {
-    setSelectedPlan(planId);
-    setBillingCycle(cycle);
-    setStep("PAYMENT");
-    setIsSubmitted(false);
+  const toggleEdit = () => {
+    if (isEditing) s.discardChanges();
+    setIsEditing((p) => !p);
   };
 
-  const handleSubmitVerification = async (e: React.FormEvent) => {
+  const handleSaveAll = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!referenceCode.trim() || !selectedPlan) {
-      toast.error("Please enter your payment reference transaction code.");
-      return;
-    }
+    hadInvalid.current = false;
+    const onInvalid = () => { hadInvalid.current = true; };
 
-    const payload = {
-      target_plan: mapPlanIdToBackend(selectedPlan),
-      target_billing_cycle: billingCycle,
-      payment_method: paymentMethod,
-      reference_code: referenceCode.trim(),
-      notes: notes.trim()
-    };
+    if (s.isAdminDirty) await s.handleSubmitAdmin(s.onSubmitAdmin, onInvalid)(e);
+    if (s.isDirty || s.isLogoDirty) await s.handleSubmit(s.onSubmit, onInvalid)(e);
 
-    const success = await submitPaymentVerification(payload);
-    if (success) setIsSubmitted(true);
+    if (!hadInvalid.current) setIsEditing(false);
   };
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center p-32"><div className="w-8 h-8 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" /></div>;
+  if (s.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--color-primary)]" />
+      </div>
+    );
   }
 
-  // RED BANNER LOGIC: For tenants with NO active subscription or bad status
-  const showRedBanner = !activeSubscription || ['suspended', 'past_due', 'cancelled'].includes(activeSubscription.status);
+  const isAnyDirty = s.isDirty || s.isAdminDirty || s.isLogoDirty;
+  const isAnySaving = s.isSaving || s.isSavingAdmin;
+
+  // Reusable Edit/Cancel Button for section headers
+  const SectionEditButton = ({ title }: { title: string }) => (
+    <button 
+      type="button" 
+      onClick={toggleEdit} 
+      className="p-2 rounded-lg text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+      title={isEditing ? "Cancel Editing" : `Edit ${title}`}
+    >
+      {isEditing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+    </button>
+  );
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 animate-in fade-in duration-300">
       
-      {/* 🔴 RED ALERT BANNER (For Inactive/Suspended/No Plan Tenants) */}
-      {showRedBanner && (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="text-rose-500 mt-0.5 shrink-0" size={20} />
-          <div>
-            <h3 className="text-sm font-bold text-rose-500">Subscription Inactive</h3>
-            <p className="text-xs text-rose-400 mt-1">
-              Your workspace currently has {!activeSubscription ? "no active subscription" : `a ${activeSubscription.status.replace('_', ' ')} status`}. 
-              Please select a plan below to restore full access to your rental management tools.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* 🚨 DEBUG BANNER - REMOVE THIS DIV ONCE CONFIRMED */}
+      <div className="bg-rose-500 text-white p-4 text-center font-bold rounded-xl shadow-lg">
+        ✅ NEW LAYOUT ACTIVE: Duplicate header removed. Pencil icons added to sections.
+      </div>
 
-      {/* 🟢 BEAUTIFUL ACTIVE PLAN BANNER */}
-      {activeSubscription && !showRedBanner && (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl p-6 shadow-sm">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            
-            {/* Left Side: Plan Identity */}
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-xl ${activeSubscription.status === 'trial' ? 'bg-indigo-500/10 text-indigo-500' : activeSubscription.status === 'pending_verification' ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                <ShieldCheck size={28} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                    activeSubscription.status === 'trial' ? 'bg-indigo-500/10 text-indigo-500' : 
-                    activeSubscription.status === 'pending_verification' ? 'bg-amber-500/10 text-amber-500' : 
-                    'bg-emerald-500/10 text-emerald-500'
-                  }`}>
-                    {activeSubscription.status === 'pending_verification' ? 'PENDING APPROVAL' : 
-                     activeSubscription.status === 'trial' ? 'FREE TRIAL' : 'ACTIVE'}
-                  </span>
-                  <h2 className="text-lg font-bold text-[var(--color-ink)]">
-                    {activeSubscription.plan === 'pro' ? 'Pro Fleet' : activeSubscription.plan} Plan
-                  </h2>
-                </div>
-                <p className="text-xs text-[var(--color-ink-muted)]">
-                  • {activeSubscription.billing_cycle} billing cycle
-                  {activeSubscription.status === 'pending_verification' && (
-                    <span className="text-amber-500 ml-2 font-semibold">• Awaiting Super Admin approval</span>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* Right Side: Stats, Toggle & Refresh */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="bg-[var(--color-surface-hover)] px-3 py-2 rounded-xl border border-[var(--color-surface-border)] text-center min-w-[100px]">
-                <div className="text-[10px] text-[var(--color-ink-subtle)] uppercase font-bold tracking-wider">Start Date</div>
-                <div className="text-sm font-bold text-[var(--color-ink)] whitespace-nowrap">
-                  {new Date(activeSubscription.starts_at).toLocaleDateString()}
-                </div>
-              </div>
-
-              <div className="bg-[var(--color-surface-hover)] px-3 py-2 rounded-xl border border-[var(--color-surface-border)] text-center min-w-[100px]">
-                <div className="text-[10px] text-[var(--color-ink-subtle)] uppercase font-bold tracking-wider">Next Renewal</div>
-                <div className="text-sm font-bold text-[var(--color-ink)] whitespace-nowrap">
-                  {activeSubscription.ends_at ? new Date(activeSubscription.ends_at).toLocaleDateString() : 'N/A'}
-                </div>
-              </div>
-
-              {/* Manual Refresh Button */}
-              <button
-                onClick={refreshData}
-                disabled={isLoading}
-                className="px-3 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-all flex items-center gap-2 text-xs font-bold whitespace-nowrap"
-                title="Refresh subscription status"
-              >
-                <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
-                <span className="hidden sm:n"></span>
-              </button>
-
-              {activeSubscription.status === 'active' && (
-                <button
-                  onClick={toggleAutoRenew}
-                  disabled={isActionMutating}
-                  className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap ${
-                    activeSubscription.auto_renew
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
-                      : "border-[var(--color-surface-border)] bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                  }`}
-                >
-                  <RefreshCw size={14} className={isActionMutating ? "animate-spin" : ""} />
-                  <span className="hidden sm:inline">Auto-Renew: {activeSubscription.auto_renew ? "On" : "Off"}</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/*  PRICING GRID & PAYMENT FLOW */}
-      {step === "PLANS" && (
-        <div className="space-y-4">
-          {/* Billing Cycle Toggle - Moved to top */}
-          <div className="flex items-center justify-end">
-            <div className="flex items-center gap-1 p-1 bg-[var(--color-surface-hover)] rounded-xl border border-[var(--color-surface-border)]">
-              <button
-                type="button"
-                onClick={() => setBillingCycle("monthly")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  billingCycle === "monthly"
-                    ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-sm"
-                    : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingCycle("annual")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  billingCycle === "annual"
-                    ? "bg-[var(--color-primary)] text-white shadow-sm"
-                    : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-              >
-                Annual (20% Off)
-              </button>
-            </div>
-          </div>
-
-          <PricingGrid
-            selectedPlan={selectedPlan || (currentPlanId as PlanId) || "Starter"}
-            billingCycle={billingCycle}
-            onSelectPlan={setSelectedPlan}
-            onSelectCycle={setBillingCycle}
-            onConfirmSelection={handleConfirmSelection}
-            currentPlanId={currentPlanId}
-            isSubmitting={isActionMutating}
-          />
-        </div>
-      )}
-
-      {/* 💳 PAYMENT SUBMISSION FORM */}
-      {step === "PAYMENT" && selectedPlan && (
-        <div className="max-w-5xl mx-auto">
-          <button onClick={() => setStep("PLANS")} className="flex items-center gap-2 text-xs font-semibold text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] mb-6 transition-colors">
-            <ArrowLeft size={14}/> Back to Plan Selection
-          </button>
-
-          {isSubmitted ? (
-            <div className="bg-[var(--color-surface)] border border-emerald-500/30 rounded-2xl p-12 text-center space-y-4">
-              <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto"><CheckCircle2 size={32}/></div>
-              <h3 className="text-xl font-bold text-[var(--color-ink)]">Payment Submitted for Review!</h3>
-              <p className="text-xs text-[var(--color-ink-muted)] max-w-md mx-auto">Your reference code <span className="font-mono font-bold text-[var(--color-ink)]">{referenceCode}</span> is now in the Super Admin queue. Your plan will activate automatically upon approval.</p>
-              <button onClick={() => { setStep("PLANS"); setIsSubmitted(false); setReferenceCode(""); setNotes(""); }} className="mt-4 px-6 py-2.5 bg-[var(--color-primary)] text-white text-xs font-bold rounded-xl hover:opacity-90">Return to Plans</button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <form onSubmit={handleSaveAll}>
+        <div className="space-y-6">
+          
+          {/* ═══════════════════════════════════════════════════════════════════
+              SECTION 1: LOGO + COMPANY IDENTITY
+          ═══════════════════════════════════════════════════════════════════ */}
+          <div className="card">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
               
-              {/* ✅ LEFT: COMPREHENSIVE PLAN PREVIEW */}
-              <div className="lg:col-span-5 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl p-6 h-fit sticky top-6">
-                <div className="flex items-center gap-2 text-indigo-500 text-[10px] font-bold uppercase tracking-wider mb-4">
-                  <Info size={12}/> Selected Tier
+              {/* Logo Preview */}
+              <div className="md:col-span-4 flex flex-col items-center">
+                <div className="relative group">
+                  <div className="w-40 h-40 rounded-2xl border-2 border-dashed border-[var(--color-surface-border)] flex items-center justify-center bg-gradient-to-br from-[var(--color-surface-hover)] to-[var(--color-surface)] overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
+                    {s.logoPreview ? (
+                      <img src={s.logoPreview} alt="Company Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-[var(--color-ink-subtle)]">
+                        <ImageIcon className="w-12 h-12" />
+                        <span className="text-xs font-medium">No Logo</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {isEditing && (
+                    <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer rounded-2xl transition-opacity">
+                      <div className="flex flex-col items-center gap-2 text-white">
+                        <Upload className="w-6 h-6" />
+                        <span className="text-xs font-semibold">Change Logo</span>
+                      </div>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={s.handleLogoChange} 
+                        className="hidden" 
+                      />
+                    </label>
+                  )}
                 </div>
                 
-                {/* Plan Header */}
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-[var(--color-ink)] mb-1">
-                    {selectedPlan === 'Professional' ? 'Pro Fleet' : selectedPlan}
-                  </h3>
-                  <p className="text-xs text-[var(--color-ink-muted)] capitalize">
-                    {billingCycle} billing cycle
+                {isEditing && (
+                  <p className="text-[11px] text-[var(--color-ink-subtle)] mt-3 text-center">
+                    PNG, JPG, or SVG. Max 2MB.
                   </p>
-                </div>
-
-                {/* Price Display */}
-                <div className="bg-[var(--color-surface-hover)] rounded-xl p-4 mb-6 border border-[var(--color-surface-border)]">
-                  <div className="text-[10px] text-[var(--color-ink-subtle)] uppercase font-bold tracking-wider mb-1">Total Payable</div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-[var(--color-ink)]">
-                      KES {selectedPlan === 'Starter' ? (billingCycle === 'annual' ? '15,000' : '18,000') : 
-                           selectedPlan === 'Professional' ? (billingCycle === 'annual' ? '42,000' : '50,000') : 
-                           billingCycle === 'annual' ? '100,000' : '120,000'}
-                    </span>
-                    <span className="text-xs text-[var(--color-ink-muted)]">/mo</span>
-                  </div>
-                  {billingCycle === 'annual' && (
-                    <div className="text-[10px] text-emerald-500 font-semibold mt-1 flex items-center gap-1">
-                      <CheckCircle2 size={10} /> Save 20% with annual billing
-                    </div>
-                  )}
-                </div>
-
-                {/* What's Included */}
-                <div className="mb-6">
-                  <div className="text-[10px] text-[var(--color-ink-subtle)] uppercase font-bold tracking-wider mb-3">
-                    What's Included:
-                  </div>
-                  <ul className="space-y-2">
-                    {(() => {
-                      const planFeatures = {
-                        'Starter': [
-                          'Up to 10 Vehicles',
-                          'Basic Booking Calendar',
-                          'Standard Client Management',
-                          'Email Receipts & Contracts',
-                          'Community Support'
-                        ],
-                        'Professional': [
-                          'Up to 50 Vehicles',
-                          'Advanced 14-Day Tactical Booking Grid',
-                          'Online Contract Signatures & ID Verification',
-                          'Automated M-Pesa & Bank Reconciliation',
-                          'Multi-User Role Permissions',
-                          'Priority WhatsApp & Email Support'
-                        ],
-                        'Enterprise': [
-                          'Unlimited Fleet Capacity',
-                          'GPS Tracking & Telematics Integration',
-                          'Custom Subdomain & White-Label Branding',
-                          'Dedicated Account Manager',
-                          'SLA 99.9% Uptime Guarantee',
-                          'Custom API Access'
-                        ]
-                      };
-                      
-                      return planFeatures[selectedPlan as keyof typeof planFeatures]?.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-[var(--color-ink)]">
-                          <CheckCircle2 size={12} className="text-emerald-500 mt-0.5 shrink-0"/>
-                          {feature}
-                        </li>
-                      ));
-                    })()}
-                  </ul>
-                </div>
-
-                {/* Action Required */}
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-amber-500 text-[10px] font-bold uppercase tracking-wider mb-1">
-                    <AlertTriangle size={12}/> Action Required
-                  </div>
-                  <div className="text-xs text-amber-400">
-                    Complete payment and submit your transaction reference code for verification.
-                  </div>
-                </div>
+                )}
               </div>
 
-              {/* RIGHT: PAYMENT DETAILS */}
-              <div className="lg:col-span-7 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl p-6">
-                <div className="flex items-center gap-2 text-[var(--color-ink)] text-sm font-bold mb-4">
-                  <CreditCard size={16}/> How to Complete Payment
-                </div>
-                <p className="text-xs text-[var(--color-ink-muted)] mb-4">Pay using your preferred channel and provide the transaction reference below.</p>
-
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <button onClick={() => setPaymentMethod("mpesa")} className={`p-3 rounded-xl border text-left flex items-center gap-3 transition-all ${paymentMethod === "mpesa" ? "border-emerald-500 bg-emerald-500/10 text-emerald-500" : "border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)]"}`}>
-                    <Smartphone size={18}/><div className="text-xs"><div className="font-bold">M-Pesa Express</div><div className="text-[10px] opacity-80">Paybill Transfer</div></div>
-                  </button>
-                  <button onClick={() => setPaymentMethod("bank")} className={`p-3 rounded-xl border text-left flex items-center gap-3 transition-all ${paymentMethod === "bank" ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)]"}`}>
-                    <Building2 size={18}/><div className="text-xs"><div className="font-bold">Bank Transfer</div><div className="text-[10px] opacity-80">EFT / RTGS</div></div>
-                  </button>
-                </div>
-
-                <div className="bg-[var(--color-surface-hover)] rounded-xl p-4 mb-6 border border-[var(--color-surface-border)] text-xs space-y-2">
-                  {paymentMethod === "mpesa" ? (
-                    <>
-                      <p className="font-bold text-emerald-500 flex items-center gap-1"><Info size={12}/> M-Pesa Payment Instructions:</p>
-                      <ol className="list-decimal list-inside space-y-1 text-[var(--color-ink-muted)] pl-1">
-                        <li>Go to M-Pesa → Lipa na M-Pesa → <strong className="text-[var(--color-ink)]">PayBill</strong></li>
-                        <li>Business Number: <strong className="font-mono text-[var(--color-ink)]">888222</strong></li>
-                        <li>Account Number: <strong className="font-mono text-[var(--color-ink)]">RENTAL-RENEWAL</strong></li>
-                        <li>Enter Amount and your M-Pesa PIN</li>
-                      </ol>
-                    </>
-                  ) : (
-                    <>
-                      <p className="font-bold text-[var(--color-primary)] flex items-center gap-1"><Info size={12}/> Bank Wire Transfer Details:</p>
-                      <ul className="space-y-1 text-[var(--color-ink-muted)] pl-1">
-                        <li>Bank Name: <strong className="text-[var(--color-ink)]">KCB Bank Kenya</strong></li>
-                        <li>Account Name: <strong className="text-[var(--color-ink)]">Rental Manager Systems Ltd</strong></li>
-                        <li>Account Number: <strong className="font-mono text-[var(--color-ink)]">12948572910</strong></li>
-                      </ul>
-                    </>
-                  )}
-                </div>
-
-                <form onSubmit={handleSubmitVerification} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--color-ink)] mb-1">Payment / Transaction Reference Code <span className="text-rose-500">*</span></label>
-                    <div className="relative">
-                      <Receipt size={14} className="absolute left-3 top-3 text-[var(--color-ink-subtle)]"/>
-                      <input type="text" required placeholder="e.g. QX829102KS" value={referenceCode} onChange={(e) => setReferenceCode(e.target.value)} className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-xs text-[var(--color-ink)] font-mono focus:ring-2 focus:ring-[var(--color-primary)]/20 uppercase"/>
-                    </div>
+              {/* Company Identity Info */}
+              <div className="md:col-span-8 space-y-4">
+                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-[var(--color-surface-border)]">
+                  <div className="p-2.5 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                    <Building2 className="w-5 h-5" />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Additional Notes to Super Admin (Optional)</label>
-                    <textarea rows={2} placeholder="Mention any custom billing notes..." value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full p-3 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-xs text-[var(--color-ink)]"/>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-[var(--color-ink)]">Company Identity</h3>
+                    <p className="text-xs text-[var(--color-ink-muted)]">Your brand and primary contact information</p>
                   </div>
-                  <button type="submit" disabled={isActionMutating} className="w-full py-3 rounded-xl bg-[var(--color-primary)] text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-[var(--color-primary)]/20 disabled:opacity-50">
-                    {isActionMutating ? <RefreshCw size={14} className="animate-spin"/> : <><Send size={14}/> Submit Payment for Verification</>}
-                  </button>
-                </form>
+                  {/* ✏️ Pencil Icon */}
+                  <SectionEditButton title="Company Identity" />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Company Name" icon={Building2} editing={isEditing}
+                    display={s.businessData.company_name} register={s.register("company_name")}
+                    error={s.errors.company_name} placeholder="e.g. Nairobi Car Rentals" />
+                  <Field label="Email Address" icon={Mail} editing={isEditing} type="email"
+                    display={s.businessData.email} register={s.register("email")}
+                    error={s.errors.email} placeholder="contact@agency.com" />
+                  <Field label="Phone Number" icon={Phone} editing={isEditing} type="tel"
+                    display={s.businessData.phone} register={s.register("phone")}
+                    error={s.errors.phone} placeholder="+254 700 000 000" />
+                  <Field label="Website" icon={Globe} editing={isEditing} type="url" link
+                    display={s.businessData.website} register={s.register("website")}
+                    error={s.errors.website} placeholder="https://www.agency.com" />
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════════
+              SECTION 2: ADMINISTRATOR
+          ═══════════════════════════════════════════════════════════════════ */}
+          <div className="card">
+            {isEditing ? (
+              <div>
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--color-surface-border)]">
+                  <div className="p-2.5 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-[var(--color-ink)]">Administrator Account</h3>
+                    <p className="text-xs text-[var(--color-ink-muted)]">Primary admin credentials</p>
+                  </div>
+                  <SectionEditButton title="Administrator" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Field label="Full Name" icon={User} editing={isEditing}
+                    display={s.adminData.full_name} register={s.registerAdmin("full_name")}
+                    error={s.adminErrors.full_name} placeholder="Full name" />
+                  <Field label="Email Address" icon={Mail} editing={isEditing} type="email"
+                    display={s.adminData.email} register={s.registerAdmin("email")}
+                    error={s.adminErrors.email} placeholder="admin@agency.com" />
+                  <Field label="Phone Number" icon={Phone} editing={isEditing} type="tel"
+                    display={s.adminData.phone_number} register={s.registerAdmin("phone_number")}
+                    error={s.adminErrors.phone_number} placeholder="+254 700 000 000" />
+                </div>
+              </div>
+            ) : (
+              <div className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/5 via-transparent to-transparent pointer-events-none" />
+                
+                {/* ✏️ Pencil Icon for View Mode */}
+                <button 
+                  type="button" 
+                  onClick={toggleEdit} 
+                  className="absolute top-0 right-0 p-2 rounded-lg text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors z-10"
+                  title="Edit Administrator"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+
+                <div className="relative flex items-start gap-6 pt-2">
+                  <div className="flex-shrink-0">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] text-white flex items-center justify-center shadow-lg shadow-[var(--color-primary)]/25">
+                      <User className="w-10 h-10" />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-xl font-bold text-[var(--color-ink)]">
+                            {s.adminData.full_name || "Administrator"}
+                          </h3>
+                          <BadgeCheck className="w-5 h-5 text-[var(--color-primary)]" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-[11px] font-bold uppercase tracking-wide">
+                            <Shield className="w-3 h-3" />
+                            Owner
+                          </span>
+                          {s.adminUser && (
+                            <span className="text-[11px] text-[var(--color-ink-subtle)] font-mono">
+                              ID #{s.adminUser.id}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-surface-hover)]/50 border border-[var(--color-surface-border)]">
+                        <Mail className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-0.5">Email</p>
+                          <p className="text-sm text-[var(--color-ink)] truncate">
+                            {s.adminData.email || "Not set"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-surface-hover)]/50 border border-[var(--color-surface-border)]">
+                        <Phone className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-0.5">Phone</p>
+                          <p className="text-sm text-[var(--color-ink)] truncate">
+                            {s.adminData.phone_number || "Not set"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════════
+              SECTION 3: BUSINESS DETAILS
+          ═══════════════════════════════════════════════════════════════════ */}
+          <div className="card">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--color-surface-border)]">
+              <div className="p-2.5 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-[var(--color-ink)]">Business Details</h3>
+                <p className="text-xs text-[var(--color-ink-muted)]">Location and compliance information</p>
+              </div>
+              {/* ✏️ Pencil Icon */}
+              <SectionEditButton title="Business Details" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Field label="Business Location" icon={MapPin} editing={isEditing}
+                display={s.businessData.business_location} register={s.register("business_location")}
+                error={s.errors.business_location} placeholder="e.g. Westlands, Nairobi" />
+              <Field label="KRA PIN / Tax ID" icon={Hash} editing={isEditing} mono
+                display={s.businessData.kra_pin} register={s.register("kra_pin")}
+                error={s.errors.kra_pin} placeholder="A000000000Z" />
+            </div>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════════
+              SECTION 4: BUSINESS POLICY
+          ═══════════════════════════════════════════════════════════════════ */}
+          <div className="card">
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-[var(--color-surface-border)]">
+              <div className="p-2.5 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-[var(--color-ink)]">Business Policy</h3>
+                <p className="text-xs text-[var(--color-ink-muted)]">Default terms for contracts and receipts</p>
+              </div>
+              {/* ✏️ Pencil Icon */}
+              <SectionEditButton title="Business Policy" />
+            </div>
+
+            {isEditing ? (
+              <div>
+                <span className="label">Terms & Note Footer</span>
+                <textarea
+                  {...s.register("footer_text")}
+                  rows={4}
+                  className="input resize-y min-h-[120px]"
+                  placeholder="e.g. Vehicles must be returned with full tank..."
+                />
+                {s.errors.footer_text && (
+                  <p className="text-xs text-[var(--color-danger-text)] mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {s.errors.footer_text.message}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-[var(--color-surface-hover)]/50 border border-[var(--color-surface-border)] text-sm text-[var(--color-ink-muted)] leading-relaxed whitespace-pre-wrap">
+                {s.businessData.footer_text || (
+                  <span className="italic text-[var(--color-ink-subtle)]">No footer text configured.</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════════
+              SAVE BAR
+          ═══════════════════════════════════════════════════════════════════ */}
+          {isEditing && (
+            <div className="sticky bottom-4 z-10">
+              <div className="card bg-[var(--color-surface)] shadow-lg border-[var(--color-primary)]/20">
+                <button
+                  type="submit"
+                  disabled={!isAnyDirty || isAnySaving}
+                  className="btn btn-primary w-full py-3.5"
+                >
+                  {isAnySaving ? (
+                    <><Loader2 className="w-5 h-5 animate-spin" /> Saving Changes...</>
+                  ) : isAnyDirty ? (
+                    <><Save className="w-5 h-5" /> Save All Changes</>
+                  ) : (
+                    <><CheckCircle2 className="w-5 h-5" /> All Changes Saved</>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// ── Field Component ─────────────────────────────────────────────────────────
+function Field({
+  label, icon: Icon, editing, display, register, error,
+  type = "text", placeholder = "", mono = false, link = false, className = "",
+}: {
+  label: string;
+  icon: any;
+  editing: boolean;
+  display: string;
+  register: any;
+  error?: any;
+  type?: string;
+  placeholder?: string;
+  mono?: boolean;
+  link?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <span className="label">{label}</span>
+      {editing ? (
+        <>
+          <div className="relative">
+            <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-ink-subtle)]" />
+            <input type={type} placeholder={placeholder} className="input pl-10" {...register} />
+          </div>
+          {error && (
+            <p className="text-xs text-[var(--color-danger-text)] mt-1.5 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" /> {error.message}
+            </p>
+          )}
+        </>
+      ) : (
+        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[var(--color-surface-hover)]/50 border border-[var(--color-surface-border)] min-h-[46px]">
+          <Icon className="w-4 h-4 text-[var(--color-ink-subtle)] shrink-0" />
+          {display ? (
+            link ? (
+              <a
+                href={display.startsWith("http") ? display : `https://${display}`}
+                target="_blank" rel="noreferrer"
+                className="text-sm text-[var(--color-primary)] font-medium hover:underline truncate"
+              >
+                {display}
+              </a>
+            ) : (
+              <span className={`text-sm text-[var(--color-ink)] truncate ${mono ? "font-mono text-xs" : ""}`}>
+                {display}
+              </span>
+            )
+          ) : (
+            <span className="text-sm italic text-[var(--color-ink-subtle)]">Not set</span>
           )}
         </div>
       )}

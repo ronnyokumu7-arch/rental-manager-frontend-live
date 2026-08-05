@@ -149,21 +149,21 @@ export function useBookingsList() {
     }
   };
 
-  // ✅ FIXED: Uses bookingsApi.markNoShow
-  const handleNoShow = async (bookingId: number) => {
-    if (!confirm("Mark this booking as a No-Show?")) return;
-    setActionLoadingId(bookingId);
-    try {
-      await bookingsApi.markNoShow(bookingId);
-      toast.success("Booking marked as No-Show");
-      await fetchBookings();
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || "Failed to mark as No-Show");
-    } finally {
-      setActionLoadingId(null);
-      setOpenDropdownId(null);
-    }
-  };
+// ✅ FIXED: Uses bookingsApi.noShow (Matches the API client)
+const handleNoShow = async (bookingId: number) => {
+  if (!confirm("Mark this booking as a No-Show?")) return;
+  setActionLoadingId(bookingId);
+  try {
+    await bookingsApi.noShow(bookingId);  // ✅ Changed from markNoShow to noShow
+    toast.success("Booking marked as No-Show");
+    await fetchBookings();
+  } catch (error: any) {
+    toast.error(error.response?.data?.detail || "Failed to mark as No-Show");
+  } finally {
+    setActionLoadingId(null);
+    setOpenDropdownId(null);
+  }
+};
 
   const handleCopyContractLink = async (bookingId: number) => {
     try {
@@ -198,6 +198,7 @@ export function useBookingsList() {
   };
 
   return {
+    bookings,
     loading, 
     view, 
     setView, 

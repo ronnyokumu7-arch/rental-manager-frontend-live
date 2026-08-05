@@ -23,7 +23,6 @@ const statusStyles: Record<BookingStatus, { bg: string; text: string }> = {
   pending: { bg: "bg-[var(--color-warning-bg)]", text: "text-[var(--color-warning-text)]" },
   confirmed: { bg: "bg-[var(--color-primary-muted)]", text: "text-[var(--color-primary-text)]" },
   active: { bg: "bg-[var(--color-success-bg)]", text: "text-[var(--color-success-text)]" },
-  awaiting_mileage: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400" },
   completed: { bg: "bg-[var(--color-surface-hover)]", text: "text-[var(--color-ink-muted)]" },
   cancelled: { bg: "bg-[var(--color-danger-bg)]", text: "text-[var(--color-danger-text)]" },
   no_show: { bg: "bg-[var(--color-danger-bg)]", text: "text-[var(--color-danger-text)]" },
@@ -31,14 +30,13 @@ const statusStyles: Record<BookingStatus, { bg: string; text: string }> = {
 
 const statusLabels: Record<BookingStatus, string> = {
   pending: "Pending", confirmed: "Confirmed", active: "Active",
-  awaiting_mileage: "Awaiting Mileage", completed: "Completed",
+  completed: "Completed",
   cancelled: "Cancelled", no_show: "No Show",
 };
 
 const BOOKING_FILTER_OPTIONS = [
   { value: "pending", label: "Pending" }, { value: "confirmed", label: "Confirmed" },
-  { value: "active", label: "Active" }, { value: "awaiting_mileage", label: "Awaiting Mileage" },
-  { value: "completed", label: "Completed" }, { value: "cancelled", label: "Cancelled" },
+  { value: "active", label: "Active" }, { value: "completed", label: "Completed" }, { value: "cancelled", label: "Cancelled" },
   { value: "no_show", label: "No Show" },
 ];
 

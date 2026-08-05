@@ -1,4 +1,3 @@
-// src/components/tasks/CreateTaskModal.tsx
 "use client";
 import { useState } from "react";
 import { X } from "lucide-react";
@@ -9,11 +8,14 @@ import DatePicker from "@/components/forms/DatePicker";
 import { useCreateTask } from "@/hooks/tasks/useCreateTask";
 import PriorityCategoryPicker from "./PriorityCategoryPicker";
 import EntitySelector from "./EntitySelector";
+// ✅ UPDATED: Import the unified TaskCreate type
+import type { TaskCreate } from "@/lib/types";
 
 interface CreateTaskModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (taskData: any) => Promise<void>;
+  // ✅ UPDATED: Strictly type the payload to match backend schema
+  onCreate: (taskData: TaskCreate) => Promise<void>;
 }
 
 export default function CreateTaskModal({ open, onClose, onCreate }: CreateTaskModalProps) {
@@ -25,13 +27,14 @@ export default function CreateTaskModal({ open, onClose, onCreate }: CreateTaskM
     if (!logic.title || !logic.assignedTo) return;
     setLoading(true);
     try {
+      // ✅ FIXED: Mapped 'assigned_to' to 'user_id' to match backend TaskCreate schema
       await onCreate({
         title: logic.title,
         description: logic.description,
         priority: logic.priority,
         category: logic.category,
         due_date: logic.dueDate || null,
-        assigned_to: logic.assignedTo,
+        user_id: logic.assignedTo, // ✅ CRITICAL FIX
         target_type: logic.relatedEntity.type,
         target_id: logic.relatedEntity.id,
       });

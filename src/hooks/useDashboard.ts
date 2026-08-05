@@ -1,4 +1,3 @@
-// src/hooks/useDashboard.ts
 import { useState, useEffect, useMemo } from "react";
 import { bookingsApi } from "@/lib/api/bookings";
 import { clientsApi } from "@/lib/api/clients";
@@ -22,12 +21,13 @@ export function useDashboard() {
           bookingsApi.list(),
           clientsApi.list(),
           vehiclesApi.list(),
-          tasksApi.getMyTasks({ limit: 50 }), 
+          tasksApi.getMyTasks({ page_size: 50 }), // ✅ FIXED: Changed limit to page_size
         ]);
 
-        setBookings(bookingsData);
-        setClients(clientsData);
-        setVehicles(vehiclesData);
+        // ✅ FIXED: Added safe fallbacks just in case
+        setBookings(bookingsData || []);
+        setClients(clientsData || []);
+        setVehicles(vehiclesData || []);
         setTasks(tasksData || []);
       } catch (error) {
         console.error("Failed to load dashboard data", error);
@@ -102,6 +102,6 @@ export function useDashboard() {
     upcomingBookings,
     recentActivity,
     tasks,
-    vehicles, // ✅ This fixes the "vehicles is not defined" error
+    vehicles, 
   };
 }

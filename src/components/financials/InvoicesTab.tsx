@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, FileText, Filter, ChevronDown, CheckCircle2, Clock, AlertCircle, Plus } from "lucide-react";
+import { Search, FileText, Filter, ChevronDown, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { useInvoices } from "@/hooks/financials/useInvoices";
 import InvoicesTable from "./invoices/InvoicesTable";
 import RecordPaymentModal from "./invoices/RecordPaymentModal";
@@ -99,11 +99,10 @@ export default function InvoicesTab() {
                 <span className="text-xs font-medium text-[var(--color-ink-muted)]">Overdue</span>
                 <span className="text-xs font-bold text-[var(--color-danger-text)] tabular-nums">{overdueCount}</span>
               </div>
-              {/* Optional: Add Void counter if needed, or rely on the filter */}
             </div>
           </div>
 
-          {/* Right Side: Search, Filter & Create Invoice Button */}
+          {/* Right Side: Search, Filter & Generate Invoice Button */}
           <div className="flex items-center gap-2 w-full lg:w-auto">
             <div className="relative w-full lg:w-56">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
@@ -134,13 +133,14 @@ export default function InvoicesTab() {
               </select>
             </div>
 
-            {/* ✅ NEW: Create Invoice Button (Moved from 3-dots menu to top bar) */}
+            {/* ✅ UPDATED: Premium Generate Invoice Button (Matches Contracts Tab perfectly) */}
             <button
-  onClick={() => setCreateModalOpen(true)}
-  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-all active:scale-95 flex-shrink-0 shadow-sm"
->
-  Generate Invoice
-</button>
+              onClick={() => setCreateModalOpen(true)}
+              className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm flex-shrink-0"
+            >
+              <FileText size={14} strokeWidth={2.5} />
+              Generate Invoice
+            </button>
           </div>
         </div>
 
@@ -160,7 +160,7 @@ export default function InvoicesTab() {
             <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
               {search || statusFilter !== "all" 
                 ? "Try adjusting your filters." 
-                : "Invoices are now created manually. Click 'Create Invoice' to generate one for an orphaned booking."}
+                : "Invoices are now created manually. Click 'Generate Invoice' to create one for an orphaned booking."}
             </p>
           </div>
         ) : (
@@ -171,7 +171,6 @@ export default function InvoicesTab() {
               onCopyLink={handleCopyLink}
               onVoid={handleVoid}
               onRecordPayment={openPaymentModal}
-              // Note: Kept onCreate prop to prevent TS errors while you update the table file next
               onCreate={() => setCreateModalOpen(true)} 
             />
             <div className="p-4 border-t border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50">

@@ -1,6 +1,5 @@
-// src/lib/api/users.ts
 import apiClient from "@/lib/api-client";
-import type { User } from "@/lib/types";
+import type { User, PaginatedResponse } from "@/lib/types"; // ✅ Added PaginatedResponse import
 
 // ---------------------------------------------------------------------------
 // Recovery & Security Interfaces
@@ -37,7 +36,6 @@ export interface UserCreatePayload {
   id_number?: string | null;
   dl_number?: string | null;
   dl_expiry?: string | null;
-  // ✅ NEW: Image URLs
   avatar_url?: string | null;
   id_image_url?: string | null;
   dl_image_url?: string | null;
@@ -59,30 +57,21 @@ export interface UserUpdatePayload {
   id_number?: string | null;
   dl_number?: string | null;
   dl_expiry?: string | null;
-  
-  // ✅ Verification & Onboarding Lifecycle
   is_onboarded?: boolean;
   email_verified?: boolean;
   phone_verified?: boolean;
-  
-  // ✅ NEW: Image URLs
   avatar_url?: string | null;
   id_image_url?: string | null;
   dl_image_url?: string | null;
 }
 
-// ✅ COMPLETELY EXPANDED: Self-Service Onboarding Payload
 export interface AcceptInvitePayload {
   invite_token: string;
   password: string;
-  
-  // Identity
   full_name: string;
   email: string;
   phone_number?: string | null;
   avatar_url?: string | null;
-  
-  // Compliance
   id_number?: string | null;
   id_image_url?: string | null;
   dl_number?: string | null;
@@ -90,7 +79,6 @@ export interface AcceptInvitePayload {
   dl_expiry?: string | null;
 }
 
-// ✅ Verification Payloads
 export interface VerificationPayload {
   channel: "email" | "phone";
 }
@@ -100,6 +88,15 @@ export interface VerifyTokenPayload {
   channel: "email" | "phone";
 }
 
+export interface TeamMember {
+  id: number;
+  fullName: string;
+  avatarUrl?: string;
+  role: string;
+  department: string;
+  maxCapacityHours: number;
+}
+
 // ---------------------------------------------------------------------------
 // API Methods
 // ---------------------------------------------------------------------------
@@ -107,8 +104,9 @@ export const usersApi = {
   create: (data: UserCreatePayload) =>
     apiClient.post<User>("/users/", data).then((r) => r.data),
 
-  list: (params?: { tenant_id?: number; role?: string; is_active?: boolean; is_suspended?: boolean }) =>
-    apiClient.get<User[]>("/users/", { params }).then((r) => r.data),
+  // ✅ FIXED: Unwrap .items from PaginatedResponse, added page/page_size params
+  list: (params?: { tenant_id?: number; role?: string; is_active?: boolean; is_suspended?: boolean; page?: number; page_size?: number }) =>
+    apiClient.get<PaginatedResponse<User>>("/users/", { params }).then((r) => r.data.items),
 
   get: (id: number) =>
     apiClient.get<User>(`/users/${id}`).then((r) => r.data),
@@ -125,18 +123,15 @@ export const usersApi = {
   delete: (id: number) =>
     apiClient.delete(`/users/${id}`),
 
-  // 🛡️ Recovery & Security Endpoints
   getRecoveryOptions: (id: number) =>
     apiClient.get<UserRecoveryOptions>(`/users/${id}/recovery-options`).then((r) => r.data),
 
   sendResetLink: (id: number, payload: SendResetLinkPayload) =>
     apiClient.post<{ message: string }>(`/users/${id}/send-reset-link`, payload).then((r) => r.data),
 
-  // ✅ Accept Invite Endpoint
   acceptInvite: (data: AcceptInvitePayload) =>
     apiClient.post<User>("/users/accept-invite", data).then((r) => r.data),
 
-  // ✅ Verification Endpoints
   sendVerification: (id: number, payload: VerificationPayload) =>
     apiClient.post<{ 
       message: string; 
@@ -149,4 +144,42 @@ export const usersApi = {
 
   markVerified: (id: number, payload: VerificationPayload) =>
     apiClient.post<User>(`/users/${id}/mark-verified`, payload).then((r) => r.data),
+
+  // =========================================================================
+  // ✅ TASK SCHEDULER SPECIFIC METHODS 
+  // =========================================================================
+  getTeamMembers: async (): Promise<TeamMember[]> => {
+    // ✅ FIXED: Unwrap .items, changed 'limit' to 'page_size' to match backend pagination schema
+    const res = await apiClient.get<PaginatedResponse<User>>("/users/", {
+      params: { is_active: true, is_suspended: false, page_size: 100 },
+    });
+    const users = res.data.items;
+
+    return users.map((u: any) => ({
+      id: u.id,
+      fullName: u.full_name,
+      avatarUrl: u.avatar_url || undefined,
+      role: u.job_title || u.role,
+      department: u.department || "General",
+      maxCapacityHours: 40, 
+    }));
+  },
+
+  updateTeamMember: async (id: number, data: Partial<TeamMember>): Promise<TeamMember> => {
+    const payload: UserUpdatePayload = {};
+    if (data.fullName !== undefined) payload.full_name = data.fullName;
+    if (data.role !== undefined) payload.job_title = data.role; 
+    if (data.department !== undefined) payload.department = data.department;
+
+    const updatedUser = await apiClient.patch<User>(`/users/${id}`, payload).then((r) => r.data);
+
+    return {
+      id: updatedUser.id,
+      fullName: updatedUser.full_name,
+      avatarUrl: updatedUser.avatar_url || undefined,
+      role: updatedUser.job_title || updatedUser.role,
+      department: updatedUser.department || "General",
+      maxCapacityHours: 40,
+    };
+  },
 };

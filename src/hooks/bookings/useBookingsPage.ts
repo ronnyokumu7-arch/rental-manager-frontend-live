@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { useBookingsList } from "@/hooks/bookings/useBookingsList";
 import { useBookingsReferenceData } from "@/hooks/bookings/useBookingsReferenceData";
 import { useExtendBooking } from "@/hooks/bookings/useExtendBooking";
@@ -33,34 +34,40 @@ export function useBookingsPage() {
     clientId: number;
   }) => {
     try {
-      const days = differenceInDays(new Date(payload.endDate), new Date(payload.startDate)) + 1;
+      const days = Math.max(1, differenceInDays(new Date(payload.endDate), new Date(payload.startDate)) + 1);
 
+      // Safely extract vehicle regardless of whether vehicleMap is Array, Map, or Object
       const targetVehicle = Array.isArray(vehicleMap)
         ? vehicleMap.find((v) => v.id === payload.vehicleId)
         : vehicleMap instanceof Map
         ? vehicleMap.get(payload.vehicleId)
-        : vehicleMap?.[payload.vehicleId];
+        : (vehicleMap as Record<number, any>)?.[payload.vehicleId];
 
-      const dailyRate = targetVehicle?.daily_rate || (targetVehicle as any)?.dailyRate || 0;
+      const dailyRate = Number(targetVehicle?.daily_rate || 0);
 
-      const bookingPayload: BookingCreate & { total_amount: number } = {
+      // ✅ Strictly aligned with BookingCreate interface (snake_case)
+      const bookingPayload: BookingCreate = {
         vehicle_id: payload.vehicleId,
         client_id: payload.clientId,
         start_date: `${payload.startDate}T00:00:00Z`,
         end_date: `${payload.endDate}T23:59:59Z`,
-        total_amount: days * dailyRate, 
-        notes: "Created via Operational Fleet Timeline Grid",
+        total_amount: days * dailyRate,
+        currency_code: "KES",
+        // Note: Removed 'notes' as it's not in the BookingCreate interface. 
+        // If your backend accepts it, add `notes?: string` to BookingCreate in src/lib/types.ts
       };
 
       await bookingsApi.create(bookingPayload);
+      toast.success("Booking created successfully from calendar!");
 
+      // Refresh the list to update the Gantt chart immediately
       if (bookingsData.refetch) {
         await bookingsData.refetch();
       }
     } catch (error: any) {
-      const serverMessage = error.response?.data?.detail || error.message;
-      console.error("Server validation rejection details:", serverMessage);
-      alert(`Could not save reservation: ${JSON.stringify(serverMessage)}`);
+      const serverMessage = error.response?.data?.detail || error.message || "Failed to create booking";
+      console.error("Booking creation failed:", serverMessage);
+      toast.error(`Could not save reservation: ${serverMessage}`);
     }
   };
 
@@ -74,7 +81,7 @@ export function useBookingsPage() {
     isExtendModalOpen,
     selectedBooking,
     isExtending,
-    openExtendModal, // ✅ FIXED: Removed the 'openModal:' alias
+    openExtendModal,
     closeExtendModal,
     handleExtend,
     handleCreateBookingFromCalendar,

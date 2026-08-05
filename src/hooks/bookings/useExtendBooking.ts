@@ -14,9 +14,11 @@ export function useExtendBooking(onSuccess: () => void) {
     setIsOpen(true);
   };
 
-  const closeModal = () => {
+  // ✅ RENAMED to match the destructuring in useBookingsPage.ts
+  const closeExtendModal = () => {
     setIsOpen(false);
     setSelectedBooking(null);
+    setIsLoading(false); // Good practice to reset loading state on close
   };
 
   const handleExtend = async (payload: ExtendBookingPayload) => {
@@ -26,7 +28,10 @@ export function useExtendBooking(onSuccess: () => void) {
     try {
       await bookingsApi.extend(selectedBooking.id, payload);
       toast.success("Booking extended successfully!");
-      closeModal();
+      
+      // ✅ This now correctly calls the renamed function
+      closeExtendModal();
+      
       onSuccess(); // Trigger parent refetch
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Failed to extend booking");
@@ -40,7 +45,7 @@ export function useExtendBooking(onSuccess: () => void) {
     selectedBooking,
     isLoading,
     openModal,
-    closeModal,
+    closeExtendModal, // ✅ RENAMED in the return object
     handleExtend,
   };
 }

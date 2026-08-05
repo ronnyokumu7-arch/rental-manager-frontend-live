@@ -1,22 +1,22 @@
-// src/components/tasks/PriorityCategoryPicker.tsx
 import { Clock, TrendingUp, AlertCircle, CheckCircle2, Car, Building2, Tag, User } from "lucide-react";
-import type { Priority, Category } from "@/hooks/tasks/useCreateTask";
+// ✅ UPDATED: Import centralized types directly
+import type { TaskPriority, TaskCategory } from "@/lib/types";
 
 interface Props {
-  priority: Priority;
-  setPriority: (p: Priority) => void;
-  category: Category;
-  setCategory: (c: Category) => void;
+  priority: TaskPriority;
+  setPriority: (p: TaskPriority) => void;
+  category: TaskCategory;
+  setCategory: (c: TaskCategory) => void;
 }
 
-const priorities: { id: Priority; label: string; icon: any; color: string }[] = [
+const priorities: { id: TaskPriority; label: string; icon: any; color: string }[] = [
   { id: "low", label: "Low", icon: Clock, color: "text-slate-600 bg-slate-50 border-slate-200" },
   { id: "medium", label: "Medium", icon: TrendingUp, color: "text-blue-600 bg-blue-50 border-blue-200" },
   { id: "high", label: "High", icon: AlertCircle, color: "text-amber-600 bg-amber-50 border-amber-200" },
   { id: "urgent", label: "Urgent", icon: AlertCircle, color: "text-red-600 bg-red-50 border-red-200" },
 ];
 
-const categories: { id: Category; label: string; icon: any }[] = [
+const categories: { id: TaskCategory; label: string; icon: any }[] = [
   { id: "compliance", label: "Compliance", icon: CheckCircle2 },
   { id: "finance", label: "Finance", icon: TrendingUp },
   { id: "maintenance", label: "Maintenance", icon: Car },

@@ -1,40 +1,39 @@
-// src/lib/api/subscriptions.ts
 import apiClient from "@/lib/api-client";
+import type { PaginatedResponse } from "@/lib/types";
 
 // ✅ 100% ALIGNED with backend PaymentVerificationOut schema
 export interface SubscriptionRequest {
   id: number;
   tenant_id: number;
   tenant_name: string | null;
-  target_plan: string;             // ✅ Backend sends target_plan
-  target_billing_cycle: string;    // ✅ Backend sends target_billing_cycle
-  payment_method: "mpesa" | "bank";
+  target_plan: string;             
+  target_billing_cycle: string;    
+  payment_method: "mpesa" | "bank" | "airtel_money" | "card" | "paypal" | "manual"; // ✅ Expanded to match backend PaymentMethod enum
   reference_code: string;
-  notes?: string;                  // ✅ Backend sends notes
-  created_at: string;              // ✅ Backend sends created_at (NOT submitted_at)
+  notes?: string;                  
+  created_at: string;              
   status: "pending" | "approved" | "rejected";
 }
 
 export const subscriptionsApi = {
-  // ✅ GET /payment-verifications/?status_filter=pending
+  // ✅ FIXED: Unwrap .items from PaginatedResponse
   getPendingRequests: async (): Promise<SubscriptionRequest[]> => {
-    return apiClient
-      .get("/payment-verifications/", { params: { status_filter: "pending" } })
-      .then((r) => r.data);
-  },
-
-  // ✅ PATCH /payment-verifications/{id}/review (Approve)
-  approveRequest: async (id: number): Promise<void> => {
-    return apiClient.patch(`/payment-verifications/${id}/review`, { 
-      status: "approved" 
+    const res = await apiClient.get<PaginatedResponse<SubscriptionRequest>>("/payment-verifications/", { 
+      params: { status_filter: "pending" } 
     });
+    return res.data.items;
   },
 
-  // ✅ PATCH /payment-verifications/{id}/review (Reject)
-  rejectRequest: async (id: number, reason: string): Promise<void> => {
-    return apiClient.patch(`/payment-verifications/${id}/review`, { 
+  approveRequest: async (id: number): Promise<SubscriptionRequest> => {
+    return apiClient.patch<SubscriptionRequest>(`/payment-verifications/${id}/review`, { 
+      status: "approved" 
+    }).then((r) => r.data);
+  },
+
+  rejectRequest: async (id: number, reason: string): Promise<SubscriptionRequest> => {
+    return apiClient.patch<SubscriptionRequest>(`/payment-verifications/${id}/review`, { 
       status: "rejected", 
       rejection_reason: reason 
-    });
+    }).then((r) => r.data);
   },
 };

@@ -18,9 +18,8 @@ export function useInvoices() {
       const params = statusFilter !== "all" ? { status: statusFilter } : undefined;
       const data = await invoicesApi.list(params);
       
-      // ✅ REMOVED: Old data normalization logic that was overriding backend status
-      // Now we trust the backend's status field completely
-      setInvoices(data);
+      // ✅ FIXED: Added safe fallback to guarantee 'invoices' state is always an array
+      setInvoices(data || []);
     } catch (error) {
       toast.error("Failed to load invoices");
     } finally {

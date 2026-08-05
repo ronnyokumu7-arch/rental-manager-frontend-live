@@ -1,7 +1,6 @@
-// src/components/profile/TaskContextBar.tsx
 "use client";
 
-import { Calendar, Tag, AlertCircle } from "lucide-react";
+import { Calendar, Tag, AlertCircle, CheckCircle2, Clock, Ban } from "lucide-react";
 import type { Task } from "@/lib/types";
 
 interface TaskContextBarProps {
@@ -35,7 +34,30 @@ export default function TaskContextBar({ task }: TaskContextBarProps) {
     }
   };
 
+  // ✅ ADDED: Status styling for the new workflow states
+  const getStatusStyle = (status?: string) => {
+    switch (status) {
+      case 'in_progress': return "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20";
+      case 'in_review': return "text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20";
+      case 'blocked': return "text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20";
+      case 'completed': return "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
+      case 'unassigned': return "text-[var(--color-ink-subtle)] bg-[var(--color-surface-hover)] border-[var(--color-surface-border)]";
+      default: return "text-slate-600 dark:text-slate-400 bg-slate-500/10 border-slate-500/20"; // pending
+    }
+  };
+
+  const getStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'in_progress': return <Clock size={9} />;
+      case 'in_review': return <AlertCircle size={9} />;
+      case 'blocked': return <Ban size={9} />;
+      case 'completed': return <CheckCircle2 size={9} />;
+      default: return <Clock size={9} />;
+    }
+  };
+
   const priorityStyle = getPriorityStyle(task.priority);
+  const statusStyle = getStatusStyle(task.status);
 
   // Truncate description to 20 words
   const truncateDescription = (text: string, wordLimit: number = 20) => {
@@ -60,6 +82,13 @@ export default function TaskContextBar({ task }: TaskContextBarProps) {
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border ${priorityStyle}`}>
             <AlertCircle size={9} />
             {task.priority}
+          </span>
+        )}
+        {/* ✅ ADDED: Status Badge next to Priority */}
+        {task.status && (
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border ${statusStyle}`}>
+            {getStatusIcon(task.status)}
+            <span className="capitalize">{task.status.replace("_", " ")}</span>
           </span>
         )}
         <h3 className="text-sm font-bold text-[var(--color-ink)] leading-tight">

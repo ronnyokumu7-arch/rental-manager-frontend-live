@@ -1,0 +1,157 @@
+/* Premium Flatpickr Theme - Light Mode */
+.flatpickr-calendar {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-surface-border) !important;
+  box-shadow: var(--shadow-dropdown) !important;
+  color: var(--color-ink) !important;
+  font-family: var(--font-sans) !important;
+  border-radius: 0.75rem !important;
+  padding: 1rem !important;
+}
+
+.flatpickr-months {
+  background: transparent !important;
+  border-bottom: 1px solid var(--color-surface-border) !important;
+  padding-bottom: 0.75rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.flatpickr-months .flatpickr-month {
+  background: transparent !important;
+  color: var(--color-ink) !important;
+  fill: var(--color-ink) !important;
+  height: 36px !important;
+}
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+  color: var(--color-ink-muted) !important;
+  fill: var(--color-ink-muted) !important;
+  transition: all 0.2s ease !important;
+}
+
+.flatpickr-months .flatpickr-prev-month:hover,
+.flatpickr-months .flatpickr-next-month:hover {
+  color: var(--color-primary) !important;
+  fill: var(--color-primary) !important;
+}
+
+.flatpickr-weekdays {
+  background: transparent !important;
+  margin-top: 1rem !important;
+  height: 28px !important;
+}
+
+.flatpickr-weekday {
+  color: var(--color-ink-muted) !important;
+  font-weight: 600 !important;
+  font-size: 0.7rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.flatpickr-days {
+  background: transparent !important;
+  border: none !important;
+}
+
+.flatpickr-day {
+  color: var(--color-ink) !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.2s ease-out !important;
+  font-weight: 500 !important;
+  border: none !important;
+  height: 36px !important;
+  line-height: 36px !important;
+}
+
+/* Hover State - Premium */
+.flatpickr-day:hover {
+  background: var(--color-primary) !important;
+  color: white !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 2px 8px var(--color-primary)/30 !important;
+  transform: scale(1.05) !important;
+}
+
+/* Selected Date */
+.flatpickr-day.selected {
+  background: var(--color-primary) !important;
+  color: white !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 4px 12px var(--color-primary)/40 !important;
+  font-weight: 600 !important;
+}
+
+.flatpickr-day.selected:hover {
+  background: var(--color-primary-hover) !important;
+}
+
+/* Today's Date */
+.flatpickr-day.today {
+  border: 2px solid var(--color-primary) !important;
+  color: var(--color-primary) !important;
+  font-weight: 700 !important;
+}
+
+.flatpickr-day.today:hover {
+  background: var(--color-primary) !important;
+  color: white !important;
+}
+
+/* Disabled Dates */
+.flatpickr-day.disabled,
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+  color: var(--color-ink-muted) !important;
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+}
+
+.flatpickr-day.disabled:hover,
+.flatpickr-day.prevMonthDay:hover,
+.flatpickr-day.nextMonthDay:hover {
+  background: transparent !important;
+  color: var(--color-ink-muted) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Range Selection (if using range mode) */
+.flatpickr-day.inRange {
+  background: var(--color-primary)/15 !important;
+  color: var(--color-ink) !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background: var(--color-primary) !important;
+  color: white !important;
+}
+
+/* Dark Mode Overrides */
+.dark .flatpickr-calendar,
+[data-theme="dark"] .flatpickr-calendar {
+  background: var(--color-surface-dark, #1e293b) !important;
+  border-color: var(--color-surface-border-dark, #334155) !important;
+}
+
+.dark .flatpickr-day,
+[data-theme="dark"] .flatpickr-day {
+  color: var(--color-ink-dark, #f1f5f9) !important;
+}
+
+.dark .flatpickr-day:hover,
+[data-theme="dark"] .flatpickr-day:hover {
+  background: var(--color-primary, #4f46e5) !important;
+  color: white !important;
+}
+
+.dark .flatpickr-day.selected,
+[data-theme="dark"] .flatpickr-day.selected {
+  background: var(--color-primary, #4f46e5) !important;
+  color: white !important;
+}

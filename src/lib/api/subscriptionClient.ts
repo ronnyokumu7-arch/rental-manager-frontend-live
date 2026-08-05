@@ -1,6 +1,5 @@
-// src/lib/api/subscriptionClient.ts
 import apiClient from "@/lib/api-client";
-import { SubscriptionOut } from "@/lib/types";
+import { SubscriptionOut, PaginatedResponse } from "@/lib/types"; // ✅ Added PaginatedResponse import
 
 // ✅ Strict payload matching the backend PaymentVerificationCreate schema
 export interface PaymentVerificationPayload {
@@ -13,12 +12,14 @@ export interface PaymentVerificationPayload {
 
 export const subscriptionClient = {
   // GET /subscriptions/my
+  // ✅ FIXED: Unwrap .items from PaginatedResponse so the hook receives a true array
   getStatus: async (): Promise<SubscriptionOut[]> => {
-    const { data } = await apiClient.get<SubscriptionOut[]>("/subscriptions/my");
-    return data;
+    const { data } = await apiClient.get<PaginatedResponse<SubscriptionOut>>("/subscriptions/my");
+    return data.items;
   },
 
   // PATCH /subscriptions/{id}
+  // (No change needed: Backend returns a single SubscriptionOut object, not a paginated list)
   updateAutoRenew: async (id: number, autoRenew: boolean): Promise<SubscriptionOut> => {
     const { data } = await apiClient.patch<SubscriptionOut>(`/subscriptions/${id}`, {
       auto_renew: autoRenew,
@@ -27,6 +28,7 @@ export const subscriptionClient = {
   },
 
   // POST /payment-verifications/
+  // (No change needed: Backend returns a single PaymentVerificationOut object)
   verifyPayment: async (payload: PaymentVerificationPayload): Promise<void> => {
     await apiClient.post("/payment-verifications/", payload);
   },

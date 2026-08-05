@@ -33,27 +33,28 @@ export default function TimelineHeader({
   availableVehicles,
   utilizationRate,
 }: TimelineHeaderProps) {
-  const formattedStart = format(viewStartDate, "MMM dd, yyyy");
-  const formattedEnd = format(viewEndDate, "MMM dd, yyyy");
+  // ✅ SIMPLIFIED: Only format the start date for a cleaner look
+  const formattedStart = format(viewStartDate, "MMM d, yyyy");
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface)] gap-4 z-40 relative">
       
       {/* Left: Date and Step Info */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center border border-[var(--color-primary)]/10">
+        <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center border border-[var(--color-primary)]/10 shrink-0">
           <Calendar size={18} />
         </div>
         <div>
-          <span className="text-sm font-bold text-[var(--color-ink)] block">
-            {formattedStart} to {formattedEnd}
+          {/* ✅ SLIGHTLY BIGGER FONT, SIMPLIFIED DATE */}
+          <span className="text-base font-bold text-[var(--color-ink)] block">
+            {formattedStart}
           </span>
           {isCreateMode ? (
             <span className="text-[11px] text-[var(--color-primary)] font-bold block mt-0.5 animate-pulse uppercase tracking-wider">
-              {schedulingStep === "select-vehicle" && "✨ Step 1: Select a vehicle grid channel"}
+              {schedulingStep === "select-vehicle" && "✨ Step 1: Select start date"}
               {schedulingStep === "select-start" && " Step 2: Click start date on timeline lane"}
-              {schedulingStep === "select-end" && "📅 Step 3: Click end date to lock booking window"}
-              {schedulingStep === "link-client" && "👤 Step 4: Finalize client link payload"}
+              {schedulingStep === "select-end" && "📅 Step 3: Now select end date"}
+              {schedulingStep === "link-client" && "👤 Step 4: Assign car to client"}
             </span>
           ) : (
             <span className="text-[11px] text-[var(--color-ink-muted)] font-medium block mt-0.5">Continuous 14-Day Tactical Window</span>
@@ -71,7 +72,7 @@ export default function TimelineHeader({
         <div className="w-px h-3 bg-[var(--color-surface-border)]" />
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
-          <span className="text-xs font-medium text-[var(--color-ink-muted)]">With Bookings</span>
+          <span className="text-xs font-medium text-[var(--color-ink-muted)]">Booked</span>
           <span className="text-xs font-bold text-[var(--color-success-text)] tabular-nums">{vehiclesWithBookings}</span>
         </div>
         <div className="w-px h-3 bg-[var(--color-surface-border)]" />
@@ -88,7 +89,7 @@ export default function TimelineHeader({
         </div>
       </div>
       
-      {/* Right: Actions */}
+      {/* Right: Actions (Keeping your premium button design) */}
       <div className="flex items-center gap-2">
         <button
           onClick={onJumpToToday}
@@ -108,6 +109,7 @@ export default function TimelineHeader({
           </button>
         </div>
 
+        {/* ✅ YOUR PREMIUM BUTTON */}
         <button
           onClick={onToggleCreateMode}
           className={`ml-2 px-3.5 py-2 text-xs font-bold border border-[var(--color-surface-border)] rounded-xl bg-[var(--color-surface)] shadow-sm transition-all active:scale-95 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] ${
@@ -116,7 +118,7 @@ export default function TimelineHeader({
               : "text-[var(--color-ink)]"
           }`}
         >
-          {isCreateMode ? "Cancel Mode" : "+ New Booking"}
+          {isCreateMode ? "Cancel" : "+ New Booking"}
         </button>
       </div>
     </div>

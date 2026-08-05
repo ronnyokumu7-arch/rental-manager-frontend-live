@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, FileText, Filter, ChevronDown, FileSignature, Send, CheckCircle2, XCircle } from "lucide-react";
+import { Search, FileText, Filter, ChevronDown, FileSignature, Send, CheckCircle2, XCircle, Plus } from "lucide-react";
 import { useContracts } from "@/hooks/financials/useContracts";
 import ContractsTable from "./contracts/ContractsTable";
 import GenerateContractModal from "./contracts/GenerateContractModal";
@@ -63,9 +63,8 @@ export default function ContractsTab() {
         {/* Toolbar */}
         <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col lg:flex-row gap-4 items-center justify-between">
           
-          {/* Left Side: Counters Only (Toggle Removed) */}
+          {/* Left Side: Counters Only */}
           <div className="flex items-center gap-4 w-full lg:w-auto">
-            {/* Contract Counters */}
             <div className="hidden xl:flex items-center gap-4 px-4 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <FileSignature size={14} className="text-[var(--color-ink-muted)]" />
@@ -93,7 +92,7 @@ export default function ContractsTab() {
             </div>
           </div>
 
-          {/* Right Side: Search & Filter */}
+          {/* Right Side: Search, Filter & Generate Button */}
           <div className="flex items-center gap-2 w-full lg:w-auto">
             <div className="relative w-full lg:w-64">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
@@ -121,6 +120,15 @@ export default function ContractsTab() {
                 <option value="void">Void</option>
               </select>
             </div>
+
+            {/* ✅ NEW: Generate Contract Button */}
+            <button
+              onClick={() => setShowGenerateModal(true)}
+              className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm flex-shrink-0"
+            >
+              <FileSignature size={14} strokeWidth={2.5} />
+              Generate Contract
+            </button>
           </div>
         </div>
 
@@ -140,7 +148,7 @@ export default function ContractsTab() {
             <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
               {search || statusFilter !== "all" 
                 ? "Try adjusting your filters." 
-                : "Contracts will automatically appear here when bookings are confirmed."}
+                : "Click 'Generate Contract' above to create contracts for pending or confirmed bookings."}
             </p>
           </div>
         ) : (

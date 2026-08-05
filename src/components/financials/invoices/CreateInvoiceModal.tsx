@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Loader2, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, FileText, AlertCircle } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { bookingsApi } from "@/lib/api/bookings";
 import { invoicesApi } from "@/lib/api/invoices";
@@ -87,19 +87,25 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
     
     setLoading(true);
     try {
-      const payload = {
-        amount_due: parseFloat(customAmount),
-        due_date: new Date(dueDate).toISOString(),
-        notes: notes,
-        ...( !existingInvoice ? { booking_id: selectedBookingId } : {} )
-      };
-
       if (existingInvoice) {
+        // Update existing invoice
+        const payload = {
+          amount_due: parseFloat(customAmount),
+          due_date: new Date(dueDate).toISOString(),
+          notes: notes,
+        };
         await invoicesApi.update(existingInvoice.id, payload as any);
         toast.success("Invoice customized and updated successfully!");
       } else {
-        await invoicesApi.create(payload as any);
-        toast.success("Custom invoice created successfully!");
+        // ✅ CHANGED: Use the robust generateInvoice endpoint for new/orphan bookings
+        // This guarantees sequential invoice numbers and proper booking linkage
+        const payload = {
+          custom_amount: parseFloat(customAmount),
+          due_date: new Date(dueDate).toISOString(),
+          notes: notes,
+        };
+        await bookingsApi.generateInvoice(selectedBookingId, payload);
+        toast.success("Invoice generated successfully!");
       }
       
       onCreated();
@@ -178,7 +184,7 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-1">Client Amount</p>
+                <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-1">Total Amount</p>
                 <p className="text-sm font-bold text-[var(--color-ink)]">
                   {selectedBooking.currency_code} {Number(selectedBooking.total_amount).toLocaleString()}
                 </p>

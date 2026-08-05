@@ -1,22 +1,28 @@
-// src/lib/api/bookings.ts
 import apiClient from "@/lib/api-client";
-import type { Booking, BookingCreate, BookingUpdate } from "@/lib/types";
+import type { Booking, BookingCreate, BookingUpdate, PaginatedResponse } from "@/lib/types";
 
 export interface ExtendBookingPayload {
   new_end_date: string;
   extension_reason?: string;
 }
 
+export interface GenerateInvoicePayload {
+  custom_amount?: number;
+  due_date?: string;
+  notes?: string;
+}
+
 export const bookingsApi = {
-  // ✅ Renamed from getById to get (matches vehiclesApi pattern)
   get: (id: number) =>
     apiClient.get<Booking>(`/bookings/${id}`).then((r) => r.data),
     
-  list: (params?: { vehicle_id?: number; client_id?: number }) =>
-    apiClient.get<Booking[]>("/bookings/", { params }).then((r) => r.data),
+  // ✅ FIXED: Unwrap .items from PaginatedResponse
+  list: (params?: { vehicle_id?: number; client_id?: number; page?: number; page_size?: number }) =>
+    apiClient.get<PaginatedResponse<Booking>>("/bookings/", { params }).then((r) => r.data.items),
     
-  listArchived: () =>
-    apiClient.get<Booking[]>("/bookings/archived").then((r) => r.data),
+  // ✅ FIXED: Unwrap .items from PaginatedResponse
+  listArchived: (params?: { page?: number; page_size?: number }) =>
+    apiClient.get<PaginatedResponse<Booking>>("/bookings/archived", { params }).then((r) => r.data.items),
     
   create: (data: BookingCreate) =>
     apiClient.post<Booking>("/bookings", data).then((r) => r.data),
@@ -27,9 +33,10 @@ export const bookingsApi = {
   delete: (id: number) =>
     apiClient.delete(`/bookings/${id}`),
   
-  generateInvoice: (id: number) =>
+  generateInvoice: (id: number, payload?: GenerateInvoicePayload) =>
     apiClient.post<{ share_url: string; token: string; expires_at: string }>(
-      `/bookings/${id}/generate-invoice`
+      `/bookings/${id}/generate-invoice`,
+      payload || {}
     ).then((r) => r.data),
   
   confirm: (id: number) =>
@@ -44,7 +51,6 @@ export const bookingsApi = {
   cancel: (id: number) =>
     apiClient.post<Booking>(`/bookings/${id}/cancel`).then((r) => r.data),
     
-  // ✅ Renamed from markNoShow to noShow
   noShow: (id: number) =>
     apiClient.post<Booking>(`/bookings/${id}/no-show`).then((r) => r.data),
     

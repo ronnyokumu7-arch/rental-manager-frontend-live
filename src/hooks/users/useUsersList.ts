@@ -1,14 +1,20 @@
-// src/hooks/users/useUsersList.ts
 import { useState, useEffect, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
-import { usersApi, type VerificationPayload } from "@/lib/api/users"; // ✅ Added VerificationPayload
+import { usersApi } from "@/lib/api/users";
 import type { User } from "@/lib/types";
 
 export type CategoryMode = "executive" | "staff";
 
 const isExecutive = (user: User) => {
   if (user.role === "super_admin" || user.role === "tenant_admin") return true;
-  const execTitles = ["CEO", "Director", "General Manager", "Founder", "Founder & CEO", "Managing Director"];
+  const execTitles = [
+    "CEO",
+    "Director",
+    "General Manager",
+    "Founder",
+    "Founder & CEO",
+    "Managing Director",
+  ];
   return execTitles.includes(user.job_title || "");
 };
 
@@ -31,16 +37,18 @@ export function useUsersList() {
   const [category, setCategory] = useState<CategoryMode>("executive");
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState<string | null>(null);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 7;
 
+  // Fetch users from API
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await usersApi.list();
-      setUsers(data);
+      // ✅ FIXED: Added safe fallback to guarantee 'users' state is always an array
+      setUsers(data || []);
     } catch (err: any) {
       console.error("Failed to load team members:", err);
       setError(err.response?.data?.detail || "Failed to load team members");
@@ -50,42 +58,46 @@ export function useUsersList() {
     }
   }, []);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
-  // ✅ Counters for the Toolbar UI (Based on the entire tenant team)
+  // Counters for Toolbar UI
   const totalUsers = users.length;
-  const activeUsers = users.filter(u => u.is_active && !u.is_suspended).length;
-  const inactiveUsers = users.filter(u => !u.is_active || u.is_suspended).length;
+  const activeUsers = users.filter((u) => u.is_active && !u.is_suspended).length;
+  const inactiveUsers = users.filter((u) => !u.is_active || u.is_suspended).length;
 
+  // Memoized filter and sort pipeline
   const filteredUsers = useMemo(() => {
     let result = users;
 
     // 1. Category Filter (Executive vs Staff)
     if (category === "executive") {
-      result = result.filter(u => isExecutive(u));
+      result = result.filter((u) => isExecutive(u));
     } else {
-      result = result.filter(u => !isExecutive(u));
+      result = result.filter((u) => !isExecutive(u));
     }
 
-    // 2. Department Filter (Robust case-insensitive exact match)
+    // 2. Department Filter
     if (departmentFilter) {
       const targetDept = departmentFilter.toLowerCase().trim();
-      result = result.filter(u => u.department?.toLowerCase().trim() === targetDept);
+      result = result.filter((u) => u.department?.toLowerCase().trim() === targetDept);
     }
 
     // 3. Search Filter
     if (search.trim()) {
       const q = search.toLowerCase();
-      result = result.filter(u =>
-        u.full_name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        (u.phone_number && u.phone_number.toLowerCase().includes(q)) ||
-        (u.job_title && u.job_title.toLowerCase().includes(q)) ||
-        (u.department && u.department.toLowerCase().includes(q))
+      result = result.filter(
+        (u) =>
+          u.full_name.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          (u.phone_number && u.phone_number.toLowerCase().includes(q)) ||
+          (u.job_title && u.job_title.toLowerCase().includes(q)) ||
+          (u.department && u.department.toLowerCase().includes(q))
       );
     }
 
-    // 4. Sort
+    // 4. Sort Priority
     return [...result].sort((a, b) => {
       const priorityA = getSortPriority(a.role, a.job_title);
       const priorityB = getSortPriority(b.role, b.job_title);
@@ -94,53 +106,72 @@ export function useUsersList() {
     });
   }, [users, category, departmentFilter, search]);
 
-  const totalPages = Math.ceil(filteredUsers.length / pageSize);
+  const totalPages = Math.ceil(filteredUsers.length / pageSize) || 1;
+  
   const paginatedUsers = useMemo(() => {
     return filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   }, [filteredUsers, currentPage, pageSize]);
 
-  useEffect(() => { setCurrentPage(1); }, [category, departmentFilter, search]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [category, departmentFilter, search]);
 
-  const updateUserLocally = (updatedUser: User) => {
-    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-  };
+  // Updates user in state or prepends if newly generated (e.g. quick invite token creation)
+  const updateUserLocally = useCallback((updatedUser: User) => {
+    setUsers((prev) => {
+      const exists = prev.some((u) => u.id === updatedUser.id);
+      if (exists) {
+        return prev.map((u) => (u.id === updatedUser.id ? updatedUser : u));
+      }
+      return [updatedUser, ...prev];
+    });
+  }, []);
 
-  const removeUserLocally = (userId: number) => {
-    setUsers(prev => prev.filter(u => u.id !== userId));
-  };
+  const removeUserLocally = useCallback((userId: number) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+  }, []);
 
-  // ✅ NEW: Handle Send Verification (Automated Flow)
-  const handleSendVerification = async (userId: number, channel: "email" | "phone") => {
+  const handleSendVerification = useCallback(async (userId: number, channel: "email" | "phone") => {
     try {
       await usersApi.sendVerification(userId, { channel });
       toast.success(`Verification ${channel} sent successfully!`);
     } catch (error: any) {
       toast.error(error.response?.data?.detail || `Failed to send verification ${channel}`);
     }
-  };
+  }, []);
 
-  // ✅ NEW: Handle Mark Verified (Manual Admin Override with Optimistic Update)
-  const handleMarkVerified = async (userId: number, channel: "email" | "phone") => {
+  const handleMarkVerified = useCallback(async (userId: number, channel: "email" | "phone") => {
     try {
       const updatedUser = await usersApi.markVerified(userId, { channel });
-      updateUserLocally(updatedUser); // ✅ Instant UI update without full refetch
+      updateUserLocally(updatedUser);
       toast.success(`User ${channel} marked as verified!`);
     } catch (error: any) {
       toast.error(error.response?.data?.detail || `Failed to mark ${channel} as verified`);
     }
-  };
+  }, [updateUserLocally]);
 
   return {
-    users, filteredUsers, paginatedUsers, loading, error,
-    totalUsers, activeUsers, inactiveUsers,
-    category, setCategory,
-    search, setSearch,
-    departmentFilter, setDepartmentFilter,
-    currentPage, setCurrentPage, totalPages,
-    refetch: fetchUsers, 
-    updateUserLocally, 
+    users,
+    filteredUsers,
+    paginatedUsers,
+    loading,
+    error,
+    totalUsers,
+    activeUsers,
+    inactiveUsers,
+    category,
+    setCategory,
+    search,
+    setSearch,
+    departmentFilter,
+    setDepartmentFilter,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    refetch: fetchUsers,
+    updateUserLocally,
     removeUserLocally,
-    handleSendVerification, // ✅ Exposed to UI
-    handleMarkVerified,     // ✅ Exposed to UI
+    handleSendVerification,
+    handleMarkVerified,
   };
 }

@@ -1,10 +1,10 @@
-// src/lib/api/contracts.ts
 import apiClient from "@/lib/api-client";
-import type { Contract, PublicContractView } from "@/lib/types";
+import type { Contract, PublicContractView, PaginatedResponse } from "@/lib/types";
 
 export const contractsApi = {
-  list: (params?: { booking_id?: number; contract_status?: string }) =>
-    apiClient.get<Contract[]>("/contracts/", { params }).then((r) => r.data),
+  // ✅ FIXED: Unwrap .items from PaginatedResponse, added page/page_size params
+  list: (params?: { booking_id?: number; contract_status?: string; page?: number; page_size?: number }) =>
+    apiClient.get<PaginatedResponse<Contract>>("/contracts/", { params }).then((r) => r.data.items),
     
   getById: (id: number) =>
     apiClient.get<Contract>(`/contracts/${id}`).then((r) => r.data),
@@ -12,10 +12,10 @@ export const contractsApi = {
   void: (id: number) =>
     apiClient.post<Contract>(`/contracts/${id}/void`).then((r) => r.data),
 
+  // ✅ FIXED: Mapped to the correct backend route and return type (ContractOut)
   regenerate: (bookingId: number) =>
     apiClient.post<Contract>(`/contracts/bookings/${bookingId}/regenerate`).then((r) => r.data),
 
-  // ✅ Preserved your exact blob handling to prevent breaking existing download logic
   downloadPdf: (id: number) =>
     apiClient.get(`/contracts/${id}/pdf`, { responseType: "blob" }),
 
@@ -33,7 +33,6 @@ export const contractsApi = {
   publicSign: (token: string, signature?: string) =>
     apiClient.post<{ message: string }>(`/contracts/public/${token}/sign`, { signature }).then((r) => r.data),
 
-  // ✅ Preserved your exact blob handling
   publicDownloadPdf: (token: string) =>
     apiClient.get(`/contracts/public/${token}/pdf`, { responseType: "blob" }),
 };

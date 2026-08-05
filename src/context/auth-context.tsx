@@ -14,6 +14,7 @@ import { AuthState, User, Tenant, LoginResponse } from "@/lib/types";
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  refresh: () => Promise<void>; // ✅ NEW: Force re-fetch tenant data
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -118,8 +119,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/login");
   };
 
+  // ✅ NEW: Force re-fetch user and tenant data
+  const refresh = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const res = await apiClient.get<User>("/auth/me");
+      const user = res.data;
+      const tenant = user.tenant_id ? await fetchTenant(user.tenant_id) : null;
+      
+      setState({ user, tenant, token, isLoading: false, isAuthenticated: true });
+    } catch (error) {
+      console.error("Failed to refresh auth state:", error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ ...state, login, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

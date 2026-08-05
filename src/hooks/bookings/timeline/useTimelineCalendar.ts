@@ -1,7 +1,7 @@
 // src/hooks/bookings/timeline/useTimelineCalendar.ts
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format, addDays, subDays, startOfDay, differenceInDays } from "date-fns";
 import { Booking, Vehicle, Client } from "@/lib/types";
 
@@ -18,10 +18,23 @@ export function useTimelineCalendar({
   clientMap = {},
   onCreateBooking,
 }: UseTimelineCalendarProps) {
-  const [viewStartDate, setViewStartDate] = useState(() => startOfDay(new Date()));
+  // ✅ Calculate today once to ensure consistency
+  const today = startOfDay(new Date());
+  
+  // ✅ INITIAL STATE: Start from today
+  const [viewStartDate, setViewStartDate] = useState(today);
   const daysToShow = 14;
 
-  // Real-time scheduling wizard states
+  // ✅ AUTO-RESET LOGIC: If view is older than 7 days, snap back to today
+  useEffect(() => {
+    const daysSinceStart = differenceInDays(today, viewStartDate);
+    
+    // If the start of the view is more than 7 days in the past, auto-reset
+    if (daysSinceStart > 7) {
+      setViewStartDate(today);
+    }
+  }, [viewStartDate, today]);
+
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [schedulingStep, setSchedulingStep] = useState<"select-vehicle" | "select-start" | "select-end" | "link-client" | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
@@ -29,12 +42,11 @@ export function useTimelineCalendar({
   const [selectedEndDate, setSelectedEndDate] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
 
-  // Core Calendar Computations
   const timelineDays = useMemo(() => {
     return Array.from({ length: daysToShow }).map((_, i) => addDays(viewStartDate, i));
   }, [viewStartDate, daysToShow]);
 
-  const viewEndDate = useMemo(() => addDays(viewStartDate, daysToShow - 1), [viewStartDate, daysToShow]);
+  const viewEndDate = useMemo(() => startOfDay(addDays(viewStartDate, daysToShow - 1)), [viewStartDate, daysToShow]);
 
   const normalizedVehicles = useMemo(() => {
     if (!vehicleMap) return [];
@@ -50,17 +62,9 @@ export function useTimelineCalendar({
     return Object.values(clientMap);
   }, [clientMap]);
 
-  // Lock Guard validation lookup helper
   const isVehicleUnavailable = (vehicleId: number): boolean => {
     const vehicle = normalizedVehicles.find(v => v.id === vehicleId);
     return !vehicle || vehicle.status !== "available";
-  };
-
-  const getClientFromRef = (clientId: number): Client | undefined => {
-    if (!clientMap || !clientId) return undefined;
-    if (clientMap instanceof Map) return clientMap.get(clientId);
-    if (Array.isArray(clientMap)) return clientMap.find((c) => c.id === clientId);
-    return (clientMap as Record<number, Client>)[clientId];
   };
 
   const resetSchedulingState = () => {
@@ -82,9 +86,7 @@ export function useTimelineCalendar({
   };
 
   const handleCellClick = (vehicleId: number, dateStr: string) => {
-    // 🚫 BLOCK: Prevent picking slots if vehicle state is not explicitly "available"
     if (isVehicleUnavailable(vehicleId)) return;
-
     if (!isCreateMode) return;
 
     if (schedulingStep === "select-vehicle") {
@@ -124,21 +126,26 @@ export function useTimelineCalendar({
   const calculatePosition = (startDateStr: string, endDateStr: string) => {
     const start = startOfDay(new Date(startDateStr));
     const end = startOfDay(new Date(endDateStr));
-    const activeStart = start < viewStartDate ? viewStartDate : start;
-    const activeEnd = end > viewEndDate ? viewEndDate : end;
+    
+    const viewStart = startOfDay(viewStartDate);
+    const viewEnd = startOfDay(viewEndDate);
 
-    if (activeEnd < viewStartDate || activeStart > viewEndDate) {
+    const activeStart = start < viewStart ? viewStart : start;
+    const activeEnd = end > viewEnd ? viewEnd : end;
+
+    if (activeEnd < viewStart || activeStart > viewEnd) {
       return { visible: false, left: 0, width: 0, isCutStart: false, isCutEnd: false };
     }
 
-    const leftOffsetDays = differenceInDays(activeStart, viewStartDate);
+    const leftOffsetDays = differenceInDays(activeStart, viewStart);
     const durationDays = differenceInDays(activeEnd, activeStart) + 1;
+    
     return {
       visible: true,
       left: leftOffsetDays * (100 / daysToShow),
       width: durationDays * (100 / daysToShow),
-      isCutStart: start < viewStartDate,
-      isCutEnd: end > viewEndDate,
+      isCutStart: start < viewStart,
+      isCutEnd: end > viewEnd,
     };
   };
 
@@ -149,9 +156,9 @@ export function useTimelineCalendar({
     }
     
     if (selectedStartDate && selectedEndDate) {
-      const current = new Date(dayStr);
-      const start = new Date(selectedStartDate);
-      const end = new Date(selectedEndDate);
+      const current = startOfDay(new Date(dayStr));
+      const start = startOfDay(new Date(selectedStartDate));
+      const end = startOfDay(new Date(selectedEndDate));
       if (current >= start && current <= end) {
         return "bg-[var(--color-primary)]/15 border-y border-[var(--color-primary)]/30 z-10";
       }
@@ -160,11 +167,12 @@ export function useTimelineCalendar({
   };
 
   const shiftWindow = (dir: "forward" | "backward") => {
-    setViewStartDate((prev) => (dir === "forward" ? addDays(prev, 7) : subDays(prev, 7)));
+    setViewStartDate((prev) => startOfDay(dir === "forward" ? addDays(prev, 7) : subDays(prev, 7)));
   };
 
+  // ✅ JUMP TO TODAY: Always forces Today to the 1st column
   const jumpToToday = () => {
-    setViewStartDate(startOfDay(new Date()));
+    setViewStartDate(today);
   };
 
   return {
@@ -185,7 +193,6 @@ export function useTimelineCalendar({
     handleFinalizeBooking,
     calculatePosition,
     getCellHighlightClass,
-    getClientFromRef,
     shiftWindow,
     jumpToToday,
     isVehicleUnavailable,

@@ -1,21 +1,19 @@
-// src/lib/api/vehicles.ts
 import apiClient from "@/lib/api-client";
-import type { Vehicle, VehicleCreate, VehicleUpdate, Booking } from "@/lib/types";
+import type { Vehicle, VehicleCreate, VehicleUpdate, Booking, PaginatedResponse } from "@/lib/types";
 
-// ✅ Payload for Milestone 3 (Quick Garage)
 export interface MileageUpdatePayload {
   current_mileage: number;
   next_service_km?: number | null;
 }
 
 export const vehiclesApi = {
-  // ✅ Updated to accept status filter for active vehicles
-  list: (params?: { status?: string }) =>
-    apiClient.get<Vehicle[]>("/vehicles/", { params }).then((r) => r.data),
+  // ✅ FIXED: Unwrap .items
+  list: (params?: { status?: string; page?: number; page_size?: number }) =>
+    apiClient.get<PaginatedResponse<Vehicle>>("/vehicles/", { params }).then((r) => r.data.items),
 
-  // ✅ Updated to accept status filter for archived vehicles
-  listArchived: (params?: { status?: string }) =>
-    apiClient.get<Vehicle[]>("/vehicles/archived", { params }).then((r) => r.data),
+  // ✅ FIXED: Unwrap .items
+  listArchived: (params?: { status?: string; page?: number; page_size?: number }) =>
+    apiClient.get<PaginatedResponse<Vehicle>>("/vehicles/archived", { params }).then((r) => r.data.items),
 
   get: (id: number) =>
     apiClient.get<Vehicle>(`/vehicles/${id}`).then((r) => r.data),
@@ -47,10 +45,10 @@ export const vehiclesApi = {
   restore: (id: number) =>
     apiClient.post<Vehicle>(`/vehicles/${id}/restore`).then((r) => r.data),
 
+  // ✅ FIXED: /bookings endpoint is now paginated, must unwrap .items
   getBookings: (vehicleId: number) =>
-    apiClient.get<Booking[]>("/bookings", { params: { vehicle_id: vehicleId } }).then((r) => r.data),
+    apiClient.get<PaginatedResponse<Booking>>("/bookings", { params: { vehicle_id: vehicleId } }).then((r) => r.data.items),
 
-  // ✅ Milestone 3 Endpoint to resolve the awaiting_mileage lock
   updateMileage: (id: number, data: MileageUpdatePayload) =>
     apiClient.patch<Vehicle>(`/vehicles/${id}/update-mileage`, data).then((r) => r.data),
 

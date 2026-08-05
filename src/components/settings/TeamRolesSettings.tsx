@@ -26,9 +26,9 @@ export default function TeamRolesSettings() {
           roleTemplatesApi.list(),
         ]);
         setMatrix(matrixData);
-        setTemplates(templatesData);
-        
-        if (templatesData.length > 0) {
+        setTemplates(templatesData || []); // ✅ FIXED: Safe fallback guarantees an array
+
+        if (templatesData && templatesData.length > 0) {
           setSelectedRoleId(templatesData[0].id);
           setActivePermissions(new Set(templatesData[0].permissions));
         }

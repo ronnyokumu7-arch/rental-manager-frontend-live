@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { Toaster } from "react-hot-toast";
+import '@/styles/flatpickr-theme.css';
 
 // 1. Configure Sans-Serif Font (Primary UI) - Next.js optimizes this automatically (zero layout shift)
 const sansFont = Inter({
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   title: "Rental Manager",
   description: "Enterprise-grade vehicle rental and fleet management platform.",
   icons: {
-    icon: "/favicon.ico", // Update with your actual favicon path
+    icon: "/favicon.ico", 
   },
 };
 
@@ -47,13 +48,12 @@ export default function RootLayout({
         selection:bg-[var(--color-primary-muted)] 
         selection:text-[var(--color-primary-text)]
         scroll-smooth
-        transition-colors duration-300 ease-in-out
+        /* ✅ REMOVED: transition-colors duration-300 ease-in-out */
       ">
         <AuthProvider>
           <Toaster 
             position="top-right" 
             toastOptions={{
-              // Premium Toaster styling that perfectly matches your design system
               className: `
                 font-sans 
                 bg-[var(--color-surface)] 
@@ -63,14 +63,12 @@ export default function RootLayout({
                 rounded-xl 
                 px-4 py-3
               `,
-              // Success toast specific override
               success: {
                 iconTheme: {
                   primary: "var(--color-success)",
                   secondary: "var(--color-surface)",
                 },
               },
-              // Error toast specific override
               error: {
                 iconTheme: {
                   primary: "var(--color-danger)",

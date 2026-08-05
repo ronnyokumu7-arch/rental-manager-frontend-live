@@ -1,4 +1,3 @@
-// src/components/dashboard/ActionCenterWidget.tsx
 "use client";
 
 import { useState } from "react";
@@ -50,7 +49,6 @@ export default function ActionCenterWidget() {
     return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  // ✅ DEFENSIVE: Force ID to a valid number and block execution if invalid
   const handleClaimTask = async (rawId: number | string | undefined | null) => {
     const taskId = Number(rawId);
     if (!taskId || isNaN(taskId)) {
@@ -132,7 +130,6 @@ export default function ActionCenterWidget() {
       </div>
 
       {/* SCROLLABLE CONTENT AREA */}
-      {/* ✅ UI/UX FIX: Changed max-h-[500px] to max-h-80 (320px) to display ~3 tasks, with overflow-y-auto for smooth scrolling */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-5 max-h-80 space-y-3">
         
         {/* TAB 1: TASKS */}
@@ -193,6 +190,7 @@ export default function ActionCenterWidget() {
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                        {/* ✅ UPDATED: Claim button only for unassigned tasks */}
                         {task.status === "unassigned" && (
                           <button 
                             onClick={(e) => {
@@ -210,7 +208,9 @@ export default function ActionCenterWidget() {
                             Claim
                           </button>
                         )}
-                        {task.status === "pending" && (
+                        
+                        {/* ✅ UPDATED: Done button for ALL active, assigned statuses (pending, in_progress, in_review, blocked) */}
+                        {task.status !== "unassigned" && task.status !== "completed" && (
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();

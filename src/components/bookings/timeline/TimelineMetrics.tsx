@@ -17,8 +17,9 @@ export default function TimelineMetrics({ vehicles, bookings }: TimelineMetricsP
     const todayStr = format(new Date(), "yyyy-MM-dd");
 
     bookings.forEach((b) => {
-      const start = format(new Date(b.start_date || (b as any).startDate), "yyyy-MM-dd");
-      const end = format(new Date(b.end_date || (b as any).endDate), "yyyy-MM-dd");
+      // ✅ CLEAN: Direct snake_case access
+      const start = format(new Date(b.start_date), "yyyy-MM-dd");
+      const end = format(new Date(b.end_date), "yyyy-MM-dd");
       if (todayStr >= start && todayStr <= end && b.status === "active") {
         rentedNow++;
       }

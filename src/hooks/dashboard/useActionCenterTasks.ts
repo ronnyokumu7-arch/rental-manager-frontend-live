@@ -1,4 +1,3 @@
-// src/hooks/dashboard/useActionCenterTasks.ts
 import { useState, useEffect } from "react";
 import { tasksApi } from "@/lib/api/tasks";
 import { usersApi } from "@/lib/api/users";
@@ -17,7 +16,6 @@ export function useActionCenterTasks() {
       let unassignedTasks: Task[] = [];
 
       // 1. Fetch personal tasks (Accessible by all roles)
-      // ✅ UPDATED: Increased limit to 50 to ensure scrolling widget has enough data
       try {
         myTasks = await tasksApi.getMyTasks({ limit: 50 });
       } catch (error) {
@@ -25,7 +23,6 @@ export function useActionCenterTasks() {
       }
 
       // 2. Safely attempt to fetch unassigned tasks (Gracefully absorb 403 errors for standard staff)
-      // ✅ UPDATED: Increased limit to 50
       try {
         unassignedTasks = await tasksApi.getUnassigned(50);
       } catch (error: any) {
@@ -34,13 +31,14 @@ export function useActionCenterTasks() {
         }
       }
 
-      // 3. Merge and organize by priority rules matching backend expectations
-      const combined = [...myTasks, ...unassignedTasks].sort((a, b) => {
-        const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
-        return (priorityOrder[a.priority] ?? 4) - (priorityOrder[b.priority] ?? 4);
-      });
+      // 3. Merge, filter out completed, and organize by priority rules
+      const combined = [...myTasks, ...unassignedTasks]
+        .filter(t => t.status !== "completed") // ✅ ADDED: Action Center is for active work only
+        .sort((a, b) => {
+          const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+          return (priorityOrder[a.priority] ?? 4) - (priorityOrder[b.priority] ?? 4);
+        });
 
-      // ✅ UPDATED: Removed .slice(0, 5) so all fetched tasks are passed to the UI for scrolling
       setTasks(combined);
     } catch (error) {
       console.error("Failed to compile tasks pipeline:", error);

@@ -1,4 +1,3 @@
-// src/components/profile/ActionCenterList.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -31,6 +30,8 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   booking: Briefcase,
   hr: Users,
   operations: Tag,
+  maintenance: Tag, // ✅ ADDED: Fallback for new categories
+  other: Tag,       // ✅ ADDED: Fallback for new categories
 };
 
 const PRIORITY_DOT_COLORS: Record<string, string> = {
@@ -59,14 +60,15 @@ export default function ActionCenterList({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // ✅ CRITICAL FIX: "pending" tab now shows ALL active tasks (pending, in_progress, in_review, blocked)
   const displayTasks = activeTab === "pool" 
     ? unassignedTasks 
     : activeTab === "done" 
       ? tasks.filter(t => t.status === "completed")
-      : tasks.filter(t => t.status === "pending");
+      : tasks.filter(t => t.status !== "completed" && t.status !== "unassigned");
 
-  // ✅ Calculate counts for each tab
-  const pendingCount = tasks.filter(t => t.status === "pending").length;
+  // ✅ CRITICAL FIX: Count logic must match the display filter
+  const pendingCount = tasks.filter(t => t.status !== "completed" && t.status !== "unassigned").length;
   const completedCount = tasks.filter(t => t.status === "completed").length;
   const unassignedCount = unassignedTasks.length;
 

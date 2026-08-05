@@ -3,10 +3,10 @@ import { usersApi } from "@/lib/api/users";
 import { clientsApi } from "@/lib/api/clients";
 import { vehiclesApi } from "@/lib/api/vehicles";
 import { bookingsApi } from "@/lib/api/bookings";
-import type { User, Client, Vehicle, Booking } from "@/lib/types";
+// ✅ UPDATED: Import centralized types instead of defining them locally
+import type { User, Client, Vehicle, Booking, TaskPriority, TaskCategory } from "@/lib/types";
 
-export type Priority = "low" | "medium" | "high" | "urgent";
-export type Category = "compliance" | "finance" | "maintenance" | "hr" | "operations" | "other";
+// ❌ REMOVED: Local Priority and Category definitions
 export type EntityType = "user" | "client" | "vehicle" | "booking";
 export type TabType = "users" | "clients" | "vehicles" | "bookings";
 
@@ -20,8 +20,9 @@ export function useCreateTask() {
   // Form State
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<Priority>("medium");
-  const [category, setCategory] = useState<Category>("operations");
+  // ✅ UPDATED: Use centralized types
+  const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [category, setCategory] = useState<TaskCategory>("operations");
   const [dueDate, setDueDate] = useState("");
   const [assignedTo, setAssignedTo] = useState<number | null>(null);
   const [relatedEntity, setRelatedEntity] = useState<RelatedEntity>({ type: null, id: null, label: "" });

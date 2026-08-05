@@ -12,8 +12,8 @@ import { Booking } from "@/lib/types";
 import { useBookingsPage, TabMode } from "@/hooks/bookings/useBookingsPage";
 
 const TABS = [
-  { id: "list", label: "Bookings List", icon: LayoutList },
-  { id: "calendar", label: "Availability Calendar", icon: CalendarDays },
+  { id: "list", label: "Reservations", icon: LayoutList },
+  { id: "calendar", label: "Bookings Calendar", icon: CalendarDays },
 ];
 
 export default function BookingsPage() {
@@ -37,9 +37,12 @@ export default function BookingsPage() {
 
   const currentTabInfo = useMemo(() => {
     return activeTab === "list" 
-      ? { title: "Reservations Management", description: "Oversee operational booking states, manage trip lifecycles, and handle extensions.", icon: <LayoutList size={20} /> }
+      ? { title: "Manage Bookings", description: "Create new reservations, manage bookings, and handle extensions.", icon: <LayoutList size={20} /> }
       : { title: "Fleet Timeline Calendar", description: "Real-time look at vehicle distribution, active reservations, and scheduling blocks.", icon: <CalendarDays size={20} /> };
   }, [activeTab]);
+
+  // ✅ THE FIX: Extract the actual array from the bookingsData object
+  const bookingsArray = bookingsData.bookings || [];
 
   return (
     <div className="space-y-6">
@@ -54,7 +57,6 @@ export default function BookingsPage() {
           <p className="text-sm text-[var(--color-ink-muted)] mt-1">{currentTabInfo.description}</p>
         </div>
 
-        {/* ✅ REMOVED: "New Booking" button */}
         <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -90,10 +92,11 @@ export default function BookingsPage() {
               Loading calendar assets...
             </div>
           ) : (
+            // ✅ THE FIX: Pass the correctly extracted array here
             <FleetTimelineCalendar
-              bookings={(Array.isArray(bookingsData) ? bookingsData : []) as Booking[]}
-              vehicleMap={vehicleMap || {}}
-              clientMap={clientMap || {}}
+              bookings={bookingsArray as Booking[]}
+              vehicleMap={vehicleMap}
+              clientMap={clientMap}
               onExtendBooking={openExtendModal}
               onCreateBooking={handleCreateBookingFromCalendar}
             />

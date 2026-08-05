@@ -2,12 +2,22 @@
 
 import { useState } from "react";
 import { User, Mail, Phone, CreditCard, Pencil, Save, X, Camera, Check, Calendar } from "lucide-react";
+import Flatpickr from "react-flatpickr";
+import "flatpickr/dist/flatpickr.min.css";
 import type { Client } from "@/lib/types";
 
 interface PersonalInfoCardProps {
   client: Client;
   onSave: (data: Partial<Client>) => void;
 }
+
+// ✅ BULLETPROOF LOCAL DATE FORMATTER
+const formatDateToLocalYYYYMMDD = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export default function PersonalInfoCard({ client, onSave }: PersonalInfoCardProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -64,6 +74,42 @@ export default function PersonalInfoCard({ client, onSave }: PersonalInfoCardPro
       </div>
     </div>
   );
+
+  // ✅ PREMIUM DATE PICKER COMPONENT
+  const PremiumDatePicker = ({ 
+    label, 
+    value, 
+    onChange 
+  }: { 
+    label: string; 
+    value: string; 
+    onChange: (dates: Date[]) => void;
+  }) => {
+    const isDarkMode = typeof window !== 'undefined' && 
+      (document.documentElement.classList.contains('dark') || 
+       window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    return (
+      <div>
+        <label className="label">{label}</label>
+        <div className="relative group">
+          <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] group-focus-within:text-[var(--color-primary)] transition-colors pointer-events-none z-10" />
+          <Flatpickr
+            value={value}
+            onChange={onChange}
+            options={{
+              dateFormat: "Y-m-d",
+              minDate: "today",
+              disableMobile: true,
+              theme: isDarkMode ? "dark" : "light",
+            }}
+            className="input pl-10"
+            placeholder="Select expiry date..."
+          />
+        </div>
+      </div>
+    );
+  };
 
   // ✅ PREMIUM EDIT MODE
   if (isEditing) {
@@ -126,19 +172,17 @@ export default function PersonalInfoCard({ client, onSave }: PersonalInfoCardPro
               placeholder="ID number"
             />
             
-            {/* Premium Date Picker */}
-            <div>
-              <label className="label">Driver's License Expiry</label>
-              <div className="relative group">
-                <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] group-focus-within:text-[var(--color-primary)] transition-colors pointer-events-none" />
-                <input
-                  type="date"
-                  value={formData.dl_expiry ? String(formData.dl_expiry).split('T')[0] : ""}
-                  onChange={(e) => setFormData({ ...formData, dl_expiry: e.target.value })}
-                  className="input pl-10"
-                />
-              </div>
-            </div>
+            {/* ✅ PREMIUM FLATPICKR DATE PICKER */}
+            <PremiumDatePicker
+              label="Driver's License Expiry"
+              value={formData.dl_expiry}
+              onChange={(dates) => {
+                if (dates[0]) {
+                  const localDateStr = formatDateToLocalYYYYMMDD(dates[0]);
+                  setFormData({ ...formData, dl_expiry: localDateStr });
+                }
+              }}
+            />
           </div>
         </div>
 

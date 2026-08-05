@@ -32,7 +32,9 @@ export default function TenantSubscriptionVerification() {
     try {
       setLoading(true);
       const data = await subscriptionsApi.getPendingRequests();
-      setRequests(data);
+      
+      // ✅ FIXED: Added safe fallback to guarantee 'requests' state is always an array
+      setRequests(data || []);
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Failed to load subscription requests.");
     } finally {

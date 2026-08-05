@@ -1,6 +1,5 @@
-// src/lib/api/invoices.ts
 import apiClient from "@/lib/api-client";
-import type { Invoice, InvoiceCreate, InvoiceUpdate, InvoiceStatus, PaymentMethod } from "@/lib/types";
+import type { Invoice, InvoiceCreate, InvoiceUpdate, InvoiceStatus, PaymentMethod, PaginatedResponse } from "@/lib/types";
 
 export interface RecordPaymentPayload {
   amount: number;
@@ -19,8 +18,9 @@ export interface PublicPaymentPayload {
 }
 
 export const invoicesApi = {
-  list: (params?: { status?: InvoiceStatus; booking_id?: number }) =>
-    apiClient.get<Invoice[]>("/invoices/", { params }).then((r) => r.data),
+  // ✅ FIXED: Unwrap .items from PaginatedResponse, added page/page_size params
+  list: (params?: { status?: InvoiceStatus; booking_id?: number; page?: number; page_size?: number }) =>
+    apiClient.get<PaginatedResponse<Invoice>>("/invoices/", { params }).then((r) => r.data.items),
 
   getById: (id: number) =>
     apiClient.get<Invoice>(`/invoices/${id}`).then((r) => r.data),
@@ -45,7 +45,6 @@ export const invoicesApi = {
   getByToken: (token: string) =>
     apiClient.get(`/invoices/public/${token}`).then((r) => r.data),
 
-  // ✅ NEW: Admin offline payment recording against a specific invoice
   recordPayment: (invoiceId: number, payload: RecordPaymentPayload) =>
     apiClient.post(`/invoices/${invoiceId}/record-payment`, payload).then((r) => r.data),
 

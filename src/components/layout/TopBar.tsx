@@ -69,9 +69,31 @@ export default function Topbar() {
 
   const isSuperAdmin = user?.role === "super_admin";
 
+  // ✅ HELPER: Renders uploaded avatar image, or a clean default User icon placeholder
+  const renderAvatar = (size: "sm" | "md") => {
+    const dims = size === "sm" ? "w-7 h-7" : "w-11 h-11";
+    const iconSize = size === "sm" ? 14 : 20;
+    
+    if (user?.avatar_url) {
+      return (
+        <img 
+          src={user.avatar_url} 
+          alt={user.full_name || "User"} 
+          className={`${dims} rounded-full object-cover border border-[var(--color-surface-border)]`} 
+        />
+      );
+    }
+    
+    return (
+      <div className={`${dims} rounded-full flex items-center justify-center text-[var(--color-ink-muted)] bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]`}>
+        <User size={iconSize} strokeWidth={1.8} />
+      </div>
+    );
+  };
+
   return (
-    // ✅ RELIES 100% ON CSS VARIABLE. No hardcoded dark overrides.
-    <header className="h-14 flex items-center gap-4 px-5 sticky top-0 z-30 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)] backdrop-blur-xl transition-colors duration-300">
+    // ✅ LOWERED z-index to z-20 to prevent blocking drawers/modals
+    <header className="h-14 flex items-center gap-4 px-5 sticky top-0 z-20 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)] backdrop-blur-xl transition-colors duration-300">
       {/* Left: Greeting */}
       <p className="hidden lg:block text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap flex-shrink-0">
         {greeting()}
@@ -120,9 +142,7 @@ export default function Topbar() {
             className="flex items-center gap-2.5 pl-1 pr-2.5 py-1 rounded-xl hover:bg-[var(--color-surface-hover)] transition-all duration-150 group"
           >
             <div className="relative flex-shrink-0">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-semibold text-xs select-none bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)]">
-                {user?.full_name?.[0] || "U"}
-              </div>
+              {renderAvatar("sm")}
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[var(--color-success)] ring-2 ring-[var(--color-bg)]" />
             </div>
             <span className="hidden md:block text-[13px] font-medium text-[var(--color-ink)] max-w-[100px] truncate">
@@ -137,9 +157,7 @@ export default function Topbar() {
               <div className="px-4 pt-4 pb-3">
                 <div className="flex items-center gap-3">
                   <div className="relative flex-shrink-0">
-                    <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-base select-none bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)]">
-                      {user?.full_name?.[0] || "U"}
-                    </div>
+                    {renderAvatar("md")}
                     <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[var(--color-success)] ring-2 ring-[var(--color-surface)]" />
                   </div>
                   <div className="min-w-0">
@@ -149,7 +167,10 @@ export default function Topbar() {
                       <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
                       <span className="text-[11px] text-[var(--color-success-text)] font-medium">Active</span>
                       <span className="text-[var(--color-surface-border)]">·</span>
-                      <span className="text-[11px] text-[var(--color-ink-subtle)] capitalize">{user?.role?.replace("_", " ")}</span>
+                      {/* ✅ CHANGED: Shows job title, or falls back to a clean role name (hiding raw "tenant_admin") */}
+                      <span className="text-[11px] text-[var(--color-ink-subtle)] capitalize">
+                        {user?.job_title || (user?.role === "tenant_admin" ? "Administrator" : user?.role?.replace("_", " "))}
+                      </span>
                     </div>
                   </div>
                 </div>

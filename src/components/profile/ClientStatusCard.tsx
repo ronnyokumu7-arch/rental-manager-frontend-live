@@ -29,7 +29,7 @@ export default function ClientStatusCard({
     
     if (daysLeft < 0) return { label: "Expired", variant: "danger", icon: AlertCircle };
     if (daysLeft < 30) return { label: `${daysLeft}d Left`, variant: "warning", icon: AlertCircle };
-    return { label: "Active", variant: "success", icon: CheckCircle2 };
+    return { label: "Valid", variant: "success", icon: CheckCircle2 };
   };
 
   const dlHealth = getDlHealth();

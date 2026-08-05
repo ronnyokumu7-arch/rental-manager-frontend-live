@@ -1,7 +1,6 @@
-// src/components/profile/TaskContextSection.tsx
 "use client";
 
-import { Calendar, Tag, AlertCircle, Clock, ArrowRight } from "lucide-react";
+import { Calendar, Tag, AlertCircle, Clock, ArrowRight, CheckCircle2, Ban } from "lucide-react";
 import type { Task } from "@/lib/types";
 
 interface TaskContextSectionProps {
@@ -35,7 +34,30 @@ export default function TaskContextSection({ task }: TaskContextSectionProps) {
     }
   };
 
+  // ✅ ADDED: Status styling for the new workflow states
+  const getStatusStyle = (status?: string) => {
+    switch (status) {
+      case 'in_progress': return "text-blue-600 dark:text-blue-400 bg-blue-500/5 border-blue-500/10";
+      case 'in_review': return "text-purple-600 dark:text-purple-400 bg-purple-500/5 border-purple-500/10";
+      case 'blocked': return "text-rose-600 dark:text-rose-400 bg-rose-500/5 border-rose-500/10";
+      case 'completed': return "text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border-emerald-500/10";
+      case 'unassigned': return "text-[var(--color-ink-subtle)] bg-[var(--color-surface-hover)] border-[var(--color-surface-border)]";
+      default: return "text-slate-600 dark:text-slate-400 bg-slate-500/5 border-slate-500/10"; // pending
+    }
+  };
+
+  const getStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'in_progress': return <Clock size={10} />;
+      case 'in_review': return <AlertCircle size={10} />;
+      case 'blocked': return <Ban size={10} />;
+      case 'completed': return <CheckCircle2 size={10} />;
+      default: return <Clock size={10} />;
+    }
+  };
+
   const priorityStyle = getPriorityStyle(task.priority);
+  const statusStyle = getStatusStyle(task.status);
 
   return (
     <div className="p-6 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/20">
@@ -69,6 +91,14 @@ export default function TaskContextSection({ task }: TaskContextSectionProps) {
             <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${priorityStyle}`}>
               <AlertCircle size={10} />
               {task.priority}
+            </span>
+          )}
+
+          {/* ✅ ADDED: Status Badge */}
+          {task.status && (
+            <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${statusStyle}`}>
+              {getStatusIcon(task.status)}
+              <span className="capitalize">{task.status.replace("_", " ")}</span>
             </span>
           )}
 

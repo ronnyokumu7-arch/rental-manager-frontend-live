@@ -71,8 +71,9 @@ export default function GenerateContractModal({ open, onClose, onGenerated }: Ge
         onGenerated();
         handleClose();
       } else {
+        // ✅ CHANGED: Use the safe, dedicated generateForBooking endpoint for orphan bookings
         toast.loading("Generating contract...", { duration: 1000 });
-        await contractsApi.regenerate(selectedBookingId);
+        await contractsApi.generateForBooking(selectedBookingId);
         toast.dismiss();
         toast.success("Contract generated successfully!");
         onGenerated();

@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from "react";
 import { Gauge, DollarSign, Shield, Calendar, Activity } from "lucide-react";
+import Flatpickr from "react-flatpickr";
+import "flatpickr/dist/flatpickr.min.css";
 import type { Vehicle, VehicleUpdate } from "@/lib/types";
 
 interface VehicleSpecsCardProps {
@@ -17,6 +19,14 @@ const labelClass = "text-[10px] font-bold text-[var(--color-ink-muted)] uppercas
 const valueClass = "text-sm font-semibold text-[var(--color-ink)] flex items-center gap-2";
 const inputClass = "w-full px-3 py-2.5 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm";
 
+// ✅ BULLETPROOF LOCAL DATE FORMATTER (Fixes timezone offset bug)
+const formatDateToLocalYYYYMMDD = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function VehicleSpecsCard({ vehicle, isEditing, onSave, onCancel, actionLoading }: VehicleSpecsCardProps) {
   const isInsuranceExpired = vehicle.insurance_expiry ? new Date(vehicle.insurance_expiry) < new Date() : false;
 
@@ -25,7 +35,7 @@ export default function VehicleSpecsCard({ vehicle, isEditing, onSave, onCancel,
     current_mileage: vehicle.current_mileage.toString(),
     next_service_km: vehicle.next_service_km ? vehicle.next_service_km.toString() : "",
     insurance_number: vehicle.insurance_number || "",
-    insurance_expiry: vehicle.insurance_expiry ? new Date(vehicle.insurance_expiry).toISOString().split('T')[0] : "",
+    insurance_expiry: vehicle.insurance_expiry ? formatDateToLocalYYYYMMDD(new Date(vehicle.insurance_expiry)) : "",
   });
 
   // Reset form data when the vehicle prop changes or editing starts
@@ -34,7 +44,7 @@ export default function VehicleSpecsCard({ vehicle, isEditing, onSave, onCancel,
       current_mileage: vehicle.current_mileage.toString(),
       next_service_km: vehicle.next_service_km ? vehicle.next_service_km.toString() : "",
       insurance_number: vehicle.insurance_number || "",
-      insurance_expiry: vehicle.insurance_expiry ? new Date(vehicle.insurance_expiry).toISOString().split('T')[0] : "",
+      insurance_expiry: vehicle.insurance_expiry ? formatDateToLocalYYYYMMDD(new Date(vehicle.insurance_expiry)) : "",
     });
   }, [vehicle, isEditing]);
 
@@ -44,7 +54,8 @@ export default function VehicleSpecsCard({ vehicle, isEditing, onSave, onCancel,
       current_mileage: parseInt(formData.current_mileage, 10) || vehicle.current_mileage,
       next_service_km: formData.next_service_km ? parseInt(formData.next_service_km, 10) : null,
       insurance_number: formData.insurance_number || null,
-      insurance_expiry: formData.insurance_expiry ? new Date(formData.insurance_expiry).toISOString() : null,
+      // ✅ Safe UTC conversion to prevent timezone shift on save
+      insurance_expiry: formData.insurance_expiry ? new Date(formData.insurance_expiry + 'T00:00:00').toISOString() : null,
     });
   };
 
@@ -84,15 +95,33 @@ export default function VehicleSpecsCard({ vehicle, isEditing, onSave, onCancel,
               placeholder="Policy ID" 
             />
           </div>
+          
+          {/* ✅ UPDATED: Premium Flatpickr for Insurance Expiry Date */}
           <div>
             <label className={labelClass}>Insurance Expiry Date</label>
-            <input 
-              type="date" 
-              value={formData.insurance_expiry}
-              onChange={(e) => setFormData({ ...formData, insurance_expiry: e.target.value })}
-              className={inputClass} 
-            />
+            <div className="relative group">
+              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] group-focus-within:text-[var(--color-primary)] transition-colors pointer-events-none z-10" />
+              <Flatpickr
+                value={formData.insurance_expiry}
+                onChange={(dates) => {
+                  if (dates[0]) {
+                    const localDateStr = formatDateToLocalYYYYMMDD(dates[0]);
+                    setFormData({ ...formData, insurance_expiry: localDateStr });
+                  } else {
+                    setFormData({ ...formData, insurance_expiry: "" });
+                  }
+                }}
+                options={{
+                  dateFormat: "Y-m-d",
+                  disableMobile: true,
+                  theme: typeof window !== 'undefined' && (document.documentElement.classList.contains('dark') || window.matchMedia('(prefers-color-scheme: dark)').matches) ? "dark" : "light",
+                }}
+                className={`${inputClass} pl-10`}
+                placeholder="Select expiry date..."
+              />
+            </div>
           </div>
+
           <div className="md:col-span-2 flex justify-end gap-3 pt-4 border-t border-[var(--color-surface-border)]">
             <button 
               type="button" 

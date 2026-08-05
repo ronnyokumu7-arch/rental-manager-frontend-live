@@ -1,7 +1,7 @@
-// src/components/layout/Sidebar.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, LogOut, Settings, type LucideIcon } from "lucide-react";
@@ -19,12 +19,23 @@ export default function Sidebar({ navItems }: SidebarProps) {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [flyoutPos, setFlyoutPos] = useState<number>(0);
   const [hoveredItem, setHoveredItem] = useState<{ label: string; top: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     function handle(e: MouseEvent) {
-      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const isInsideSidebar = sidebarRef.current?.contains(target);
+      const isInsideFlyout = flyoutRef.current?.contains(target);
+
+      if (!isInsideSidebar && !isInsideFlyout) {
         setOpenGroup(null);
       }
     }
@@ -61,22 +72,19 @@ export default function Sidebar({ navItems }: SidebarProps) {
   };
 
   const openGroupItem = navItems.find((i) => i.label === openGroup);
-
-  // Separate settings from other nav items
-  const settingsItem = navItems.find(item => item.label === "Settings");
-  const regularNavItems = navItems.filter(item => item.label !== "Settings");
+  const settingsItem = navItems.find((item) => item.label === "Settings");
+  const regularNavItems = navItems.filter((item) => item.label !== "Settings");
 
   return (
     <>
-      {/* ✅ STRICTLY VARIABLE-DRIVEN SIDEBAR RAIL */}
-      <aside 
-        ref={sidebarRef} 
-        className="h-full w-20 flex flex-col flex-shrink-0 
+      <aside
+        ref={sidebarRef}
+        className="relative z-30 h-full w-20 flex flex-col flex-shrink-0 
                    bg-[var(--color-bg)] 
                    border-r border-[var(--color-surface-border)] 
                    transition-colors duration-300"
       >
-        {/* Logo - Removed divider */}
+        {/* Logo */}
         <div className="h-16 flex items-center justify-center flex-shrink-0">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-[11px] text-white tracking-tight select-none bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] shadow-[0_0_15px_rgba(99,102,241,0.3)]">
             RM
@@ -89,7 +97,7 @@ export default function Sidebar({ navItems }: SidebarProps) {
             const active = isActive(item.href, item.children);
             const isGroupOpen = openGroup === item.label;
             const Icon = item.icon as LucideIcon;
-            
+
             return (
               <div key={item.label} className="relative group/nav">
                 {item.href && !item.children ? (
@@ -102,19 +110,25 @@ export default function Sidebar({ navItems }: SidebarProps) {
                     onMouseLeave={() => setHoveredItem(null)}
                     className={`relative flex items-center justify-center w-full h-12 rounded-xl transition-all duration-200 outline-none group/btn ${
                       active
-                        ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                        ? "text-[var(--color-primary)]"
                         : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
                     }`}
                   >
-                    {/* Active Indicator Line */}
                     {active && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[var(--color-primary)] shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
                     )}
-                    <Icon size={20} strokeWidth={active ? 2.2 : 1.8} className="transition-all" />
+                    {/* ✅ FIXED: Removed 'fill' prop. Relying on strokeWidth and text color for a clean active state. */}
+                    <Icon
+                      size={20}
+                      strokeWidth={active ? 1.5 : 1.8}
+                      className="transition-all duration-200"
+                    />
                   </Link>
                 ) : (
                   <button
-                    ref={(el) => { buttonRefs.current[item.label] = el; }}
+                    ref={(el) => {
+                      buttonRefs.current[item.label] = el;
+                    }}
                     onClick={() => handleGroupClick(item.label, buttonRefs.current[item.label])}
                     onMouseEnter={(e) => {
                       const rect = e.currentTarget.getBoundingClientRect();
@@ -122,21 +136,27 @@ export default function Sidebar({ navItems }: SidebarProps) {
                     }}
                     onMouseLeave={() => setHoveredItem(null)}
                     className={`relative flex items-center justify-center w-full h-12 rounded-xl transition-all duration-200 outline-none group/btn ${
-                      isGroupOpen
-                        ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                      isGroupOpen || active
+                        ? "text-[var(--color-primary)]"
                         : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
                     }`}
                   >
-                    {isGroupOpen && (
+                    {(isGroupOpen || active) && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[var(--color-primary)] shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
                     )}
-                    <Icon size={20} strokeWidth={isGroupOpen ? 2.2 : 1.8} className="transition-all" />
-                    {/* Group Indicator Dot */}
-                    <span className={`absolute bottom-2 right-2 w-[5px] h-[5px] rounded-full transition-all ${
-                      isGroupOpen 
-                        ? "bg-[var(--color-primary)] shadow-[0_0_6px_rgba(99,102,241,0.8)]" 
-                        : "bg-[var(--color-ink-subtle)]"
-                    }`} />
+                    {/* ✅ FIXED: Removed 'fill' prop here as well. */}
+                    <Icon
+                      size={20}
+                      strokeWidth={isGroupOpen || active ? 1.5 : 1.8}
+                      className="transition-all duration-200"
+                    />
+                    <span
+                      className={`absolute bottom-2 right-2 w-[5px] h-[5px] rounded-full transition-all ${
+                        isGroupOpen || active
+                          ? "bg-[var(--color-primary)] shadow-[0_0_6px_rgba(99,102,241,0.8)]"
+                          : "bg-[var(--color-ink-subtle)]"
+                      }`}
+                    />
                   </button>
                 )}
               </div>
@@ -146,7 +166,6 @@ export default function Sidebar({ navItems }: SidebarProps) {
 
         {/* Settings & Logout Section */}
         <div className="px-3 pb-6 flex-shrink-0 space-y-2">
-          {/* Settings Button with Unique Animation */}
           {settingsItem && (
             <Link
               href={settingsItem.href || "#"}
@@ -155,17 +174,21 @@ export default function Sidebar({ navItems }: SidebarProps) {
                 setHoveredItem({ label: settingsItem.label, top: rect.top });
               }}
               onMouseLeave={() => setHoveredItem(null)}
-              className="relative flex items-center justify-center w-full h-12 rounded-xl transition-all duration-200 outline-none group/btn text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
+              className={`relative flex items-center justify-center w-full h-12 rounded-xl transition-all duration-200 outline-none group/btn ${
+                isActive(settingsItem.href)
+                  ? "text-[var(--color-primary)]"
+                  : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
+              }`}
             >
-              <Settings 
-                size={20} 
-                strokeWidth={1.8} 
-                className="transition-all duration-500 group-hover/btn:rotate-[180deg] group-hover/btn:scale-110" 
+              {/* ✅ FIXED: Removed 'fill' prop from Settings icon. */}
+              <Settings
+                size={20}
+                strokeWidth={isActive(settingsItem.href) ? 1.5 : 1.8}
+                className="transition-all duration-500 group-hover/btn:rotate-[180deg] group-hover/btn:scale-110"
               />
             </Link>
           )}
-          
-          {/* Logout Button */}
+
           <button
             onClick={handleLogout}
             className="group/logout relative flex items-center justify-center w-full h-12 rounded-xl text-[var(--color-ink-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-bg)] transition-all duration-300"
@@ -176,8 +199,8 @@ export default function Sidebar({ navItems }: SidebarProps) {
         </div>
       </aside>
 
-      {/* ✅ STRICTLY VARIABLE-DRIVEN TOOLTIP */}
-      {hoveredItem && !openGroup && (
+      {/* PORTAL-DRIVEN TOOLTIP */}
+      {mounted && hoveredItem && !openGroup && createPortal(
         <div
           className="pointer-events-none fixed whitespace-nowrap text-[12px] font-bold px-3 py-1.5 rounded-lg z-[9999] 
                      bg-[var(--color-ink)] text-[var(--color-surface)]
@@ -190,14 +213,16 @@ export default function Sidebar({ navItems }: SidebarProps) {
         >
           <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[var(--color-ink)]" />
           {hoveredItem.label}
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* ✅ STRICTLY VARIABLE-DRIVEN FLYOUT PANEL */}
-      {openGroup && openGroupItem?.children && (
+      {/* PORTAL-DRIVEN FLYOUT PANEL */}
+      {mounted && openGroup && openGroupItem?.children && createPortal(
         <>
           <div className="fixed inset-0 z-[9998]" onClick={() => setOpenGroup(null)} />
           <div
+            ref={flyoutRef}
             className="fixed z-[9999] w-[260px] overflow-y-auto animate-in slide-in-from-left-2 fade-in duration-200 custom-scrollbar"
             style={{
               left: "88px",
@@ -206,17 +231,21 @@ export default function Sidebar({ navItems }: SidebarProps) {
             }}
           >
             <div className="p-4 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-dropdown)] backdrop-blur-xl">
-              {/* Flyout Header */}
               <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-surface-border)]">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20">
-                  {openGroupItem.icon && <openGroupItem.icon size={16} strokeWidth={2} className="text-[var(--color-primary)]" />}
+                  {openGroupItem.icon && (
+                    <openGroupItem.icon
+                      size={16}
+                      strokeWidth={1.5}
+                      className="text-[var(--color-primary)]"
+                    />
+                  )}
                 </div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">
                   {openGroupItem.label}
                 </p>
               </div>
-              
-              {/* Flyout Items */}
+
               <div className="space-y-1">
                 {openGroupItem.children.map((child) => {
                   const childActive = pathname === child.href || pathname.startsWith(child.href + "/");
@@ -225,16 +254,18 @@ export default function Sidebar({ navItems }: SidebarProps) {
                       key={child.href}
                       href={child.href}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 group/child ${
-                        childActive 
-                          ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" 
+                        childActive
+                          ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
                           : "text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]"
                       }`}
                     >
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all ${
-                        childActive 
-                          ? "bg-[var(--color-primary)] shadow-[0_0_6px_rgba(99,102,241,0.8)]" 
-                          : "bg-[var(--color-ink-subtle)]"
-                      }`} />
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all ${
+                          childActive
+                            ? "bg-[var(--color-primary)] shadow-[0_0_6px_rgba(99,102,241,0.8)]"
+                            : "bg-[var(--color-ink-subtle)]"
+                        }`}
+                      />
                       <span className="flex-1">{child.label}</span>
                       {childActive && <ChevronRight size={14} strokeWidth={2.5} className="text-[var(--color-primary)]" />}
                     </Link>
@@ -243,7 +274,8 @@ export default function Sidebar({ navItems }: SidebarProps) {
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </>
   );

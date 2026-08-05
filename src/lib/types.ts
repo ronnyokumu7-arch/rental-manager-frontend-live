@@ -13,7 +13,7 @@ export interface User {
   is_suspended: boolean;
   suspension_reason?: string | null;
   
-  // ✅ NEW: Tenant Ownership (Agency Owner)
+  // Tenant Ownership (Agency Owner)
   is_tenant_owner?: boolean;
   
   // Contact & Role Details
@@ -31,7 +31,7 @@ export interface User {
   dl_number?: string | null;
   dl_expiry?: string | null;
   
-  // ✅ NEW: Media & Documents (Base64 or external URLs)
+  // Media & Documents (Base64 or external URLs)
   avatar_url?: string | null;
   id_image_url?: string | null;
   dl_image_url?: string | null;
@@ -42,11 +42,11 @@ export interface User {
   is_onboarded?: boolean;
   
   // Invite System
-  invite_token?: string | null;
+  // ✅ REMOVED: invite_token (Backend stripped this for security; it is never exposed in UserOut)
   invite_expires_at?: string | null;
   
   // Security Audit
-  failed_login_attempts?: number;
+  // ✅ REMOVED: failed_login_attempts (Backend stripped this to prevent brute-force recon)
   account_locked_until?: string | null;
   
   // UI Preferences
@@ -227,7 +227,7 @@ export interface BookingVehicleRelation {
 
 export interface Booking {
   id: number;
-  booking_number: string;
+  booking_number?: string | null;     // ✅ FIXED: Made optional/nullable to match backend BookingOut
   tenant_id: number;
   client_id: number;
   vehicle_id: number;
@@ -236,6 +236,7 @@ export interface Booking {
   return_location?: string | null;
   start_date: string;
   end_date: string;
+  original_end_date?: string | null;  // ✅ ADDED: Matches backend's immutable audit trail for extensions
   daily_rate?: number | string | null;
   total_amount: number;
   currency_code: string;
@@ -284,17 +285,38 @@ export interface Contract {
   contract_number: string;
   status: ContractStatus;
   pdf_path: string | null;
-  signature_image_path?: string | null;
-  share_token: string | null;
-  share_token_expires_at: string | null;
+  signature_image_path?: string | null; // ✅ Made optional to match backend
+  share_token?: string | null;          // ✅ Made optional to match backend
+  share_token_expires_at?: string | null; // ✅ Made optional to match backend
   signed_by_client: boolean;
   client_signed_at: string | null;
-  signed_at: string | null; // ✅ ADD THIS LINE
+  signed_at: string | null; 
   created_at: string;
   updated_at: string;
+  
+  // Computed fields from backend relationship
   booking_number?: string | null;
   client_id?: number | null;
   client_name?: string | null;
+}
+
+// Ensure PublicContractView matches the backend schema
+export interface PublicContractView {
+  contract_number: string;
+  booking_id: number;
+  booking_number?: string | null;
+  tenant_name: string;
+  client_name: string;
+  vehicle_make: string;
+  vehicle_model: string;
+  vehicle_plate: string;
+  start_date: string;
+  end_date: string;
+  total_amount: string;
+  currency_code: string;
+  status: ContractStatus;
+  signed_by_client: boolean;
+  created_at: string;
 }
 
 // ─── Invoices ────────────────────────────────────────────────────────────────
@@ -303,14 +325,16 @@ export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "void" | "pa
 export interface Invoice {
   id: number;
   tenant_id: number;
-  subscription_id: number | null;
   booking_id: number | null;
   invoice_number: string;
   status: InvoiceStatus;
   share_token?: string | null;
-  share_url?: string | null;
+  share_token_expires_at?: string | null; // ✅ ADDED: Backend tracks expiration
   amount_due: number;
   amount_paid: number;
+  remaining_balance: number;              // ✅ ADDED: Computed field from backend
+  discount_amount: number;                // ✅ ADDED: Backend supports discounts
+  discount_reason?: string | null;        // ✅ ADDED: Backend supports discounts
   currency_code: string;
   due_date: string;
   paid_at: string | null;
@@ -318,18 +342,24 @@ export interface Invoice {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  
+  // Computed fields from backend relationship
   booking_number?: string | null;
   client_id?: number | null;
   client_name?: string | null;
+  
+  // ✅ REMOVED: subscription_id (Not present in backend InvoiceOut)
+  // ✅ REMOVED: share_url (Generated on-demand via /share-link endpoint, not in list view)
 }
 
 export interface InvoiceCreate {
-  booking_id?: number;
-  subscription_id?: number;
-  amount_due: number;
-  currency_code?: string;
+  booking_id: number;
   due_date: string;
   notes?: string;
+  amount_due?: number;
+  currency_code?: string;
+  discount_amount?: number;               // ✅ ADDED
+  discount_reason?: string;               // ✅ ADDED
 }
 
 export interface InvoiceUpdate {
@@ -337,6 +367,8 @@ export interface InvoiceUpdate {
   currency_code?: string;
   due_date?: string;
   notes?: string;
+  discount_amount?: number;               // ✅ ADDED
+  discount_reason?: string;               // ✅ ADDED
   status?: InvoiceStatus;
 }
 
@@ -359,20 +391,11 @@ export interface Payment {
   notes: string | null;
   created_at: string;
   
-  // ✅ ADDED: Computed fields from backend
+  // ✅ PERFECT MATCH: Computed fields from backend PaymentOut
   booking_id?: number | null;
   invoice_number?: string | null;
   client_id?: number | null;
   client_name?: string | null;
-}
-
-export interface PaymentCreate {
-  invoice_id: number;
-  amount: number;
-  currency_code?: string;
-  method: PaymentMethod;
-  reference?: string;
-  notes?: string;
 }
 
 // ─── Dashboard List Enrichments ──────────────────────────────────────────────
@@ -406,21 +429,25 @@ export interface RoleTemplate {
   id: number;
   tenant_id: number;
   job_title: string;
+  description?: string | null; // ✅ ADDED: Matches backend RoleTemplateOut
   permissions: string[];
 }
 
 // ─── Tasks & Action Center ──────────────────────────────────────────────────
-export type TaskStatus = "unassigned" | "pending" | "completed";
+export type TaskStatus = "unassigned" | "pending" | "in_progress" | "in_review" | "blocked" | "completed";
+
+export type TaskCategory = "fleet" | "finance" | "hr" | "booking" | "compliance" | "maintenance" | "operations" | "other";
+
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
-export type TaskCategory = "fleet" | "finance" | "hr" | "booking" | "compliance";
 
 export interface Task {
   id: number;
   tenant_id: number;
   user_id: number | null;
+  created_by: number | null;
   title: string;
   description: string | null;
-  category: TaskCategory; // Frontend strictness (backend accepts string)
+  category: TaskCategory;
   status: TaskStatus;
   priority: TaskPriority;
   due_date: string | null;
@@ -430,31 +457,38 @@ export interface Task {
   requires_role: string | null;
   target_type: string | null;
   target_id: number | null;
-  location_id: number | null; // ✅ Added to match backend TaskBase
-  created_by: number | null;
+  location_id: number | null;
   created_at: string;
   updated_at: string;
+  // ✅ REMOVED: start_date (Backend TaskOut does not support this field)
 }
 
 export interface TaskCreate {
   title: string;
   description?: string | null;
   category: TaskCategory;
-  priority?: TaskPriority; // ✅ Backend defaults to "medium", so optional is safer
+  priority?: TaskPriority;
   due_date?: string | null;
   target_type?: string | null;
   target_id?: number | null;
-  location_id?: number | null; // ✅ Added to match backend
+  location_id?: number | null;
   user_id?: number | null;
-  created_by?: number | null; // ✅ Added to match backend
-  requires_role?: string | null; // ✅ Added to match backend
-  is_system_generated?: boolean; // ✅ Added to match backend
+  requires_role?: string | null;
+  is_system_generated?: boolean;
+  // ✅ REMOVED: start_date (Backend TaskCreate does not support this field)
+  // ✅ REMOVED: created_by (Backend sets this securely server-side from current_user.id)
 }
 
 export interface TaskUpdate {
+  title?: string;
+  description?: string | null;
+  category?: TaskCategory;
+  priority?: TaskPriority;
   status?: TaskStatus;
+  user_id?: number | null;
+  due_date?: string | null;
   completed_at?: string | null;
-  user_id?: number | null; // ✅ Added: Backend explicitly allows this for claiming/assigning
+  // ✅ REMOVED: start_date (Backend TaskUpdate does not support this field)
 }
 
 // ─── Tenants & Subscriptions ─────────────────────────────────────────────────

@@ -20,7 +20,7 @@ export function useContracts() {
       
       // ✅ DATA NORMALIZATION: Heal historical data inconsistencies
       // If a contract has a signed date, force its status to "signed"
-      const normalizedData = data.map((c: any) => {
+      const normalizedData = (data || []).map((c: any) => { // ✅ FIXED: Added safe fallback || []
         if (c.client_signed_at || c.signed_at) {
           return { ...c, status: "signed" as ContractStatus };
         }

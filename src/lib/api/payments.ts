@@ -1,22 +1,22 @@
-// src/lib/api/payments.ts
 import apiClient from "@/lib/api-client";
-import type { Payment, PaymentStatus, PaymentMethod } from "@/lib/types";
+import type { Payment, PaymentStatus, PaymentMethod, PaginatedResponse } from "@/lib/types";
 
 export interface PaymentVoidPayload {
   reason: string;
 }
 
 export const paymentsApi = {
+  // ✅ FIXED: Unwrap .items from PaginatedResponse, added page/page_size params
   list: async (params?: {
     invoice_id?: number;
     status?: PaymentStatus;
     method?: PaymentMethod;
+    page?: number;
+    page_size?: number;
   }): Promise<Payment[]> => {
-    const res = await apiClient.get<Payment[]>("/payments", { params });
-    return res.data;
+    const res = await apiClient.get<PaginatedResponse<Payment>>("/payments/", { params });
+    return res.data.items;
   },
-
-  // ✅ REMOVED: create() - Payments are now created exclusively via invoicesApi.recordPayment()
 
   void: async (id: number, payload: PaymentVoidPayload): Promise<Payment> => {
     const res = await apiClient.post<Payment>(`/payments/${id}/void`, payload);

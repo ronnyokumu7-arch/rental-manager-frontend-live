@@ -17,7 +17,9 @@ export function usePayments() {
     setLoading(true);
     try {
       const data = await paymentsApi.list();
-      setPayments(data);
+      
+      // ✅ FIXED: Added safe fallback to guarantee 'payments' state is always an array
+      setPayments(data || []);
     } catch (error) {
       toast.error("Failed to load payments");
     } finally {
