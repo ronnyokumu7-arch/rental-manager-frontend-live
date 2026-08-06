@@ -12,21 +12,11 @@ import {
   ShieldCheck 
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { SubscriptionRequest } from "@/lib/api/subscriptions";
+// ✅ Import the type AND the API client from the same source of truth
+import { SubscriptionRequest, subscriptionsApi } from "@/lib/api/subscriptions";
 
-// ✅ Interface matching the backend PaymentVerificationOut schema
-interface SubscriptionRequest {
-  id: number;
-  tenant_id: number;
-  tenant_name: string | null;
-  target_plan: string;
-  target_billing_cycle: string;
-  payment_method: "mpesa" | "bank";
-  reference_code: string;
-  notes?: string;
-  created_at: string;
-  status: "pending" | "approved" | "rejected";
-}
+// ❌ REMOVED: Local duplicate interface (was causing the conflict)
+// The imported SubscriptionRequest from @/lib/api/subscriptions is now the single source of truth
 
 export default function TenantSubscriptionVerification() {
   const [requests, setRequests] = useState<SubscriptionRequest[]>([]);
@@ -73,7 +63,7 @@ export default function TenantSubscriptionVerification() {
       return;
     }
     
-    setProcessingId(id);
+    setRejectingId(id); // ✅ Fix: was setProcessingId, should track rejecting state separately
     try {
       await subscriptionsApi.rejectRequest(id, rejectionReason.trim());
       toast.success("Payment request rejected.");
@@ -83,7 +73,7 @@ export default function TenantSubscriptionVerification() {
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Rejection failed.");
     } finally {
-      setProcessingId(null);
+      setRejectingId(null); // ✅ Fix: was setProcessingId, should match rejectingId state
     }
   };
 
@@ -181,7 +171,7 @@ export default function TenantSubscriptionVerification() {
                       </div>
                       {req.notes && (
                         <div className="mt-1 text-[10px] text-[var(--color-ink-subtle)] italic truncate max-w-[200px]" title={req.notes}>
-                          "{req.notes}"
+                          &quot;{req.notes}&quot; {/* ✅ Escaped quotes to avoid JSX parsing issues */}
                         </div>
                       )}
                     </td>
