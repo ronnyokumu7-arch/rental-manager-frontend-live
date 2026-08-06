@@ -1,6 +1,8 @@
 // src/app/invite/page.tsx
 "use client";
 
+export const dynamic = 'force-dynamic';   //added for emergencyy deploy
+
 import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { 

@@ -1,6 +1,8 @@
 // src/app/verify/page.tsx
 "use client";
 
+export const dynamic = 'force-dynamic';         //added for emergencyy deploy
+
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle, AlertCircle, Loader2, ArrowRight } from "lucide-react";
