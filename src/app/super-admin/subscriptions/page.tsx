@@ -12,7 +12,7 @@ import {
   ShieldCheck 
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { subscriptionsApi } from "@/lib/api/subscriptions";
+import { SubscriptionRequest } from "@/lib/api/subscriptions";
 
 // ✅ Interface matching the backend PaymentVerificationOut schema
 interface SubscriptionRequest {
