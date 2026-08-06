@@ -1,0 +1,53 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Frontend: Local Backend",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NEXT_PUBLIC_API_URL": "http://localhost:8000/api/v1"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "node_modules/**"]
+    },
+    {
+      "name": "Frontend: Render Backend",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NEXT_PUBLIC_API_URL": "https://rental-manager-backend-live.onrender.com/api/v1"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "node_modules/**"]
+    },
+    {
+      "name": "Frontend: Build + Start (Prod Test)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "NEXT_PUBLIC_API_URL": "https://rental-manager-backend-live.onrender.com/api/v1",
+        "NODE_ENV": "production"
+      },
+      "console": "integratedTerminal",
+      "preLaunchTask": "build:frontend",
+      "skipFiles": ["<node_internals>/**", "node_modules/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: Local",
+      "configurations": ["Backend: Local", "Frontend: Local Backend"],
+      "stopAll": true
+    }
+  ]
+}
