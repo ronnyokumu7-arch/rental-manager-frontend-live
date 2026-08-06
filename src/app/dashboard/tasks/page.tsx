@@ -126,7 +126,7 @@ export default function TasksPage() {
             onStatusChange={handleStatusChange}
             onArchive={handleArchive}
             onOpenCreateModal={handleOpenNewTask} // ✅ Wired
-            onEdit={handleEditTask}               // ✅ Wired
+            // onEdit={handleEditTask}               // ✅ Wired
           />
         )}
 
