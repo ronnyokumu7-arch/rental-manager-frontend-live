@@ -1,5 +1,6 @@
 // src/context/auth-context.tsx
 "use client";
+
 import {
   createContext,
   useContext,
@@ -11,20 +12,29 @@ import { useRouter } from "next/navigation";
 import apiClient from "@/lib/api-client";
 import { AuthState, User, Tenant, LoginResponse } from "@/lib/types";
 
+/**
+ * @interface AuthContextType
+ * @description Extends the base AuthState with authentication action methods.
+ */
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  refresh: () => Promise<void>; // ✅ NEW: Force re-fetch tenant data
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// ✅ Store in BOTH cookie (for middleware) and localStorage (for api-client)
+// ─── TOKEN MANAGEMENT HELPERS ────────────────────────────────────────────────
+
+/**
+ * Stores the auth token in both localStorage (for API client) 
+ * and Cookies (for Next.js Middleware/Server Components).
+ */
 const setAuthToken = (token: string) => {
   if (typeof window !== "undefined") {
     localStorage.setItem("rm_token", token);
     const isSecure = window.location.protocol === "https:";
-    const expires = new Date(Date.now() + 7 * 864e5).toUTCString();
+    const expires = new Date(Date.now() + 7 * 864e5).toUTCString(); // 7 days
     document.cookie = `rm_token=${encodeURIComponent(token)}; expires=${expires}; path=/; SameSite=Lax${isSecure ? "; Secure" : ""}`;
   }
 };
@@ -43,7 +53,10 @@ const removeAuthToken = () => {
   }
 };
 
-// ✅ Fixed: Use /tenants/ not /admin/tenants/
+/**
+ * Fetches tenant data safely. Returns null if the request fails 
+ * to prevent crashing the entire auth flow.
+ */
 async function fetchTenant(tenantId: number): Promise<Tenant | null> {
   try {
     const res = await apiClient.get<Tenant>(`/tenants/${tenantId}`);
@@ -53,60 +66,95 @@ async function fetchTenant(tenantId: number): Promise<Tenant | null> {
   }
 }
 
+// ─── AUTH PROVIDER ───────────────────────────────────────────────────────────
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  
+  // ✅ CRITICAL: isLoading MUST start as true to prevent race conditions 
+  // where protected routes render before auth state is resolved.
   const [state, setState] = useState<AuthState>({
     user: null,
     tenant: null,
     token: null,
-    isLoading: true,
+    isLoading: true, 
     isAuthenticated: false,
   });
 
+  /**
+   * ✅ FIXED: Safe Initialization
+   * Wraps the initial auth check in an async function with a try/catch/finally.
+   * Uses an `isMounted` flag to prevent state updates if the component unmounts 
+   * before the API calls finish (prevents React memory leak/race condition warnings).
+   */
   useEffect(() => {
-    const token = getAuthToken();
-    if (!token) {
-      setState((s) => ({ ...s, isLoading: false }));
-      return;
-    }
+    let isMounted = true;
 
-    apiClient
-      .get<User>("/auth/me")
-      .then(async (res) => {
+    const initAuth = async () => {
+      const token = getAuthToken();
+      
+      if (!token) {
+        if (isMounted) setState((s) => ({ ...s, isLoading: false }));
+        return;
+      }
+
+      try {
+        const res = await apiClient.get<User>("/auth/me");
         const user = res.data;
         const tenant = user.tenant_id ? await fetchTenant(user.tenant_id) : null;
-        setState({ user, tenant, token, isLoading: false, isAuthenticated: true });
-      })
-      .catch(() => {
+        
+        if (isMounted) {
+          setState({ user, tenant, token, isLoading: false, isAuthenticated: true });
+        }
+      } catch (error) {
+        console.error("[Auth] Initialization failed:", error);
         removeAuthToken();
-        setState((s) => ({ ...s, isLoading: false }));
-      });
+        if (isMounted) {
+          setState((s) => ({ ...s, user: null, tenant: null, token: null, isLoading: false, isAuthenticated: false }));
+        }
+      }
+    };
+
+    initAuth();
+
+    // Cleanup function to prevent race conditions on unmount
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  /**
+   * ✅ FIXED: Safe Login
+   * Wrapped in try/catch to prevent Uncaught Promise Rejections.
+   * Re-throws the error so the Login UI component can catch it and display a toast.
+   */
   const login = async (email: string, password: string) => {
-    const res = await apiClient.post<LoginResponse>("/auth/login", {
-      email,
-      password,
-    });
-    const { access_token, user } = res.data;
+    try {
+      const res = await apiClient.post<LoginResponse>("/auth/login", { email, password });
+      const { access_token, user } = res.data;
 
-    // ✅ Store in both places
-    setAuthToken(access_token);
+      setAuthToken(access_token);
+      const tenant = user.tenant_id ? await fetchTenant(user.tenant_id) : null;
 
-    const tenant = user.tenant_id ? await fetchTenant(user.tenant_id) : null;
+      setState({
+        user,
+        tenant,
+        token: access_token,
+        isLoading: false,
+        isAuthenticated: true,
+      });
 
-    setState({
-      user,
-      tenant,
-      token: access_token,
-      isLoading: false,
-      isAuthenticated: true,
-    });
-
-    if (user.role === "super_admin") router.push("/super-admin");
-    else router.push("/dashboard");
+      if (user.role === "super_admin") router.push("/super-admin");
+      else router.push("/dashboard");
+    } catch (error) {
+      console.error("[Auth] Login failed:", error);
+      throw error; // Let the login form handle the UI error display
+    }
   };
 
+  /**
+   * Clears all auth state and redirects to login.
+   */
   const logout = () => {
     removeAuthToken();
     setState({
@@ -119,7 +167,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/login");
   };
 
-  // ✅ NEW: Force re-fetch user and tenant data
+  /**
+   * ✅ FIXED: Safe Refresh
+   * If the refresh fails (e.g., token expired on backend), it safely logs 
+   * the user out instead of leaving the app in a corrupted state.
+   */
   const refresh = async () => {
     try {
       const token = getAuthToken();
@@ -131,7 +183,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setState({ user, tenant, token, isLoading: false, isAuthenticated: true });
     } catch (error) {
-      console.error("Failed to refresh auth state:", error);
+      console.error("[Auth] Refresh failed, clearing session:", error);
+      removeAuthToken();
+      setState({
+        user: null,
+        tenant: null,
+        token: null,
+        isLoading: false,
+        isAuthenticated: false,
+      });
     }
   };
 
@@ -142,6 +202,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Custom hook to consume the AuthContext safely.
+ */
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");

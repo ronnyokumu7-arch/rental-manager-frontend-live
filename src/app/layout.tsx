@@ -1,3 +1,4 @@
+// src/app/layout.tsx
 export const dynamic = 'force-dynamic';
 
 import type { Metadata } from "next";
@@ -6,8 +7,9 @@ import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { Toaster } from "react-hot-toast";
 import '@/styles/flatpickr-theme.css';
+import Providers from "@/components/Providers"; // ✅ NEW IMPORT
 
-// 1. Configure Sans-Serif Font (Primary UI) - Next.js optimizes this automatically (zero layout shift)
+// 1. Configure Sans-Serif Font (Primary UI)
 const sansFont = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -50,37 +52,39 @@ export default function RootLayout({
         selection:bg-[var(--color-primary-muted)] 
         selection:text-[var(--color-primary-text)]
         scroll-smooth
-        /* ✅ REMOVED: transition-colors duration-300 ease-in-out */
       ">
-        <AuthProvider>
-          <Toaster 
-            position="top-right" 
-            toastOptions={{
-              className: `
-                font-sans 
-                bg-[var(--color-surface)] 
-                text-[var(--color-ink)] 
-                border border-[var(--color-surface-border)] 
-                shadow-[var(--shadow-dropdown)] 
-                rounded-xl 
-                px-4 py-3
-              `,
-              success: {
-                iconTheme: {
-                  primary: "var(--color-success)",
-                  secondary: "var(--color-surface)",
+        {/* ✅ WRAPPED IN PROVIDERS (Adds React Query & Error Boundary) */}
+        <Providers>
+          <AuthProvider>
+            <Toaster 
+              position="top-right" 
+              toastOptions={{
+                className: `
+                  font-sans 
+                  bg-[var(--color-surface)] 
+                  text-[var(--color-ink)] 
+                  border border-[var(--color-surface-border)] 
+                  shadow-[var(--shadow-dropdown)] 
+                  rounded-xl 
+                  px-4 py-3
+                `,
+                success: {
+                  iconTheme: {
+                    primary: "var(--color-success)",
+                    secondary: "var(--color-surface)",
+                  },
                 },
-              },
-              error: {
-                iconTheme: {
-                  primary: "var(--color-danger)",
-                  secondary: "var(--color-surface)",
+                error: {
+                  iconTheme: {
+                    primary: "var(--color-danger)",
+                    secondary: "var(--color-surface)",
+                  },
                 },
-              },
-            }}
-          />
-          {children}
-        </AuthProvider>
+              }}
+            />
+            {children}
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

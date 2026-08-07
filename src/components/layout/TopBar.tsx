@@ -1,7 +1,7 @@
 // src/components/layout/TopBar.tsx
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react"; // ✅ Added useCallback
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -10,6 +10,12 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 
+/**
+ * @component Topbar
+ * @description 
+ * The global top navigation bar. Handles search UI, theme toggling, 
+ * notifications, and the user profile dropdown.
+ */
 export default function Topbar() {
   const { user, tenant, logout } = useAuth();
   const pathname = usePathname();
@@ -17,7 +23,8 @@ export default function Topbar() {
   const [isDark, setIsDark] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // ✅ ROBUST THEME INITIALIZATION: Prevents "stuck" dark mode
+  // ─── THEME INITIALIZATION ──────────────────────────────────────────────────
+  // ✅ ROBUST THEME INITIALIZATION: Prevents "stuck" dark mode on first load
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -32,17 +39,47 @@ export default function Topbar() {
     }
   }, []);
 
-  useEffect(() => {
-    function handle(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowUserMenu(false);
-      }
+  // ─── EVENT LISTENERS (MEMORY LEAK FIX) ─────────────────────────────────────
+  
+  // ✅ FIXED: Stable references prevent the useEffect from re-firing unnecessarily
+  const handleClickOutside = useCallback((e: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      setShowUserMenu(false);
     }
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
   }, []);
 
-  useEffect(() => { setShowUserMenu(false); }, [pathname]);
+  const handleEscapeKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setShowUserMenu(false);
+    }
+  }, []);
+
+  /**
+   * ✅ CRITICAL FIX: Conditional Event Listeners
+   * Instead of listening to EVERY click on the document 100% of the time,
+   * we ONLY attach the global event listeners when the dropdown is OPEN.
+   * This prevents event loop overhead, stops memory leaks during rapid 
+   * Next.js route transitions, and guarantees clean teardown.
+   */
+  useEffect(() => {
+    if (!showUserMenu) return; // 🚀 No listeners attached when menu is closed
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscapeKey);
+
+    // Cleanup runs automatically when showUserMenu changes to false, or on unmount
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscapeKey);
+    };
+  }, [showUserMenu, handleClickOutside, handleEscapeKey]);
+
+  // Close menu automatically when navigating to a new route
+  useEffect(() => { 
+    setShowUserMenu(false); 
+  }, [pathname]);
+
+  // ─── HANDLERS & HELPERS ────────────────────────────────────────────────────
 
   const toggleTheme = () => {
     const newIsDark = !isDark;
@@ -69,7 +106,7 @@ export default function Topbar() {
 
   const isSuperAdmin = user?.role === "super_admin";
 
-  // ✅ HELPER: Renders uploaded avatar image, or a clean default User icon placeholder
+  // Renders uploaded avatar image, or a clean default User icon placeholder
   const renderAvatar = (size: "sm" | "md") => {
     const dims = size === "sm" ? "w-7 h-7" : "w-11 h-11";
     const iconSize = size === "sm" ? 14 : 20;
@@ -90,6 +127,8 @@ export default function Topbar() {
       </div>
     );
   };
+
+  // ─── RENDER ────────────────────────────────────────────────────────────────
 
   return (
     // ✅ LOWERED z-index to z-20 to prevent blocking drawers/modals
@@ -167,7 +206,6 @@ export default function Topbar() {
                       <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
                       <span className="text-[11px] text-[var(--color-success-text)] font-medium">Active</span>
                       <span className="text-[var(--color-surface-border)]">·</span>
-                      {/* ✅ CHANGED: Shows job title, or falls back to a clean role name (hiding raw "tenant_admin") */}
                       <span className="text-[11px] text-[var(--color-ink-subtle)] capitalize">
                         {user?.job_title || (user?.role === "tenant_admin" ? "Administrator" : user?.role?.replace("_", " "))}
                       </span>
