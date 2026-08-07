@@ -25,7 +25,7 @@ export default function DashboardShell({ children, navItems }: DashboardShellPro
         }}
       />
 
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - Hidden on mobile/tablet (<1024px) */}
       <div className="hidden lg:block fixed inset-y-0 left-0 z-40 w-[72px]">
         <Sidebar navItems={navItems} />
       </div>
@@ -33,13 +33,19 @@ export default function DashboardShell({ children, navItems }: DashboardShellPro
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-[72px]">
         <Topbar />
-        {/* ✅ CRITICAL: Main content is transparent to inherit shell background */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+        {/* 
+          ✅ MOBILE PADDING STRATEGY:
+          - pb-[calc(6rem+env(safe-area-inset-bottom,0px))] = 96px (existing) + iOS safe area
+          - 96px accommodates: BottomNav (~56px) + FAB spacing (16px) + buffer (24px)
+          - env() fallback to 0px ensures Android/older iOS compatibility
+          - lg:pb-8 restores desktop spacing
+        */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-8">
           {children}
         </main>
       </div>
 
-      {/* Mobile Bottom Nav */}
+      {/* Mobile Bottom Nav - Visible only on mobile/tablet (<1024px) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40">
         <BottomNav navItems={navItems} />
       </div>

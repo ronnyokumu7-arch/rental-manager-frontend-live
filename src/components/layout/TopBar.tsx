@@ -1,7 +1,7 @@
 // src/components/layout/TopBar.tsx
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react"; // ✅ Added useCallback
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,6 +15,12 @@ import { useAuth } from "@/context/auth-context";
  * @description 
  * The global top navigation bar. Handles search UI, theme toggling, 
  * notifications, and the user profile dropdown.
+ * 
+ * 📱 MOBILE OPTIMIZATION (Phase 1):
+ * - Height: h-12 on mobile (48px), h-14 on desktop (56px)
+ * - Search: Hidden on mobile (Phase 2: icon trigger)
+ * - Theme toggle: Hidden on mobile (moved to Settings)
+ * - Greeting/User name: Already responsive via existing Tailwind classes
  */
 export default function Topbar() {
   const { user, tenant, logout } = useAuth();
@@ -24,7 +30,6 @@ export default function Topbar() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // ─── THEME INITIALIZATION ──────────────────────────────────────────────────
-  // ✅ ROBUST THEME INITIALIZATION: Prevents "stuck" dark mode on first load
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -41,7 +46,6 @@ export default function Topbar() {
 
   // ─── EVENT LISTENERS (MEMORY LEAK FIX) ─────────────────────────────────────
   
-  // ✅ FIXED: Stable references prevent the useEffect from re-firing unnecessarily
   const handleClickOutside = useCallback((e: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
       setShowUserMenu(false);
@@ -54,20 +58,12 @@ export default function Topbar() {
     }
   }, []);
 
-  /**
-   * ✅ CRITICAL FIX: Conditional Event Listeners
-   * Instead of listening to EVERY click on the document 100% of the time,
-   * we ONLY attach the global event listeners when the dropdown is OPEN.
-   * This prevents event loop overhead, stops memory leaks during rapid 
-   * Next.js route transitions, and guarantees clean teardown.
-   */
   useEffect(() => {
-    if (!showUserMenu) return; // 🚀 No listeners attached when menu is closed
+    if (!showUserMenu) return;
 
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscapeKey);
 
-    // Cleanup runs automatically when showUserMenu changes to false, or on unmount
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscapeKey);
@@ -106,7 +102,6 @@ export default function Topbar() {
 
   const isSuperAdmin = user?.role === "super_admin";
 
-  // Renders uploaded avatar image, or a clean default User icon placeholder
   const renderAvatar = (size: "sm" | "md") => {
     const dims = size === "sm" ? "w-7 h-7" : "w-11 h-11";
     const iconSize = size === "sm" ? 14 : 20;
@@ -131,15 +126,25 @@ export default function Topbar() {
   // ─── RENDER ────────────────────────────────────────────────────────────────
 
   return (
-    // ✅ LOWERED z-index to z-20 to prevent blocking drawers/modals
-    <header className="h-14 flex items-center gap-4 px-5 sticky top-0 z-20 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)] backdrop-blur-xl transition-colors duration-300">
-      {/* Left: Greeting */}
+    // ✅ MOBILE HEIGHT: h-12 (48px) on mobile, h-14 (56px) on desktop
+    // ✅ MOBILE PADDING: px-4 (16px) on mobile, px-5 (20px) on desktop
+    <header className="h-12 sm:h-14 flex items-center gap-4 px-4 sm:px-5 sticky top-0 z-20 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)] backdrop-blur-xl transition-colors duration-300">
+      {/* Global Toast Provider */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          className: "!bg-[var(--color-surface)] !text-[var(--color-ink)] !border !border-[var(--color-surface-border)] !shadow-[var(--shadow-dropdown)] !rounded-xl",
+          duration: 3000,
+        }}
+      />
+
+      {/* Left: Greeting - Already hidden on mobile via existing lg:block class */}
       <p className="hidden lg:block text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap flex-shrink-0">
         {greeting()}
       </p>
 
-      {/* Center: Search */}
-      <div className="flex-1 max-w-xl mx-auto">
+      {/* Center: Search - Hidden on mobile (Phase 2: icon trigger) */}
+      <div className="hidden sm:flex flex-1 max-w-xl mx-auto">
         <div className="flex items-center gap-3 h-9 px-3.5 rounded-xl cursor-text border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-hover)] transition-all duration-200 group">
           <Search size={14} strokeWidth={2} className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-ink-muted)] flex-shrink-0 transition-colors" />
           <span className="text-[13px] text-[var(--color-ink-subtle)] flex-1 select-none">Search anything...</span>
@@ -156,10 +161,10 @@ export default function Topbar() {
 
       {/* Right: Controls */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
-        {/* Theme Toggle */}
+        {/* Theme Toggle - Hidden on mobile (moved to Settings) */}
         <button
           onClick={toggleTheme}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all duration-150"
+          className="hidden sm:flex w-9 h-9 rounded-xl items-center justify-center text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all duration-150"
           title={isDark ? "Switch to light mode" : "Switch to dark mode"}
         >
           {isDark ? <Sun size={17} strokeWidth={1.8} /> : <Moon size={17} strokeWidth={1.8} />}

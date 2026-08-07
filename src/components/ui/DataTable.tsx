@@ -1,4 +1,6 @@
+// src/components/ui/DataTable.tsx
 "use client";
+
 import React, { useState } from "react";
 import {
   useReactTable,
@@ -9,7 +11,7 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { ArrowUpDown, ArrowUp, ArrowDown, Inbox } from "lucide-react";
-import Pagination from "./Pagination"; // Assuming you have this
+import Pagination from "./Pagination";
 
 interface DataTableProps<T> {
   data: T[];
@@ -49,7 +51,7 @@ export default function DataTable<T>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableSorting,
-    manualPagination: true, // We handle pagination externally/via props
+    manualPagination: true,
   });
 
   if (loading) {
@@ -77,9 +79,21 @@ export default function DataTable<T>({
 
   return (
     <div className="border border-surface-border rounded-xl bg-surface-card flex flex-col overflow-hidden shadow-[var(--shadow-card)]">
-      {/* Scrollable Table Container */}
-      <div className="overflow-auto max-h-[calc(100vh-280px)]">
-        <table className="w-full text-sm text-left">
+      {/* 
+        ✅ MOBILE HORIZONTAL SCROLL CONTAINER (Phase 1):
+        - overflow-x-auto: Enables horizontal scrolling on narrow screens
+        - -mx-4 sm:-mx-6 lg:-mx-8: Negative margins to bleed to edge, counteracting parent padding
+        - px-4 sm:px-6 lg:px-8: Restore padding inside scroll area for content spacing
+        - Phase 2: Add responsive column hiding (hidden md:table-cell) via column meta
+        - Phase 2: Add card-view toggle for complex mobile tables
+      */}
+      <div className="overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+        {/* 
+          ✅ TABLE MOBILE OPTIMIZATION:
+          - min-w-max: Forces table to expand beyond viewport width, enabling scroll
+          - w-full: Maintains full-width behavior on desktop
+        */}
+        <table className="w-full min-w-max text-sm text-left">
           <thead className="text-xs text-ink-muted uppercase bg-surface sticky top-0 z-10 shadow-sm">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>

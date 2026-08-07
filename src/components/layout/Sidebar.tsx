@@ -1,3 +1,4 @@
+// src/components/layout/Sidebar.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -77,6 +78,12 @@ export default function Sidebar({ navItems }: SidebarProps) {
 
   return (
     <>
+      {/* 
+        ✅ MOBILE HIDING: Sidebar is desktop-only (<1024px hidden)
+        - Already handled by DashboardShell.tsx via "hidden lg:block"
+        - This component remains unchanged for desktop behavior
+        - No mobile-specific code added here (per navigation paradigm: BottomNav only on mobile)
+      */}
       <aside
         ref={sidebarRef}
         className="relative z-30 h-full w-20 flex flex-col flex-shrink-0 
@@ -117,7 +124,6 @@ export default function Sidebar({ navItems }: SidebarProps) {
                     {active && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[var(--color-primary)] shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
                     )}
-                    {/* ✅ FIXED: Removed 'fill' prop. Relying on strokeWidth and text color for a clean active state. */}
                     <Icon
                       size={20}
                       strokeWidth={active ? 1.5 : 1.8}
@@ -144,7 +150,6 @@ export default function Sidebar({ navItems }: SidebarProps) {
                     {(isGroupOpen || active) && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[var(--color-primary)] shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
                     )}
-                    {/* ✅ FIXED: Removed 'fill' prop here as well. */}
                     <Icon
                       size={20}
                       strokeWidth={isGroupOpen || active ? 1.5 : 1.8}
@@ -180,7 +185,6 @@ export default function Sidebar({ navItems }: SidebarProps) {
                   : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
               }`}
             >
-              {/* ✅ FIXED: Removed 'fill' prop from Settings icon. */}
               <Settings
                 size={20}
                 strokeWidth={isActive(settingsItem.href) ? 1.5 : 1.8}
