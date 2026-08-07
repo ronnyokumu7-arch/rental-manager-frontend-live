@@ -78,107 +78,101 @@
    THEME TOKENS — The "DNA" of the Application
    ============================================================ */
 
-:root {
+@theme {
   /* ── Typography ─────────────────────────────────────────── */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* ✅ MOBILE-FIRST ADDITION: Safe Area Insets (iOS Notch / Android Nav Bars) */
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-
-  /* ── Brand Identity (Canva Theme Purple & Electric Indigo) ─ */
-  --color-primary:        #6366F1;        /* Rich Violet-Purple */
+  /* ── Brand Identity (Electric Indigo & Violet) ──────────── */
+  --color-primary:        #6366F1;
   --color-primary-hover:  #4F46E5;
   --color-primary-active: #4338CA;
-  --color-primary-muted:  rgba(99, 102, 241, 0.10);
-  --color-primary-subtle: rgba(99, 102, 241, 0.04);
+  --color-primary-muted:  rgba(99, 102, 241, 0.08);
+  --color-primary-subtle: rgba(99, 102, 241, 0.03);
   --color-primary-text:   #4338CA;
-  --color-primary-glow:   rgba(99, 102, 241, 0.18);
+  --color-primary-glow:   rgba(99, 102, 241, 0.16);
 
-  /* ── Surface & Backgrounds (Brightened Off-Whites & Violet Accents) ── */
-  --color-bg:              #F8F7FC;        
-  --color-bg-elevated:    #EEECF8;        
-  --color-surface:        #FFFFFF;        
-  --color-surface-hover:  #F9F8FD;        
-  --color-surface-active: #F2F0FA;        
-  --color-surface-border:        rgba(99, 80, 160, 0.09);
-  --color-surface-border-strong: rgba(99, 80, 160, 0.18);
-  --color-surface-border-subtle: rgba(99, 80, 160, 0.04);
+  /* ── Grounded Surface & Backgrounds (Rich Tinted Pop) ────── */
+  --color-bg:             #F1F0F5; /* Grounded slate-violet off-white */
+  --color-bg-elevated:    #E7E5EF;
+  --color-surface:        #FAF9FE; /* Luminous indigo-tinted off-white (No pure flat white) */
+  --color-surface-hover:  #F3F0FA;
+  --color-surface-active: #EAE4F7;
+  --color-surface-sunken: #E6E2F0;
 
-  /* ── Gradient Surfaces (Refined Depth with High Contrast Whites) ── */
-  --gradient-surface:        linear-gradient(180deg, #FFFFFF 0%, #FAFAFE 50%, #F4F2FA 100%);
-  --gradient-surface-hover:  linear-gradient(180deg, #FAFAFE 0%, #F4F1FC 50%, #ECE8F7 100%);
-  --gradient-surface-card:   linear-gradient(180deg, #FFFFFF 0%, #FCFCFE 45%, #F5F3FB 100%);
-  --gradient-surface-sunken: linear-gradient(180deg, #EFECF8 0%, #E5E1F3 100%);
-  --gradient-bg:              linear-gradient(180deg, #E6E1F7 0%, #F5F4FA 30%, #F8F7FC 100%);
-  --gradient-stat-primary:  linear-gradient(135deg, #F6F4FF 0%, #EBEFFF 50%, #E5E0FF 100%);
-  --gradient-stat-success:  linear-gradient(135deg, #F4FDF7 0%, #E6FCED 60%, #C6F7D8 100%);
-  --gradient-stat-warning:  linear-gradient(135deg, #FFFDF5 0%, #FEF7DC 60%, #FDECB0 100%);
-  --gradient-stat-danger:   linear-gradient(135deg, #FEF7F7 0%, #FEEBEB 60%, #FBBFBF 100%);
-  --gradient-stat-neutral:  linear-gradient(135deg, #F8F7FF 0%, #F0EEFA 60%, #E4E0F2 100%);
-  --gradient-page-bg:       linear-gradient(180deg, #E4DFF9 0%, #ECE8FB 12%, #F6F4FD 35%, #FAFAFE 65%, #FFFFFF 100%);
+  --color-surface-border:        rgba(15, 13, 28, 0.08);
+  --color-surface-border-strong: rgba(15, 13, 28, 0.16);
+  --color-surface-border-subtle: rgba(15, 13, 28, 0.04);
 
-  /* ── Ink (Softened Deep Violet-Slate Typography) ────────── */
-  --color-ink:            #1E1B2E;        
-  --color-ink-secondary:  #3B354D;
-  --color-ink-muted:      #68617D;
-  --color-ink-subtle:     #9891AD;
-  --color-ink-faint:      #CDC8DC;
-  --color-ink-inverse:    #FAF9FF;
+  /* ── Premium Flat & Gradient Accent Surfaces ────────────── */
+  --gradient-surface:        linear-gradient(180deg, #FAF9FE 0%, #F2EFF9 100%);
+  --gradient-surface-hover:  linear-gradient(180deg, #F3F0FA 0%, #E8E2F4 100%);
+  --gradient-surface-card:   linear-gradient(180deg, #FAF9FE 0%, #F3EFFB 100%);
+  --gradient-surface-sunken: linear-gradient(180deg, #EBE8F3 0%, #E2DEEF 100%);
+  --gradient-bg:             linear-gradient(180deg, #EBE8F5 0%, #F1F0F5 100%);
 
-  /* ── Semantic Colors (Refined & Eye-Friendly) ───────────── */
-  --color-success:            #059669;
-  --color-success-hover:      #047857;
-  --color-success-bg:         rgba(5, 150, 105, 0.08);
-  --color-success-bg-strong:  rgba(5, 150, 105, 0.14);
-  --color-success-text:       #064E3B;
-  --color-success-border:     rgba(5, 150, 105, 0.22);
+  /* ── Stats & Data Containers ────────────────────────────── */
+  --gradient-stat-primary:  linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+  --gradient-stat-success:  linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  --gradient-stat-warning:  linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  --gradient-stat-danger:   linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+  --gradient-stat-neutral:  linear-gradient(135deg, #F8F7FC 0%, #ECEAEF 100%);
 
-  --color-warning:            #D97706;
-  --color-warning-hover:      #B45309;
-  --color-warning-bg:         rgba(217, 119, 6, 0.08);
-  --color-warning-bg-strong:  rgba(217, 119, 6, 0.14);
-  --color-warning-text:       #78350F;
-  --color-warning-border:     rgba(217, 119, 6, 0.22);
+  /* ── Ink Hierarchy (Deep Obsidian Violet Typography) ─────── */
+  --color-ink:            #0F0D1C; /* High contrast, non-harsh primary ink */
+  --color-ink-secondary:  #2D283E;
+  --color-ink-muted:      #57516B;
+  --color-ink-subtle:     #88829E;
+  --color-ink-faint:      #BFB9D1;
+  --color-ink-inverse:    #FFFFFF;
 
-  --color-danger:             #DC2626;
-  --color-danger-hover:       #B91C1C;
-  --color-danger-bg:          rgba(220, 38, 38, 0.08);
-  --color-danger-bg-strong:   rgba(220, 38, 38, 0.14);
-  --color-danger-text:        #7F1D1D;
-  --color-danger-border:      rgba(220, 38, 38, 0.22);
+  /* ── Semantic Colors (Eye-Friendly High Contrast) ───────── */
+  --color-success:        #059669;
+  --color-success-hover:  #047857;
+  --color-success-bg:     rgba(5, 150, 105, 0.08);
+  --color-success-text:   #064E3B;
+  --color-success-border: rgba(5, 150, 105, 0.20);
 
-  --color-info:               #2563EB;
-  --color-info-bg:            rgba(37, 99, 235, 0.08);
-  --color-info-text:          #1E3A8A;
+  --color-warning:        #D97706;
+  --color-warning-hover:  #B45309;
+  --color-warning-bg:     rgba(217, 119, 6, 0.08);
+  --color-warning-text:   #78350F;
+  --color-warning-border: rgba(217, 119, 6, 0.20);
 
-  /* ── TIMELINE BAR COLORS (Light Mode - Solid & Vibrant) ─── */
-  --color-bar-success:        #10B981;
-  --color-bar-success-text:   #FFFFFF;
-  --color-bar-warning:        #F59E0B;
-  --color-bar-warning-text:   #FFFFFF;
-  --color-bar-primary:        #6366F1;
-  --color-bar-primary-text:   #FFFFFF;
-  --color-bar-danger:         #EF4444;
-  --color-bar-danger-text:    #FFFFFF;
+  --color-danger:         #DC2626;
+  --color-danger-hover:   #B91C1C;
+  --color-danger-bg:      rgba(220, 38, 38, 0.08);
+  --color-danger-text:    #7F1D1D;
+  --color-danger-border:  rgba(220, 38, 38, 0.20);
 
-  /* ── Depth & Elevation (Purple Tinted Slate Shadows) ────── */
-  --shadow-color:        rgba(30, 25, 55, 0.04);
-  --shadow-color-strong: rgba(30, 25, 55, 0.10);
+  --color-info:           #2563EB;
+  --color-info-bg:        rgba(37, 99, 235, 0.08);
+  --color-info-text:      #1E3A8A;
+
+  /* ── Timeline & Chart Bars ──────────────────────────────── */
+  --color-bar-success:      #10B981;
+  --color-bar-success-text: #FFFFFF;
+  --color-bar-warning:      #F59E0B;
+  --color-bar-warning-text: #FFFFFF;
+  --color-bar-primary:      #6366F1;
+  --color-bar-primary-text: #FFFFFF;
+  --color-bar-danger:       #EF4444;
+  --color-bar-danger-text:  #FFFFFF;
+
+  /* ── Ambient Multi-Tier Shadows (Refined Occlusion) ─────── */
+  --shadow-color:        rgba(15, 13, 28, 0.03);
+  --shadow-color-strong: rgba(15, 13, 28, 0.08);
 
   --shadow-xs:  0 1px 2px 0 var(--shadow-color);
   --shadow-sm:  0 1px 3px 0 var(--shadow-color), 0 1px 2px -1px var(--shadow-color);
-  --shadow-md:  0 4px 6px -1px var(--shadow-color), 0 2px 4px -2px rgba(30, 25, 55, 0.03);
+  --shadow-md:  0 4px 6px -1px var(--shadow-color), 0 2px 4px -2px rgba(15, 13, 28, 0.02);
   --shadow-lg:  0 10px 15px -3px var(--shadow-color-strong), 0 4px 6px -4px var(--shadow-color);
   --shadow-xl:  0 20px 25px -5px var(--shadow-color-strong), 0 8px 10px -6px var(--shadow-color);
-  --shadow-2xl: 0 25px 50px -12px rgba(30, 25, 55, 0.16);
+  --shadow-2xl: 0 25px 50px -12px rgba(15, 13, 28, 0.14);
 
-  --shadow-card:        0 0 0 1px var(--color-surface-border), var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  --shadow-card-hover:  0 0 0 1px var(--color-surface-border-strong), var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --shadow-card-active: 0 0 0 1px var(--color-primary), var(--shadow-sm);
+  --shadow-card:        0 0 0 1px var(--color-surface-border), var(--shadow-xs);
+  --shadow-card-hover:  0 0 0 1px var(--color-surface-border-strong), var(--shadow-md);
+  --shadow-card-active: 0 0 0 1px var(--color-primary), var(--shadow-xs);
 
   --shadow-modal:       0 0 0 1px var(--color-surface-border-strong), var(--shadow-2xl);
   --shadow-dropdown:    0 0 0 1px var(--color-surface-border), var(--shadow-lg);
@@ -187,21 +181,13 @@
   --shadow-focus:       0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
   --shadow-focus-ring:  0 0 0 3px var(--color-primary-muted);
 
-  --shadow-glow-primary: 0 0 24px var(--color-primary-glow);
-  --shadow-glow-success: 0 0 24px rgba(5, 150, 105, 0.15);
+  --shadow-glow-primary: 0 0 20px var(--color-primary-glow);
+  --shadow-glow-success: 0 0 20px rgba(5, 150, 105, 0.12);
 
-  /* ── Gradients (Brand & Action - Canva Theme Purple) ─────── */
-  --gradient-primary:   linear-gradient(135deg, #7C3AED 0%, #6366F1 50%, #4F46E5 100%);
-  --gradient-success:   linear-gradient(135deg, #059669 0%, #10B981 100%);
-  --gradient-warning:   linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
-  --gradient-danger:    linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
-
-  /* ── Motion & Animation ─────────────────────────────────── */
+  /* ── Motion & Springs ───────────────────────────────────── */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-out:    cubic-bezier(0, 0, 0.2, 1);
-  --ease-in:     cubic-bezier(0.4, 0, 1, 1);
 
   --duration-instant: 50ms;
   --duration-fast:    100ms;
@@ -209,7 +195,7 @@
   --duration-slow:    300ms;
   --duration-slower:  500ms;
 
-  /* ── Spacing Scale ────────────────────────────────────────── */
+  /* ── Spacing Scale ──────────────────────────────────────── */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -220,22 +206,29 @@
   --space-10: 2.5rem;
   --space-12: 3rem;
 
-  /* ── Border Radius ────────────────────────────────────────── */
+  /* ── Border Radius ──────────────────────────────────────── */
   --radius-sm:   0.375rem;
   --radius-md:   0.5rem;
   --radius-lg:   0.75rem;
   --radius-xl:   1rem;
   --radius-2xl:  1.5rem;
   --radius-full: 9999px;
+}
 
-  /* ── Z-Index Scale ────────────────────────────────────────── */
-  --z-base:     0;
-  --z-dropdown: 10;
-  --z-sticky:   20;
-  --z-modal:    30;
-  --z-popover:  40;
-  --z-tooltip:  50;
-  --z-toast:    60;
+/* ── Mobile Safe Areas & Base Styles ──────────────────────── */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ============================================================
@@ -313,27 +306,27 @@
   --color-info-border:        rgba(59, 130, 246, 0.30);
 
   /* ── TIMELINE BAR COLORS (Dark Mode - Glassmorphic) ────── */
-  --color-bar-primary:        rgba(99, 102, 241, 0.25);      
+  --color-bar-primary:        rgba(99, 102, 241, 0.25);       
   --color-bar-primary-text:   #FFFFFF;
   --color-bar-primary-border: rgba(99, 102, 241, 0.40);
   --color-bar-primary-glass:  rgba(99, 102, 241, 0.15);
 
-  --color-bar-success:        rgba(16, 185, 129, 0.25);      
+  --color-bar-success:        rgba(16, 185, 129, 0.25);       
   --color-bar-success-text:   #FFFFFF;
   --color-bar-success-border: rgba(16, 185, 129, 0.40);
   --color-bar-success-glass:  rgba(16, 185, 129, 0.15);
   
-  --color-bar-warning:        rgba(245, 158, 11, 0.25);      
+  --color-bar-warning:        rgba(245, 158, 11, 0.25);       
   --color-bar-warning-text:   #FFFFFF;
   --color-bar-warning-border: rgba(245, 158, 11, 0.40);
   --color-bar-warning-glass:  rgba(245, 158, 11, 0.15);
   
-  --color-bar-danger:         rgba(239, 68, 68, 0.25);       
+  --color-bar-danger:         rgba(239, 68, 68, 0.25);        
   --color-bar-danger-text:    #FFFFFF;
   --color-bar-danger-border:  rgba(239, 68, 68, 0.40);
   --color-bar-danger-glass:   rgba(239, 68, 68, 0.15);
 
-  --color-bar-info:           rgba(59, 130, 246, 0.25);       
+  --color-bar-info:           rgba(59, 130, 246, 0.25);        
   --color-bar-info-text:      #FFFFFF;
   --color-bar-info-border:    rgba(59, 130, 246, 0.40);
   --color-bar-info-glass:     rgba(59, 130, 246, 0.15);
@@ -342,357 +335,6 @@
   --shadow-color:        rgba(0, 0, 0, 0.4);
   --shadow-color-strong: rgba(0, 0, 0, 0.7);
 
-  --shadow-card:         0 0 0 1px var(--color-surface-border), 0 2px 4px 0 rgb(0 0 0 / 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --shadow-card-hover:   0 0 0 1px var(--color-surface-border-strong), 0 8px 16px -2px rgb(0 0 0 / 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  --shadow-card-active:  0 0 0 1px var(--color-primary), 0 2px 4px 0 rgb(0 0 0 / 0.4);
-
-  --shadow-modal:        0 25px 50px -12px rgb(0 0 0 / 0.7), 0 0 0 1px var(--color-surface-border-strong), inset 0 1px 0 rgba(255, 255, 255, 0.10);
-  --shadow-dropdown:     0 10px 20px -3px rgb(0 0 0 / 0.6), 0 0 0 1px var(--color-surface-border);
-  --shadow-focus:        0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
-
-  --shadow-glow-primary: 0 0 32px var(--color-primary-glow);
-  --shadow-glow-success: 0 0 32px rgba(16, 185, 129, 0.20);
-}
-
-/* ============================================================
-   KEYFRAMES
-   ============================================================ */
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-10px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* ============================================================
-   BASE STYLES — Global Resets & Typography
-   ============================================================ */
-
-@layer base {
-  *, *::before, *::after {
-    box-sizing: border-box;
-    border-color: var(--color-surface-border);
-  }
-
-  html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    
-    /* ✅ MOBILE-FIRST ADDITION: Prevent text size adjustment on orientation change */
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-    
-    /* ✅ MOBILE-FIRST ADDITION: Remove harsh default tap highlight on Android (Infinix/Tecno/Samsung) */
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  body {
-    background-color: var(--color-bg);
-    color: var(--color-ink);
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    line-height: 1.6;
-    transition: background-color var(--duration-normal) var(--ease-spring),
-                color var(--duration-normal) var(--ease-spring);
-                
-    /* ✅ MOBILE-FIRST ADDITION: Prevent pull-to-refresh and overscroll bounce from interfering with bottom sheets/drawers */
-    overscroll-behavior-y: contain;
-  }
-
-  /* ✅ MOBILE-FIRST ADDITION: Touch optimization for all interactive elements */
-  button, a, [role="button"], input, select, textarea {
-    -webkit-touch-callout: none; /* Prevents iOS callout on long press */
-    touch-action: manipulation;  /* Removes 300ms tap delay on older Android WebViews */
-  }
-
-  /* Custom Scrollbar — Thin & Elegant */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: var(--color-surface-border-strong);
-    border-radius: var(--radius-full);
-  }
-  ::-webkit-scrollbar-thumb:hover { background: var(--color-ink-subtle); }
-
-  /* Focus Ring — Accessible & Consistent */
-  :focus-visible {
-    outline: none;
-    box-shadow: var(--shadow-focus);
-    border-radius: var(--radius-sm);
-  }
-
-  /* Selection — Brand Colored */
-  ::selection {
-    background: var(--color-primary-muted);
-    color: var(--color-primary-text);
-  }
-  .dark ::selection {
-    background: var(--color-primary-muted);
-    color: var(--color-ink);
-  }
-}
-
-/* ============================================================
-   COMPONENT CLASSES — Architectural UI Primitives
-   ============================================================ */
-
-@layer components {
-  /* ── Cards (With Sheen Gradient Surface) ─────────────────── */
-  .card {
-    background-color: var(--color-surface);
-    background-image: var(--gradient-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
-    border: 1px solid var(--color-surface-border);
-    padding: 1.5rem;
-    transition: box-shadow var(--duration-normal) var(--ease-spring),
-                transform var(--duration-normal) var(--ease-spring),
-                background-image var(--duration-normal) var(--ease-spring),
-                border-color var(--duration-normal) var(--ease-spring);
-  }
-  .card:hover {
-    background-image: var(--gradient-surface-hover);
-    box-shadow: var(--shadow-card-hover);
-    border-color: var(--color-surface-border-strong);
-  }
-
-  /* Glass Card Variant */
-  .glass-card {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--color-surface-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
-  }
-  .dark .glass-card {
-    background: rgba(15, 17, 21, 0.6);
-  }
-
-  /* ── Buttons ─────────────────────────────────────────────── */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    font-size: 0.875rem;
-    border-radius: var(--radius-md);
-    padding: 0.625rem 1.25rem;
-    transition: all var(--duration-fast) var(--ease-spring);
-    cursor: pointer;
-    border: 1px solid transparent;
-    text-decoration: none;
-    user-select: none;
-  }
-  .btn:active { transform: scale(0.98); }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-  .btn-primary {
-    background-color: var(--color-primary);
-    background-image: var(--gradient-primary);
-    color: #ffffff;
-    box-shadow: 0 2px 4px 0 var(--color-primary-glow);
-    border: none;
-  }
-  .btn-primary:hover:not(:disabled) {
-    background-color: var(--color-primary-hover);
-    box-shadow: 0 4px 8px -1px var(--color-primary-glow);
-    transform: translateY(-1px);
-  }
-
-  .btn-secondary {
-    background-color: var(--color-surface);
-    background-image: var(--gradient-surface);
-    color: var(--color-ink);
-    border-color: var(--color-surface-border);
-  }
-  .btn-secondary:hover:not(:disabled) {
-    background-image: var(--gradient-surface-hover);
-    border-color: var(--color-surface-border-strong);
-  }
-
-  .btn-ghost {
-    background-color: transparent;
-    color: var(--color-ink-muted);
-  }
-  .btn-ghost:hover:not(:disabled) {
-    background-color: var(--color-surface-hover);
-    color: var(--color-ink);
-  }
-
-  .btn-danger {
-    background-color: var(--color-danger);
-    background-image: var(--gradient-danger);
-    color: #ffffff;
-  }
-  .btn-danger:hover:not(:disabled) {
-    background-color: var(--color-danger-hover);
-  }
-
-  .btn-sm  { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
-  .btn-lg  { padding: 0.75rem 1.5rem; font-size: 1rem; }
-  .btn-icon { padding: 0.625rem; }
-
-  /* ── Form Inputs ─────────────────────────────────────────── */
-  .input {
-    width: 100%;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-surface-border);
-    background-color: var(--color-surface);
-    color: var(--color-ink);
-    padding: 0.625rem 0.875rem;
-    font-size: 0.9375rem;
-    font-family: var(--font-sans);
-    transition: all var(--duration-fast) var(--ease-spring);
-    outline: none;
-  }
-  .input:hover {
-    border-color: var(--color-surface-border-strong);
-  }
-  .input:focus {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-focus);
-  }
-  .input::placeholder { color: var(--color-ink-subtle); }
-  .input:disabled {
-    background-color: var(--color-surface-hover);
-    cursor: not-allowed;
-  }
-
-  .label {
-    display: block;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--color-ink);
-    margin-bottom: 0.375rem;
-  }
-
-  /* ── Badges ──────────────────────────────────────────────── */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: var(--radius-full);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.025em;
-    border: 1px solid transparent;
-    line-height: 1;
-  }
-  .badge::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: currentColor;
-  }
-  .badge-success, [data-badge-variant="success"] {
-    background: var(--color-success-bg) !important;
-    color: var(--color-success-text) !important;
-  }
-  .badge-warning, [data-badge-variant="warning"] {
-    background: var(--color-warning-bg) !important;
-    color: var(--color-warning-text) !important;
-  }
-  .badge-danger, [data-badge-variant="danger"] {
-    background: var(--color-danger-bg) !important;
-    color: var(--color-danger-text) !important;
-  }
-  .badge-primary, [data-badge-variant="primary"] {
-    background: var(--color-primary-muted) !important;
-    color: var(--color-primary-text) !important;
-  }
-  .badge-neutral, [data-badge-variant="neutral"] {
-    background: var(--color-surface-hover) !important;
-    color: var(--color-ink-muted) !important;
-  }
-
-  /* ── Data Tables ─────────────────────────────────────────── */
-  .table-container {
-    width: 100%;
-    overflow-x: auto;
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--color-surface-border);
-    background-color: var(--color-surface);
-  }
-  .table { width: 100%; font-size: 0.875rem; border-collapse: collapse; }
-  .table thead tr {
-    background-color: var(--color-surface-hover);
-    border-bottom: 1px solid var(--color-surface-border);
-  }
-  .table th {
-    padding: 0.75rem 1rem;
-    text-align: left;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-ink-muted);
-  }
-  .table td {
-    padding: 1rem;
-    border-bottom: 1px solid var(--color-surface-border);
-    color: var(--color-ink);
-    font-weight: 500;
-  }
-  .table tbody tr:last-child td { border-bottom: none; }
-  .table tbody tr { transition: background-color var(--duration-fast) ease; }
-  .table tbody tr:hover { background-color: var(--color-surface-hover); }
-
-  /* ── Page Layout Header ───────────────────────────────────── */
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
-    gap: 1rem;
-  }
-  .page-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.025em;
-    color: var(--color-ink);
-  }
-  .page-subtitle {
-    font-size: 0.875rem;
-    color: var(--color-ink-muted);
-    margin-top: 0.25rem;
-  }
-
-  /* ── Dividers & Skeletons ────────────────────────────────── */
-  .divider {
-    height: 1px;
-    width: 100%;
-    background-color: var(--color-surface-border);
-    margin: 1.5rem 0;
-  }
-
-  .skeleton {
-    background: linear-gradient(
-      90deg,
-      var(--color-surface-active) 25%,
-      var(--color-surface-hover) 37%,
-      var(--color-surface-active) 63%
-    );
-    background-size: 400% 100%;
-    animation: shimmer 1.4s ease infinite;
-    border-radius: var(--radius-md);
-  }
+  --shadow-card:        0 0 0 1px var(--color-surface-border), 0 2px 4px 0 rgb(0 0 0 / 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-card-hover:  0 0 0 1px var(--color-surface-border-strong), 0 8px 16px 0 rgb(0 0 0 / 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
