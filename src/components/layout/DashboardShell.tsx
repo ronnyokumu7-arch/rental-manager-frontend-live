@@ -26,12 +26,12 @@ export default function DashboardShell({ children, navItems }: DashboardShellPro
         <Topbar />
         {/* 
           ✅ MOBILE PADDING STRATEGY:
-          - pb-[calc(6rem+env(safe-area-inset-bottom,0px))] = 96px (existing) + iOS safe area
+          - pb-[calc(6rem_+_env(safe-area-inset-bottom,0px))] = 96px (existing) + iOS safe area
           - 96px accommodates: BottomNav (~56px) + FAB spacing (16px) + buffer (24px)
           - env() fallback to 0px ensures Android/older iOS compatibility
           - lg:pb-8 restores desktop spacing
         */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-[calc(6rem_+_env(safe-area-inset-bottom,0px))] lg:pb-8">
           {children}
         </main>
       </div>

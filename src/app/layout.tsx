@@ -1,116 +1,72 @@
-export const dynamic = 'force-dynamic';
-
-import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
-import "./globals.css";
-import { AuthProvider } from "@/context/auth-context";
-import { Toaster } from "react-hot-toast";
-import '@/styles/flatpickr-theme.css';
-import Providers from "@/components/Providers";
-
-// 1. Configure Sans-Serif Font (Primary UI)
-const sansFont = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-// 2. Configure Monospace Font (Technical IDs, code, license plates, etc.)
-const monoFont = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: "swap",
-  weight: ["400", "500"],
-});
-
-export const metadata: Metadata = {
-  title: "Rental Manager",
-  description: "Enterprise-grade vehicle rental and fleet management platform.",
-  icons: {
-    icon: "/favicon.ico", 
-  },
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function SettingsLayout() {
   return (
-    <html 
-      lang="en" 
-      suppressHydrationWarning
-      className={`${sansFont.variable} ${monoFont.variable}`}
-    >
-      <body className="
-        font-sans 
-        antialiased 
-        bg-[#0b0f14] 
-        text-[var(--color-ink)] 
-        selection:bg-[var(--color-primary-muted)] 
-        selection:text-[var(--color-primary-text)]
-        scroll-smooth
-        relative
-        min-h-screen
-        overflow-x-hidden
-      ">
-        <Providers>
-          <AuthProvider>
-            <Toaster 
-              position="top-right" 
-              toastOptions={{
-                className: `
-                  font-sans 
-                  bg-[var(--color-surface)] 
-                  text-[var(--color-ink)] 
-                  border border-[var(--color-surface-border)] 
-                  shadow-[var(--shadow-dropdown)] 
-                  rounded-xl 
-                  px-4 py-3
-                `,
-                success: {
-                  iconTheme: {
-                    primary: "var(--color-success)",
-                    secondary: "var(--color-surface)",
-                  },
-                },
-                error: {
-                  iconTheme: {
-                    primary: "var(--color-danger)",
-                    secondary: "var(--color-surface)",
-                  },
-                },
-              }}
-            />
+    <div className="min-h-screen bg-bg text-ink p-6 md:p-10 font-sans transition-colors">
+      <div className="max-w-6xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <header className="flex justify-between items-center pb-6 border-b border-surface-border">
+          <div>
+            <h1 className="text-2xl font-bold text-ink">Company Settings</h1>
+            <p className="text-sm text-ink-muted">Manage your business details and brand identity.</p>
+          </div>
+          <button className="px-4 py-2 bg-primary hover:bg-primary-hover active:bg-primary-active text-ink-inverse font-medium rounded-lg shadow-sm transition-all">
+            Save Changes
+          </button>
+        </header>
 
-            {/* 🌌 AMBIENT GLOW BACKGROUND LAYER */}
-            <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-              {/* Top-Left Green Glow (Behind top text / hero area) */}
-              <div 
-                className="absolute -left-[10%] -top-[10%] h-[700px] w-[700px] rounded-full bg-[#0d3323] opacity-70 blur-[140px]" 
-                aria-hidden="true" 
-              />
-              {/* Bottom-Right Green Glow (Behind right status card / tables) */}
-              <div 
-                className="absolute -bottom-[20%] -right-[10%] h-[900px] w-[900px] rounded-full bg-[#0a2b1d] opacity-80 blur-[160px]" 
-                aria-hidden="true" 
-              />
-              {/* Subtle Center-Right Accent Glow */}
-              <div 
-                className="absolute top-[20%] right-[15%] h-[450px] w-[450px] rounded-full bg-[#0d211c] opacity-35 blur-[120px]" 
-                aria-hidden="true" 
+        {/* 2-Column Responsive Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Column (Main Form - 7 cols) */}
+          <section className="lg:col-span-7 bg-surface border border-surface-border rounded-xl p-6 shadow-card hover:shadow-card-hover transition-shadow space-y-4">
+            <h2 className="text-lg font-semibold text-ink">General Details</h2>
+            
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-ink-secondary">Business Name</label>
+              <input 
+                type="text" 
+                defaultValue="Acme Fleet Rentals"
+                className="w-full px-3 py-2 bg-bg-elevated border border-surface-border rounded-md text-ink focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
 
-            {/* 🚀 APPLICATION CONTENT LAYER */}
-            <div className="relative z-10 min-h-screen">
-              {children}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-ink-secondary">Support Email</label>
+              <input 
+                type="email" 
+                defaultValue="support@acme.com"
+                className="w-full px-3 py-2 bg-bg-elevated border border-surface-border rounded-md text-ink focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          </section>
+
+          {/* Right Column (Logo & Admin Form - 5 cols) */}
+          <section className="lg:col-span-5 space-y-6">
+            
+            {/* Logo Card */}
+            <div className="bg-surface border border-surface-border rounded-xl p-6 shadow-card space-y-3">
+              <h3 className="text-md font-semibold text-ink">Company Logo</h3>
+              <div className="border-2 border-dashed border-surface-border-strong rounded-lg p-6 text-center bg-bg-elevated hover:bg-surface-hover transition-colors cursor-pointer">
+                <span className="text-sm text-ink-muted">Click to upload SVG or PNG</span>
+              </div>
             </div>
 
-          </AuthProvider>
-        </Providers>
-      </body>
-    </html>
+            {/* Admin Form Card */}
+            <div className="bg-surface border border-surface-border rounded-xl p-6 shadow-card space-y-3">
+              <h3 className="text-md font-semibold text-ink">Admin Contact</h3>
+              <p className="text-xs text-ink-subtle">Primary administrator for system notifications.</p>
+              
+              <input 
+                type="text" 
+                placeholder="Admin Full Name"
+                className="w-full px-3 py-2 bg-bg-elevated border border-surface-border rounded-md text-ink text-sm focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+          </section>
+
+        </div>
+      </div>
+    </div>
   );
 }
