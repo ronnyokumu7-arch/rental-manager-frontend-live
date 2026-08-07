@@ -2,7 +2,6 @@
 "use client";
 
 import { ReactNode } from "react";
-import { Toaster } from "react-hot-toast";
 import Sidebar from "./Sidebar";
 import Topbar from "./TopBar";
 import BottomNav from "./BottomNav";
@@ -16,15 +15,7 @@ interface DashboardShellProps {
 export default function DashboardShell({ children, navItems }: DashboardShellProps) {
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-ink)] flex transition-colors duration-300">
-      {/* Global Toast Provider */}
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          className: "!bg-[var(--color-surface)] !text-[var(--color-ink)] !border !border-[var(--color-surface-border)] !shadow-[var(--shadow-dropdown)] !rounded-xl",
-          duration: 3000,
-        }}
-      />
-
+      
       {/* Desktop Sidebar - Hidden on mobile/tablet (<1024px) */}
       <div className="hidden lg:block fixed inset-y-0 left-0 z-40 w-[72px]">
         <Sidebar navItems={navItems} />

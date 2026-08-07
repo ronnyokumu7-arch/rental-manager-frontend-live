@@ -129,15 +129,7 @@ export default function Topbar() {
     // ✅ MOBILE HEIGHT: h-12 (48px) on mobile, h-14 (56px) on desktop
     // ✅ MOBILE PADDING: px-4 (16px) on mobile, px-5 (20px) on desktop
     <header className="h-12 sm:h-14 flex items-center gap-4 px-4 sm:px-5 sticky top-0 z-20 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)] backdrop-blur-xl transition-colors duration-300">
-      {/* Global Toast Provider */}
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          className: "!bg-[var(--color-surface)] !text-[var(--color-ink)] !border !border-[var(--color-surface-border)] !shadow-[var(--shadow-dropdown)] !rounded-xl",
-          duration: 3000,
-        }}
-      />
-
+      
       {/* Left: Greeting - Already hidden on mobile via existing lg:block class */}
       <p className="hidden lg:block text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap flex-shrink-0">
         {greeting()}
