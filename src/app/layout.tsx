@@ -1,72 +1,163 @@
-export function SettingsLayout() {
+export const dynamic = 'force-dynamic';
+
+import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
+import "./globals.css";
+import "@/styles/flatpickr-theme.css";
+import { AuthProvider } from "@/context/auth-context";
+import { Toaster } from "react-hot-toast";
+import Providers from "@/components/Providers";
+
+// 1. Configure Primary Sans-Serif Typography (UI & Dashboard Controls)
+const sansFont = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+// 2. Configure Monospace Typography (Technical IDs, VINs, Contracts, License Plates)
+const monoFont = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+  weight: ["400", "500"],
+});
+
+export const metadata: Metadata = {
+  title: {
+    default: "Rental Manager | Fleet & Booking Operations",
+    template: "%s | Rental Manager",
+  },
+  description: "Enterprise-grade vehicle rental and fleet management platform.",
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div className="min-h-screen bg-bg text-ink p-6 md:p-10 font-sans transition-colors">
-      <div className="max-w-6xl mx-auto space-y-6">
-        
-        {/* Header */}
-        <header className="flex justify-between items-center pb-6 border-b border-surface-border">
-          <div>
-            <h1 className="text-2xl font-bold text-ink">Company Settings</h1>
-            <p className="text-sm text-ink-muted">Manage your business details and brand identity.</p>
-          </div>
-          <button className="px-4 py-2 bg-primary hover:bg-primary-hover active:bg-primary-active text-ink-inverse font-medium rounded-lg shadow-sm transition-all">
-            Save Changes
-          </button>
-        </header>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${sansFont.variable} ${monoFont.variable}`}
+    >
+      <body
+        className="
+          font-sans
+          antialiased
+          bg-[var(--color-bg,#0b0f14)]
+          text-[var(--color-ink)]
+          selection:bg-[var(--color-primary-muted,rgba(16,185,129,0.2))]
+          selection:text-[var(--color-primary-text,#34d399)]
+          scroll-smooth
+          relative
+          min-h-screen
+          overflow-x-hidden
+        "
+      >
+        <Providers>
+          <AuthProvider>
+            {/* 🔔 PREMIUM GLASSMORPHIC TOASTER NOTIFICATIONS */}
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                className: `
+                  font-sans
+                  text-sm
+                  font-medium
+                  bg-[var(--color-surface,rgba(18,24,33,0.85))]
+                  text-[var(--color-ink,#f3f4f6)]
+                  border border-[var(--color-surface-border,rgba(255,255,255,0.08))]
+                  shadow-[var(--shadow-dropdown,0_20px_25px_-5px_rgba(0,0,0,0.5))]
+                  backdrop-blur-md
+                  rounded-xl
+                  px-4 py-3.5
+                  transition-all duration-200
+                `,
+                duration: 4000,
+                success: {
+                  iconTheme: {
+                    primary: "var(--color-success, #10b981)",
+                    secondary: "var(--color-surface, #0b0f14)",
+                  },
+                },
+                error: {
+                  iconTheme: {
+                    primary: "var(--color-danger, #ef4444)",
+                    secondary: "var(--color-surface, #0b0f14)",
+                  },
+                },
+              }}
+            />
 
-        {/* 2-Column Responsive Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* Left Column (Main Form - 7 cols) */}
-          <section className="lg:col-span-7 bg-surface border border-surface-border rounded-xl p-6 shadow-card hover:shadow-card-hover transition-shadow space-y-4">
-            <h2 className="text-lg font-semibold text-ink">General Details</h2>
-            
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-ink-secondary">Business Name</label>
-              <input 
-                type="text" 
-                defaultValue="Acme Fleet Rentals"
-                className="w-full px-3 py-2 bg-bg-elevated border border-surface-border rounded-md text-ink focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            {/* 🌌 AMBIENT BRAND GLOW & MESH DEPTH LAYER */}
+            <div 
+              className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none" 
+              aria-hidden="true"
+            >
+              {/* Radial Grid Pattern Mesh for Dark Mode Tech Feel */}
+              <div 
+                className="absolute inset-0 opacity-[0.03] mix-blend-overlay"
+                style={{
+                  backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)`,
+                  backgroundSize: '32px 32px',
+                }}
+              />
+
+              {/* Top-Left Brand Lighting Glow */}
+              <div
+                className="
+                  absolute -left-[10%] -top-[12%] 
+                  h-[750px] w-[750px] 
+                  rounded-full 
+                  bg-[var(--color-primary-glow,#0d3323)] 
+                  opacity-70 blur-[150px]
+                  transform-gpu
+                "
+              />
+
+              {/* Bottom-Right Deep Accent Lighting Glow */}
+              <div
+                className="
+                  absolute -bottom-[20%] -right-[10%] 
+                  h-[950px] w-[950px] 
+                  rounded-full 
+                  bg-[var(--color-brand-glow-secondary,#0a2b1d)] 
+                  opacity-80 blur-[170px]
+                  transform-gpu
+                "
+              />
+
+              {/* Subtle Center-Right Secondary Highlight Glow */}
+              <div
+                className="
+                  absolute top-[22%] right-[12%] 
+                  h-[500px] w-[500px] 
+                  rounded-full 
+                  bg-[var(--color-brand-glow-tertiary,#0d211c)] 
+                  opacity-35 blur-[130px]
+                  transform-gpu
+                "
+              />
+
+              {/* Top Hero Vignette Spotlight */}
+              <div 
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-[var(--color-primary-muted,rgba(16,185,129,0.05))] via-transparent to-transparent opacity-60 pointer-events-none"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-ink-secondary">Support Email</label>
-              <input 
-                type="email" 
-                defaultValue="support@acme.com"
-                className="w-full px-3 py-2 bg-bg-elevated border border-surface-border rounded-md text-ink focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+            {/* 🚀 APPLICATION CONTENT CONTAINER */}
+            <div className="relative z-10 flex min-h-screen flex-col">
+              {children}
             </div>
-          </section>
-
-          {/* Right Column (Logo & Admin Form - 5 cols) */}
-          <section className="lg:col-span-5 space-y-6">
-            
-            {/* Logo Card */}
-            <div className="bg-surface border border-surface-border rounded-xl p-6 shadow-card space-y-3">
-              <h3 className="text-md font-semibold text-ink">Company Logo</h3>
-              <div className="border-2 border-dashed border-surface-border-strong rounded-lg p-6 text-center bg-bg-elevated hover:bg-surface-hover transition-colors cursor-pointer">
-                <span className="text-sm text-ink-muted">Click to upload SVG or PNG</span>
-              </div>
-            </div>
-
-            {/* Admin Form Card */}
-            <div className="bg-surface border border-surface-border rounded-xl p-6 shadow-card space-y-3">
-              <h3 className="text-md font-semibold text-ink">Admin Contact</h3>
-              <p className="text-xs text-ink-subtle">Primary administrator for system notifications.</p>
-              
-              <input 
-                type="text" 
-                placeholder="Admin Full Name"
-                className="w-full px-3 py-2 bg-bg-elevated border border-surface-border rounded-md text-ink text-sm focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-          </section>
-
-        </div>
-      </div>
-    </div>
+          </AuthProvider>
+        </Providers>
+      </body>
+    </html>
   );
 }
