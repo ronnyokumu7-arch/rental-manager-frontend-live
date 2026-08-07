@@ -10,18 +10,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 
-/**
- * @component Topbar
- * @description 
- * The global top navigation bar. Handles search UI, theme toggling, 
- * notifications, and the user profile dropdown.
- * 
- * 📱 MOBILE OPTIMIZATION (Phase 1):
- * - Height: h-12 on mobile (48px), h-14 on desktop (56px)
- * - Search: Hidden on mobile (Phase 2: icon trigger)
- * - Theme toggle: Hidden on mobile (moved to Settings)
- * - Greeting/User name: Already responsive via existing Tailwind classes
- */
 export default function Topbar() {
   const { user, tenant, logout } = useAuth();
   const pathname = usePathname();
@@ -29,58 +17,38 @@ export default function Topbar() {
   const [isDark, setIsDark] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // ─── THEME INITIALIZATION ──────────────────────────────────────────────────
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    
     const isCurrentlyDark = savedTheme === "dark" || (!savedTheme && prefersDark);
     setIsDark(isCurrentlyDark);
-    
-    if (isCurrentlyDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    if (isCurrentlyDark) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
   }, []);
 
-  // ─── EVENT LISTENERS (MEMORY LEAK FIX) ─────────────────────────────────────
-  
   const handleClickOutside = useCallback((e: MouseEvent) => {
-    if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-      setShowUserMenu(false);
-    }
+    if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowUserMenu(false);
   }, []);
 
   const handleEscapeKey = useCallback((e: KeyboardEvent) => {
-    if (e.key === "Escape") {
-      setShowUserMenu(false);
-    }
+    if (e.key === "Escape") setShowUserMenu(false);
   }, []);
 
   useEffect(() => {
     if (!showUserMenu) return;
-
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscapeKey);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscapeKey);
     };
   }, [showUserMenu, handleClickOutside, handleEscapeKey]);
 
-  // Close menu automatically when navigating to a new route
-  useEffect(() => { 
-    setShowUserMenu(false); 
-  }, [pathname]);
-
-  // ─── HANDLERS & HELPERS ────────────────────────────────────────────────────
+  useEffect(() => { setShowUserMenu(false); }, [pathname]);
 
   const toggleTheme = () => {
     const newIsDark = !isDark;
     setIsDark(newIsDark);
-    
     if (newIsDark) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
@@ -91,7 +59,6 @@ export default function Topbar() {
   };
 
   const companyName = user?.role === "super_admin" ? "Rental Manager" : tenant?.name || "Agency";
-  
   const greeting = () => {
     const h = new Date().getHours();
     const name = user?.full_name?.split(" ")[0] || "there";
@@ -99,23 +66,14 @@ export default function Topbar() {
     if (h < 17) return `Good afternoon, ${name}`;
     return `Good evening, ${name}`;
   };
-
   const isSuperAdmin = user?.role === "super_admin";
 
   const renderAvatar = (size: "sm" | "md") => {
-    const dims = size === "sm" ? "w-7 h-7" : "w-11 h-11";
-    const iconSize = size === "sm" ? 14 : 20;
-    
+    const dims = size === "sm" ? "w-8 h-8" : "w-11 h-11";
+    const iconSize = size === "sm" ? 16 : 20;
     if (user?.avatar_url) {
-      return (
-        <img 
-          src={user.avatar_url} 
-          alt={user.full_name || "User"} 
-          className={`${dims} rounded-full object-cover border border-[var(--color-surface-border)]`} 
-        />
-      );
+      return <img src={user.avatar_url} alt={user.full_name || "User"} className={`${dims} rounded-full object-cover border border-[var(--color-surface-border)]`} />;
     }
-    
     return (
       <div className={`${dims} rounded-full flex items-center justify-center text-[var(--color-ink-muted)] bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]`}>
         <User size={iconSize} strokeWidth={1.8} />
@@ -123,42 +81,33 @@ export default function Topbar() {
     );
   };
 
-  // ─── RENDER ────────────────────────────────────────────────────────────────
-
   return (
-    // ✅ MOBILE HEIGHT: h-12 (48px) on mobile, h-14 (56px) on desktop
-    // ✅ MOBILE PADDING: px-4 (16px) on mobile, px-5 (20px) on desktop
-    <header className="h-12 sm:h-14 flex items-center gap-4 px-4 sm:px-5 sticky top-0 z-20 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)] backdrop-blur-xl transition-colors duration-300">
+    // ✅ GLASSMORPHIC TOPBAR: Transparent background with backdrop-blur to show ambient glows
+    <header className="h-14 sm:h-16 flex items-center gap-4 px-4 sm:px-6 sticky top-0 z-30 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)]/70 backdrop-blur-xl transition-colors duration-300">
       
-      {/* Left: Greeting - Already hidden on mobile via existing lg:block class */}
+      {/* Left: Greeting - Hidden on mobile */}
       <p className="hidden lg:block text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap flex-shrink-0">
         {greeting()}
       </p>
 
-      {/* Center: Search - Hidden on mobile (Phase 2: icon trigger) */}
+      {/* Center: Search - Hidden on mobile */}
       <div className="hidden sm:flex flex-1 max-w-xl mx-auto">
-        <div className="flex items-center gap-3 h-9 px-3.5 rounded-xl cursor-text border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-hover)] transition-all duration-200 group">
+        <div className="flex items-center gap-3 h-9 px-3.5 rounded-xl cursor-text border border-[var(--color-surface-border)] bg-[var(--color-surface)]/50 hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-hover)] transition-all duration-200 group backdrop-blur-sm">
           <Search size={14} strokeWidth={2} className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-ink-muted)] flex-shrink-0 transition-colors" />
           <span className="text-[13px] text-[var(--color-ink-subtle)] flex-1 select-none">Search anything...</span>
           <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
             <kbd className="flex items-center justify-center w-5 h-5 rounded-md text-[10px] font-semibold text-[var(--color-ink-subtle)] border border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]">
               <Command size={9} strokeWidth={2.5} />
             </kbd>
-            <kbd className="flex items-center justify-center px-1.5 h-5 rounded-md text-[10px] font-semibold text-[var(--color-ink-subtle)] border border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]">
-              K
-            </kbd>
+            <kbd className="flex items-center justify-center px-1.5 h-5 rounded-md text-[10px] font-semibold text-[var(--color-ink-subtle)] border border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]">K</kbd>
           </div>
         </div>
       </div>
 
       {/* Right: Controls */}
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        {/* Theme Toggle - Hidden on mobile (moved to Settings) */}
-        <button
-          onClick={toggleTheme}
-          className="hidden sm:flex w-9 h-9 rounded-xl items-center justify-center text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all duration-150"
-          title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-        >
+      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto sm:ml-0">
+        {/* Theme Toggle - Hidden on mobile */}
+        <button onClick={toggleTheme} className="hidden sm:flex w-9 h-9 rounded-xl items-center justify-center text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all duration-150">
           {isDark ? <Sun size={17} strokeWidth={1.8} /> : <Moon size={17} strokeWidth={1.8} />}
         </button>
 
@@ -169,14 +118,11 @@ export default function Topbar() {
         </button>
 
         {/* Divider */}
-        <div className="w-px h-5 bg-[var(--color-surface-border)] mx-1" />
+        <div className="w-px h-5 bg-[var(--color-surface-border)] mx-1 hidden sm:block" />
 
         {/* User Menu */}
         <div ref={menuRef} className="relative">
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2.5 pl-1 pr-2.5 py-1 rounded-xl hover:bg-[var(--color-surface-hover)] transition-all duration-150 group"
-          >
+          <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2.5 pl-1 pr-2.5 py-1 rounded-xl hover:bg-[var(--color-surface-hover)] transition-all duration-150 group">
             <div className="relative flex-shrink-0">
               {renderAvatar("sm")}
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[var(--color-success)] ring-2 ring-[var(--color-bg)]" />
@@ -188,8 +134,8 @@ export default function Topbar() {
           </button>
 
           {showUserMenu && (
-            <div className="absolute right-0 top-[calc(100%+8px)] w-[260px] rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in slide-up fade-in duration-200">
-              {/* User Info Header */}
+            // ✅ MOBILE-SAFE DROPDOWN: w-[calc(100vw-2rem)] prevents left-edge clipping on 360px screens
+            <div className="absolute right-0 sm:right-0 top-[calc(100%+8px)] w-[calc(100vw-2rem)] sm:w-[260px] max-w-[260px] rounded-2xl bg-[var(--color-surface)]/95 backdrop-blur-xl border border-[var(--color-surface-border)] shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in slide-up fade-in duration-200">
               <div className="px-4 pt-4 pb-3">
                 <div className="flex items-center gap-3">
                   <div className="relative flex-shrink-0">
@@ -219,7 +165,6 @@ export default function Topbar() {
 
               <div className="h-px bg-[var(--color-surface-border)] mx-3" />
 
-              {/* Menu Items */}
               <div className="px-2 py-2">
                 <Link href={isSuperAdmin ? `/super-admin/users/${user?.id}` : `/dashboard/users/${user?.id}`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-all duration-100">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
@@ -237,7 +182,6 @@ export default function Topbar() {
 
               <div className="h-px bg-[var(--color-surface-border)] mx-3" />
 
-              {/* Sign Out */}
               <div className="px-2 py-2">
                 <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-[var(--color-danger-text)] hover:bg-[var(--color-danger-bg)] transition-all duration-100">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--color-danger-bg)] border border-[var(--color-danger)]/20">
