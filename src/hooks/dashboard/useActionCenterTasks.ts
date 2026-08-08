@@ -18,7 +18,7 @@ export function useActionCenterTasks() {
       // 1. Fetch personal tasks (Accessible by all roles)
       try {
         myTasks = await tasksApi.getMyTasks({ limit: 50 });
-      } catch (error) {
+      } catch {
         console.error("Failed to fetch personal tasks:", error);
       }
 
@@ -40,7 +40,7 @@ export function useActionCenterTasks() {
         });
 
       setTasks(combined);
-    } catch (error) {
+    } catch {
       console.error("Failed to compile tasks pipeline:", error);
     } finally {
       setLoading(false);

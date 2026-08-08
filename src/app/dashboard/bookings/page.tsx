@@ -1,7 +1,6 @@
 // src/app/dashboard/bookings/page.tsx
 "use client";
 
-import { useRouter } from "next/navigation";
 import { LayoutList, CalendarDays } from "lucide-react";
 import { useMemo } from "react";
 
@@ -17,8 +16,6 @@ const TABS = [
 ];
 
 export default function BookingsPage() {
-  const router = useRouter();
-  
   const {
     activeTab,
     setActiveTab,

@@ -25,7 +25,7 @@ export function usePublicContract(token: string) {
     }
   }, [token]);
 
-  const handleSign = async (signatureData: string) => {
+  const handleSign = async (_signatureData: string) => {
     if (!contract || contract.signed_by_client) return;
     setIsSigning(true);
     try {

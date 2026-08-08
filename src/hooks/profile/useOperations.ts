@@ -24,7 +24,7 @@ export function useOperations(userId: number, currentUserRole: string, isSelfVie
       } else {
         return await tasksApi.getMyTasks({ limit: 100 });
       }
-    } catch (error) {
+    } catch {
       console.error("Failed to fetch tasks for context", error);
       // Fallback to my-tasks if specific user fetch fails
       return await tasksApi.getMyTasks({ limit: 100 });
@@ -65,7 +65,7 @@ export function useOperations(userId: number, currentUserRole: string, isSelfVie
             // Non-critical error, we can still show the main task list
           }
         }
-      } catch (error) {
+      } catch {
         console.error("Failed to fetch operations data", error);
         toast.error("Failed to load tasks");
       } finally {
@@ -97,7 +97,7 @@ export function useOperations(userId: number, currentUserRole: string, isSelfVie
         const nextTask = updatedTasks.find(t => t.id !== taskId && t.status === "pending") || null;
         setSelectedTask(nextTask);
       }
-    } catch (error) {
+    } catch {
       console.error("Failed to complete task", error);
       toast.error("Failed to update task");
     } finally {
@@ -121,7 +121,7 @@ export function useOperations(userId: number, currentUserRole: string, isSelfVie
       if (selectedTask?.id === taskId) {
         setSelectedTask(null);
       }
-    } catch (error) {
+    } catch {
       console.error("Failed to assign task", error);
       toast.error("Failed to assign task");
     } finally {

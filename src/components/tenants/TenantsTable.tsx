@@ -1,13 +1,13 @@
 import { useRouter } from "next/navigation";
-import { Building2, Mail, User, Phone, Loader2, Search, Filter, Archive, Plus, CreditCard } from "lucide-react";
+import { Building2, Mail, User, Phone, Search, Filter, Archive, Plus, CreditCard } from "lucide-react";
 import { TenantActionsMenu } from "./TenantActionsMenu";
 import type { Tenant } from "@/lib/types";
 
 export function TenantsTable({ 
-  filteredTenants, loading, actionLoadingId, 
+  filteredTenants, loading:_loading, actionLoadingId:_actionLoadingId, 
   handleToggleSubscription, handleArchive,
   searchQuery, setSearchQuery, statusFilter, setStatusFilter, 
-  subFilter, setSubFilter, showArchived, setShowArchived 
+  subFilter:_subFilter, setSubFilter:_setSubFilter, showArchived, setShowArchived 
 }: any) {
   const router = useRouter();
 

@@ -6,7 +6,7 @@ import {
   Eye, EyeOff, LogIn, ArrowRight, ArrowLeft, 
   ShieldCheck, Mail, Car, Calendar, TrendingUp, 
   ChevronLeft, ChevronRight, Sparkles, CheckCircle2,
-  Activity, FileText, Layers, Lock
+  Activity, FileText, Lock
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import axios from "axios";
@@ -200,7 +200,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-    } catch (err) {
+    } catch {
       setErrorType(getErrorType(err));
     } finally {
       setLoading(false);

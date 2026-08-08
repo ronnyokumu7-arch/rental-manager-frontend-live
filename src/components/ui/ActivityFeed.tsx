@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Calendar, User, Car, AlertCircle, CheckCircle2, type LucideIcon } from "lucide-react";
+import { Calendar, type LucideIcon } from "lucide-react";
 
 interface ActivityItem {
   id: string | number;

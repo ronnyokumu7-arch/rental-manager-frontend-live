@@ -83,7 +83,7 @@ export default function Topbar() {
 
   return (
     // ✅ GLASSMORPHIC TOPBAR: Transparent background with backdrop-blur to show ambient glows
-    <header className="h-14 sm:h-16 flex items-center gap-4 px-4 sm:px-6 sticky top-0 z-30 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)]/70 backdrop-blur-xl transition-colors duration-300">
+    <header className="h-14 sm:h-16 flex items-center gap-4 px-4 sm:px-6 sticky top-0 z-30 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)] transition-colors duration-300">
       
       {/* Left: Greeting - Hidden on mobile */}
       <p className="hidden lg:block text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap flex-shrink-0">
@@ -92,7 +92,7 @@ export default function Topbar() {
 
       {/* Center: Search - Hidden on mobile */}
       <div className="hidden sm:flex flex-1 max-w-xl mx-auto">
-        <div className="flex items-center gap-3 h-9 px-3.5 rounded-xl cursor-text border border-[var(--color-surface-border)] bg-[var(--color-surface)]/50 hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-hover)] transition-all duration-200 group backdrop-blur-sm">
+        <div className="flex items-center gap-3 h-9 px-3.5 rounded-xl cursor-text border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-hover)] transition-all duration-200 group">
           <Search size={14} strokeWidth={2} className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-ink-muted)] flex-shrink-0 transition-colors" />
           <span className="text-[13px] text-[var(--color-ink-subtle)] flex-1 select-none">Search anything...</span>
           <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
@@ -135,7 +135,7 @@ export default function Topbar() {
 
           {showUserMenu && (
             // ✅ MOBILE-SAFE DROPDOWN: w-[calc(100vw-2rem)] prevents left-edge clipping on 360px screens
-            <div className="absolute right-0 sm:right-0 top-[calc(100%+8px)] w-[calc(100vw-2rem)] sm:w-[260px] max-w-[260px] rounded-2xl bg-[var(--color-surface)]/95 backdrop-blur-xl border border-[var(--color-surface-border)] shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in slide-up fade-in duration-200">
+            <div className="absolute right-0 top-[calc(100%+8px)] w-[calc(100vw-2rem)] sm:w-[260px] max-w-[260px] rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in slide-up fade-in duration-200">
               <div className="px-4 pt-4 pb-3">
                 <div className="flex items-center gap-3">
                   <div className="relative flex-shrink-0">

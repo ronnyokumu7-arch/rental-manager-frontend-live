@@ -51,10 +51,10 @@ const STATUS_STYLES: Record<string, string> = {
 const PRIORITIES = ["urgent", "high", "medium", "low"];
 
 export default function AssignedToTab({
-  tasks, users, loading, metrics,
+  tasks:_tasks, users, loading, metrics,
   search, setSearch, priorityFilter, setPriorityFilter,
   selectedUserId, setSelectedUserId,
-  currentPage, setCurrentPage, pageSize, totalPages, filteredTasks,
+  currentPage, setCurrentPage, pageSize, totalPages:_totalPages, filteredTasks,
   openDropdownId, dropdownPos, onToggleDropdown, onStatusChange, onArchive
 }: AssignedToTabProps) {
 

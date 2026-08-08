@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, User, Shield, Bell, CheckCircle2, Camera, Layers } from "lucide-react";
+import { ArrowLeft, User, Bell, CheckCircle2, Camera, Layers } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile"; 
 
 // ✅ Import the modular components

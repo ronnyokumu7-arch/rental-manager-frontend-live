@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { 
   CreditCard, Calendar, AlertTriangle, CheckCircle2, XCircle, 
-  Clock, Loader2, Zap, Shield, Plus, Ban, Info
+  Clock, Loader2, Zap, Shield, Plus, Ban
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { tenantsApi } from '@/lib/api/tenants';

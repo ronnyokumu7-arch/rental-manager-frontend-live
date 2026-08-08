@@ -128,7 +128,7 @@ function StatSkeleton() {
 export default function SkeletonCard({
   variant = "card",
   rows = 3,
-  className = "",
+  className:_className = "",
 }: SkeletonCardProps) {
   switch (variant) {
     case "table":

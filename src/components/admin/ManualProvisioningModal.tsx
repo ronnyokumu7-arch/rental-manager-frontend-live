@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import apiClient from "@/lib/api-client";
 import toast from "react-hot-toast";
-import { CreditCard, Hash, DollarSign, Calendar, X, ShieldCheck, Loader2 } from "lucide-react";
+import { Hash, DollarSign, X, ShieldCheck, Loader2 } from "lucide-react";
 
 interface ManualProvisioningModalProps {
   tenantId: number;

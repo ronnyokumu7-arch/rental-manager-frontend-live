@@ -35,7 +35,7 @@ export function useBookingForm() {
         ]);
         setClients(clientsRes);
         setVehicles(vehiclesRes);
-      } catch (error) {
+      } catch {
         console.error("Failed to load form data:", error);
         toast.error("Failed to load clients or vehicles.");
       }

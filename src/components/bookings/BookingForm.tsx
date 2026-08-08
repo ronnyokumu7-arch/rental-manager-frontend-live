@@ -10,7 +10,6 @@ import VehicleSearch from './VehicleSearch';
 import BookingSummary from './BookingSummary';
 import AddressAutocomplete from '@/components/ui/AddressAutocomplete';
 
-interface BookingFormProps {}
 
 const inputClass = "w-full pl-10 pr-3 py-2.5 rounded-lg border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/30 focus:border-[var(--color-primary)] outline-none transition-all text-sm";
 const labelClass = "block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-ink-muted)] mb-1.5";
@@ -42,10 +41,6 @@ const PremiumDatePicker = ({
   minDate?: string;
   maxDate?: string;
 }) => {
-  // Detect if dark mode is active for theme adaptation
-  const isDarkMode = typeof window !== 'undefined' && 
-    (document.documentElement.classList.contains('dark') || 
-     window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   return (
     <div>
@@ -62,7 +57,6 @@ const PremiumDatePicker = ({
             minDate: minDate || "today",
             maxDate: maxDate,
             disableMobile: true, // Forces the beautiful custom dropdown UI
-            theme: isDarkMode ? "dark" : "light",
           }}
           className={inputClass}
           placeholder="Select date..."
@@ -72,7 +66,7 @@ const PremiumDatePicker = ({
   );
 };
 
-export default function BookingForm({}: BookingFormProps) {
+export default function BookingForm() {
   const {
     loading,
     clients,

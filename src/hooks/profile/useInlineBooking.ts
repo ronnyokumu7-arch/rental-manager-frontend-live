@@ -96,7 +96,7 @@ export function useInlineBooking(booking: Booking) {
       });
       toast.success("Booking updated successfully!");
       setIsEditing(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to update booking.");
     } finally {
       setIsSaving(false);
@@ -104,10 +104,10 @@ export function useInlineBooking(booking: Booking) {
   };
 
   const handleAction = async (action: "confirm" | "activate" | "complete" | "cancel" | "no_show") => {
-    if (!confirm(`Are you sure you want to ${action.replace("_", " ")} this booking?`)) return;
+    if (!confirmAction(`Are you sure you want to ${action.replace("_", " ")} this booking?`)) return;
     setIsActionLoading(true);
     try {
-      if (action === "confirm") await bookingsApi.confirm(booking.id);
+      if (action === "confirm") await bookingsApi.confirmAction(booking.id);
       else if (action === "activate") await bookingsApi.activate(booking.id);
       else if (action === "complete") await bookingsApi.complete(booking.id);
       else if (action === "cancel") await bookingsApi.cancel(booking.id);
@@ -145,7 +145,7 @@ export function useInlineBooking(booking: Booking) {
       const res = await invoicesApi.generateShareLink(booking.invoices[0].id);
       toast.success("Invoice link copied to clipboard!");
       return res.share_url;
-    } catch (error) {
+    } catch {
       toast.error("Failed to copy invoice link.");
       return null;
     }

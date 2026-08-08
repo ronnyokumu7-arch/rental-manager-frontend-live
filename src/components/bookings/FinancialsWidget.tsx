@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { 
   Share2, Copy, Check, DollarSign, 
   Receipt, ArrowUpRight, ShieldCheck, Loader2,
-  Sparkles, ExternalLink, RefreshCw
+  Sparkles
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { invoicesApi } from "@/lib/api/invoices";

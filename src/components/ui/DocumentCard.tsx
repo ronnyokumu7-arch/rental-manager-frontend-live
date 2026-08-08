@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { FileText, Download, Eye, Upload, X } from "lucide-react";
+import { Download, Eye, Upload, X } from "lucide-react";
 import Badge from "./Badge";
 
 interface DocumentCardProps {
@@ -18,19 +18,6 @@ interface DocumentCardProps {
   className?: string;
 }
 
-const typeConfig: Record<
-  DocumentCardProps["type"],
-  { icon: typeof FileText; color: string; bg: string }
-> = {
-  contract: { icon: FileText, color: "text-accent-dark", bg: "bg-accent-bg" },
-  invoice: { icon: FileText, color: "text-warning-text", bg: "bg-warning-bg" },
-  receipt: { icon: FileText, color: "text-success-text", bg: "bg-success-bg" },
-  report: { icon: FileText, color: "text-ink-muted", bg: "bg-surface-hover" },
-  identity: { icon: FileText, color: "text-accent-dark", bg: "bg-accent-bg" },
-  license: { icon: FileText, color: "text-success-text", bg: "bg-success-bg" },
-  other: { icon: FileText, color: "text-ink-muted", bg: "bg-surface-hover" },
-};
-
 export default function DocumentCard({
   title,
   type,
@@ -44,8 +31,6 @@ export default function DocumentCard({
   onRemove,
   className = "",
 }: DocumentCardProps) {
-  const config = typeConfig[type];
-  const Icon = config.icon;
 
   return (
     <div className={`card !p-0 overflow-hidden ${className}`}>
@@ -55,11 +40,11 @@ export default function DocumentCard({
           <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
           {onRemove && (
             <button
-  onClick={onRemove}
-  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-ink/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-ink/60 transition-colors"
->
-  <X size={16} />
-</button>
+              onClick={onRemove}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-ink/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-ink/60 transition-colors"
+            >
+              <X size={16} />
+            </button>
           )}
         </div>
       )}

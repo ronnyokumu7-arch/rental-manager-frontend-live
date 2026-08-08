@@ -1,15 +1,40 @@
 {
+  "root": true,
   "extends": [
     "next/core-web-vitals",
     "next/typescript"
   ],
   "rules": {
-    "react/no-unescaped-entities": "off",
-    "@next/next/no-img-element": "warn",
-    "react-hooks/exhaustive-deps": "warn",
-    "@typescript-eslint/no-unused-vars": "warn",
+    // ── BUILD-BLOCKING (error) ────────────────────────────────────────────
+    // Dead code: unused imports/vars now fail the build (_ prefix to opt out)
+    "@typescript-eslint/no-unused-vars": ["error", {
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "ignoreRestSiblings": true
+    }],
+    // Empty interface {} / object types fail the build (use Record or a real type)
+    "@typescript-eslint/no-empty-object-type": "error",
+    // @ts-ignore banned; @ts-expect-error allowed only with a 5+ char explanation
+    "@typescript-eslint/ban-ts-comment": ["error", { "minimumDescriptionLength": 5 }],
+    // Auto-fixable hygiene — these fail the build but --fix resolves most instantly
+    "prefer-const": "error",
+    "eqeqeq": ["error", "always"],
+    "no-var": "error",
+    // Debug leftovers fail the build
+    "no-debugger": "error",
+    "no-alert": "error",
+    // Hooks called conditionally = runtime crash. Always error.
+    "react-hooks/rules-of-hooks": "error",
+
+    // ── CLEANUP PHASE (warn → escalate to "error" after sprint) ────────────
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-empty-object-type": "warn",
-    "prefer-const": "warn"
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "react/no-array-index-key": "warn",
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "@next/next/no-img-element": "warn",
+
+    // ── INTENTIONALLY OFF ──────────────────────────────────────────────────
+    "react/no-unescaped-entities": "off"
   }
 }

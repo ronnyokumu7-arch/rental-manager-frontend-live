@@ -29,7 +29,7 @@ export function useDashboard() {
         setClients(clientsData || []);
         setVehicles(vehiclesData || []);
         setTasks(tasksData || []);
-      } catch (error) {
+      } catch {
         console.error("Failed to load dashboard data", error);
       } finally {
         setLoading(false);

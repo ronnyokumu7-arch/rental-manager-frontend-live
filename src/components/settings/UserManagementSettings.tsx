@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { 
-  Users, Plus, Mail, Copy, Check, Loader2, MoreVertical, 
-  Shield, ShieldAlert, Trash2, UserCheck, UserX 
+  Plus, Mail, Copy, Check, Loader2, MoreVertical, 
+  ShieldAlert, UserCheck, UserX 
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { usersApi, type UserCreatePayload } from "@/lib/api/users";
@@ -44,7 +44,7 @@ export default function UserManagementSettings() {
     try {
       const data = await usersApi.list();
       setUsers(data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load team members");
     } finally {
       setLoading(false);
@@ -86,7 +86,7 @@ export default function UserManagementSettings() {
       await usersApi.suspend(userId, "Suspended via Settings");
       toast.success("User suspended");
       fetchUsers();
-    } catch (error) {
+    } catch {
       toast.error("Failed to suspend user");
     }
   };
@@ -96,7 +96,7 @@ export default function UserManagementSettings() {
       await usersApi.reactivate(userId);
       toast.success("User reactivated");
       fetchUsers();
-    } catch (error) {
+    } catch {
       toast.error("Failed to reactivate user");
     }
   };

@@ -1,7 +1,7 @@
 // src/components/settings/TeamRolesSettings.tsx
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, } from "react";
 import { ShieldCheck, Loader2, Save, CheckCircle2, Plus, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 import { roleTemplatesApi, type RoleTemplate, type PermissionMatrix } from "@/lib/api/role-templates";
@@ -32,7 +32,7 @@ export default function TeamRolesSettings() {
           setSelectedRoleId(templatesData[0].id);
           setActivePermissions(new Set(templatesData[0].permissions));
         }
-      } catch (error) {
+      } catch {
         toast.error("Failed to load role settings");
       } finally {
         setLoading(false);
@@ -44,7 +44,7 @@ export default function TeamRolesSettings() {
   // 2. Handle Role Selection
   const handleSelectRole = (roleId: number) => {
     if (hasChanges) {
-      if (!confirm("You have unsaved permission changes. Switch roles anyway?")) return;
+      if (!confirmAction("You have unsaved permission changes. Switch roles anyway?")) return;
     }
     setSelectedRoleId(roleId);
     const template = templates.find((t) => t.id === roleId);

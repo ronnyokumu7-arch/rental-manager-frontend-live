@@ -3,8 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { 
-  Loader2, User, Car, CalendarDays, FileText, AlertCircle, 
-  ArrowRight, ShieldCheck, Clock, MapPin 
+  Loader2, User, Car, CalendarDays, FileText, AlertCircle
 } from "lucide-react";
 import { clientsApi } from "@/lib/api/clients";
 import { vehiclesApi } from "@/lib/api/vehicles";
@@ -77,7 +76,7 @@ export default function SmartProfileViewer({ task }: SmartProfileViewerProps) {
       } else if (task.target_type === "booking") {
         setBookingData(await bookingsApi.get(task.target_id));
       }
-    } catch (err) {
+    } catch {
       console.error(err);
       setError("Resource not found or access denied.");
     } finally {

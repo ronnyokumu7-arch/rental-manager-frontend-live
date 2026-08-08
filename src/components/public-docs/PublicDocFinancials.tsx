@@ -13,7 +13,7 @@ interface PublicDocFinancialsProps {
   rows: FinancialRow[];
 }
 
-export default function PublicDocFinancials({ currency, rows }: PublicDocFinancialsProps) {
+export default function PublicDocFinancials({ currency:_currency, rows }: PublicDocFinancialsProps) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
       <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-6 border-b border-slate-100 pb-3">

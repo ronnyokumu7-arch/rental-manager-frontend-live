@@ -20,7 +20,7 @@ export function usePayments() {
       
       // ✅ FIXED: Added safe fallback to guarantee 'payments' state is always an array
       setPayments(data || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load payments");
     } finally {
       setLoading(false);

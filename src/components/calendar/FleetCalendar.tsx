@@ -13,7 +13,7 @@ export default function FleetCalendar() {
     vehicles, selectedVehicleIds, toggleVehicle, bookingsByDay, loading
   } = useCalendar();
 
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [_selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   const monthYear = currentDate.toLocaleString("default", { month: "long", year: "numeric" });
 

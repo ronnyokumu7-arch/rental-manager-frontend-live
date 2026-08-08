@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { format, addDays, subDays, startOfDay, differenceInDays } from "date-fns";
+import { addDays, subDays, startOfDay, differenceInDays } from "date-fns";
 import { Booking, Vehicle, Client } from "@/lib/types";
 
 interface UseTimelineCalendarProps {
@@ -13,7 +13,7 @@ interface UseTimelineCalendarProps {
 }
 
 export function useTimelineCalendar({
-  bookings = [],
+  bookings:_bookings = [],
   vehicleMap = {},
   clientMap = {},
   onCreateBooking,

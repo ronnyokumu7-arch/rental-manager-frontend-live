@@ -1,7 +1,7 @@
 // src/app/dashboard/profile/page.tsx
 "use client";
 
-import { User, Mail, Phone, MapPin, Shield, Bell, Key } from "lucide-react";
+import { User, MapPin, Shield, Bell, Key } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import SectionCard from "@/components/ui/SectionCard";
 

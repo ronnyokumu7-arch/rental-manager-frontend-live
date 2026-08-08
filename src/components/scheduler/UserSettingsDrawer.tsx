@@ -7,7 +7,6 @@ import {
   User,
   Shield,
   Clock,
-  Briefcase,
   AlertTriangle,
   Save,
   Trash2,
@@ -129,7 +128,7 @@ export default function UserSettingsDrawer({
         permissions
       );
       onClose();
-    } catch (error) {
+    } catch {
       console.error("Failed to save user settings:", error);
     } finally {
       setIsSaving(false);

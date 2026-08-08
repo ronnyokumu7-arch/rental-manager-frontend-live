@@ -29,7 +29,7 @@ export function useBookingsList() {
         ? await bookingsApi.listArchived() 
         : await bookingsApi.list();
       setBookings(data);
-    } catch (error) {
+    } catch {
       console.error("Failed to fetch bookings", error);
       toast.error("Failed to load bookings");
     } finally {
@@ -92,7 +92,7 @@ export function useBookingsList() {
   const handleConfirm = async (bookingId: number) => {
     setActionLoadingId(bookingId);
     try {
-      await bookingsApi.confirm(bookingId);
+      await bookingsApi.confirmAction(bookingId);
       toast.success("Booking confirmed! Contract & Invoice generated.");
       await fetchBookings();
     } catch (error: any) {
@@ -135,7 +135,7 @@ export function useBookingsList() {
 
   // ✅ FIXED: Uses bookingsApi.cancel
   const handleCancel = async (bookingId: number) => {
-    if (!confirm("Are you sure you want to cancel this booking?")) return;
+    if (!confirmAction("Are you sure you want to cancel this booking?")) return;
     setActionLoadingId(bookingId);
     try {
       await bookingsApi.cancel(bookingId);
@@ -151,7 +151,7 @@ export function useBookingsList() {
 
 // ✅ FIXED: Uses bookingsApi.noShow (Matches the API client)
 const handleNoShow = async (bookingId: number) => {
-  if (!confirm("Mark this booking as a No-Show?")) return;
+  if (!confirmAction("Mark this booking as a No-Show?")) return;
   setActionLoadingId(bookingId);
   try {
     await bookingsApi.noShow(bookingId);  // ✅ Changed from markNoShow to noShow

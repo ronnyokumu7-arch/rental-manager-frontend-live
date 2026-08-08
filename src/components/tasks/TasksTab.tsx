@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   Calendar, Tag, Clock, Ban, CheckCircle2, MoreVertical,
   User as UserIcon, Users, UserX, Wrench, Building2, Briefcase, DollarSign, Shield, Car, Archive,
-  Search, Flag, Plus, ChevronDown
+  Search, Flag, Plus, Pencil
 } from "lucide-react";
 import type { Task, User } from "@/lib/types";
 
@@ -40,6 +40,7 @@ interface TasksTabProps {
   
   // Modal
   onOpenCreateModal: () => void;
+  onEdit: (task: Task) => void; // ✅ ADDED: Accepts the full task object for editing
 }
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -62,8 +63,11 @@ export default function TasksTab({
   tasks, users, loading, metrics,
   search, setSearch, priorityFilter, setPriorityFilter, categoryFilter, setCategoryFilter,
   currentPage, setCurrentPage, pageSize, totalPages, filteredTasks,
-  openDropdownId, dropdownPos, onToggleDropdown, onAssign, onClaim, onStatusChange, onArchive,
-  onOpenCreateModal
+  openDropdownId, dropdownPos, onToggleDropdown, 
+  onAssign: _onAssign, // ✅ FIXED: Renamed locally to satisfy the linter
+  onClaim, onStatusChange, onArchive,
+  onOpenCreateModal,
+  onEdit, // ✅ ADDED: Now we can use onEdit(task) in the JSX below!
 }: TasksTabProps) {
   
   const [isPriorityOpen, setIsPriorityOpen] = useState(false);
@@ -297,7 +301,24 @@ export default function TasksTab({
                                 <div className="h-px bg-[var(--color-surface-border)]" />
                               </>
                             )}
-                            <button onClick={() => onArchive(task.id)} className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors"><Archive size={14} /> Archive Task</button>
+                            {/* Divider */}
+<div className="h-px bg-[var(--color-surface-border)] mx-2 my-1" />
+
+{/* Edit Task Button */}
+<button 
+  onClick={() => onEdit(task)} 
+  className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
+>
+  <Pencil size={14} /> Edit Task
+</button>
+
+{/* Archive Button (Destructive) */}
+<button 
+  onClick={() => onArchive(task.id)} 
+  className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors"
+>
+  <Archive size={14} /> Archive Task
+</button>
                           </div>
                         )}
                       </div>

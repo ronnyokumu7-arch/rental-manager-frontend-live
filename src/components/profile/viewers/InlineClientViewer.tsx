@@ -16,7 +16,7 @@ interface InlineClientViewerProps {
   onRefresh: () => void;
 }
 
-export default function InlineClientViewer({ client, taskId, task, onRefresh }: InlineClientViewerProps) {
+export default function InlineClientViewer({ client, taskId, task, onRefresh:_onRefresh }: InlineClientViewerProps) {
   const {
     isEditing, setIsEditing, isSaving, isActionLoading,
     uploadingDoc, viewingImage, setViewingImage,

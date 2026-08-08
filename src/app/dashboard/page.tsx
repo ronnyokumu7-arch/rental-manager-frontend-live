@@ -249,9 +249,9 @@ export default function DashboardPage() {
 
       {/* 🚀 PREMIUM FLOATING ACTION BUTTON */}
       <button
-        onClick={() => router.push("/dashboard/bookings/new")}
-        className="fixed bottom-8 right-8 z-50 group flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-110 hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 ease-out"
-        title="Create New Booking"
+      onClick={() => router.push("/dashboard/bookings/new")}
+      className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 lg:bottom-8 lg:right-8 z-50 group flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-110 hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 ease-out"
+      title="Create New Booking"
       >
         <Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
         <span className="absolute right-full mr-4 px-3 py-1.5 bg-[var(--color-surface)] text-[var(--color-ink)] text-xs font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-[var(--color-surface-border)]">

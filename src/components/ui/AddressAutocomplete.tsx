@@ -61,7 +61,7 @@ export default function AddressAutocomplete({
         const addresses = data.map((item: any) => item.display_name);
         setSuggestions(addresses);
         setShowSuggestions(addresses.length > 0);
-      } catch (error) {
+      } catch {
         console.error("Address search error:", error);
         setSuggestions([]);
       } finally {

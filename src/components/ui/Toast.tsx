@@ -1,8 +1,7 @@
 "use client";
 
 import { Toaster as HotToaster, ToastBar, toast } from "react-hot-toast";
-import { X, CheckCircle2, AlertCircle, Info, Loader2 } from "lucide-react";
-import type { ReactElement } from "react";
+import { X, Info } from "lucide-react";
 
 /**
  * Brand-configured Toaster — drop this into your root layout once.

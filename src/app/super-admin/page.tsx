@@ -27,7 +27,7 @@ export default function SuperAdminPage() {
         // Fetch all tenants (up to 500 for dashboard stats)
         const data = await tenantsApi.list(0, 500);
         setTenants(data);
-      } catch (error) {
+      } catch {
         console.error("Failed to load dashboard stats:", error);
       } finally {
         setLoading(false);

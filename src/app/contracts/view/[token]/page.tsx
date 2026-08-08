@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { contractsApi } from "@/lib/api/contracts";
-// ✅ 1. IMPORT THE SIGNATURE PAD AND ITS REF TYPE
 import SignaturePad, { SignaturePadRef } from "@/components/public-docs/SignaturePad";
+import { PublicContractView } from "@/lib/types"; // ✅ Use PublicContractView, not Contract
 
 // Helper to format dates exactly as: "01, Jan, 2026"
 const formatDate = (dateStr: string) => {
@@ -30,12 +30,11 @@ export default function PublicContractPage() {
   const params = useParams();
   const token = params.token as string;
 
-  // ✅ 2. CREATE THE REF FOR THE SIGNATURE PAD
   const signatureRef = useRef<SignaturePadRef>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [contract, setContract] = useState<any | null>(null);
+  const [contract, setContract] = useState<PublicContractView | null>(null); // ✅ FIXED: Correct type
   const [signing, setSigning] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -45,8 +44,9 @@ export default function PublicContractPage() {
         const data = await contractsApi.publicView(token);
         setContract(data);
         if (data.signed_by_client) setShowSuccess(true);
-      } catch (err: any) {
-        setError(err.response?.data?.detail || "Contract not found or expired.");
+      } catch (err: unknown) {
+        const detail = err instanceof Error ? (err as any).response?.data?.detail : undefined;
+        setError(detail || "Contract not found or expired.");
       } finally {
         setLoading(false);
       }
@@ -55,25 +55,24 @@ export default function PublicContractPage() {
     if (token) fetchContract();
   }, [token]);
 
-  // ✅ 3. UPDATE SIGN HANDLER TO CAPTURE THE SIGNATURE
   const handleSignContract = async () => {
-    // Validate that the user actually signed
     const signatureData = signatureRef.current?.getSignature();
     if (!signatureData) {
-      return toast.error("Please draw your signature before signing.");
+      toast.error("Please draw your signature before signing.");
+      return;
     }
 
     setSigning(true);
     try {
-      // ✅ Send the base64 signature to the backend
       await contractsApi.publicSign(token, signatureData);
       toast.success("Contract signed successfully!");
       setShowSuccess(true);
-      setContract((prev: any) =>
+      setContract((prev) =>
         prev ? { ...prev, signed_by_client: true, status: "signed" } : null
       );
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Failed to sign contract.");
+    } catch (err: unknown) {
+      const detail = err instanceof Error ? (err as any).response?.data?.detail : undefined;
+      toast.error(detail || "Failed to sign contract.");
     } finally {
       setSigning(false);
     }
@@ -91,7 +90,7 @@ export default function PublicContractPage() {
       link.click();
       window.URL.revokeObjectURL(url);
       toast.success("PDF downloaded!");
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to download PDF");
     }
   };

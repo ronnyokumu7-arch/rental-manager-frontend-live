@@ -2,7 +2,7 @@
 "use client";
 
 import { 
-  User, Shield, Phone, CheckCircle, Mail, CreditCard, 
+  User, Shield, CheckCircle, Mail, CreditCard, 
   Upload, Camera, FileText, Car, Loader2, Users, Calendar
 } from "lucide-react";
 import Flatpickr from "react-flatpickr";
@@ -174,7 +174,6 @@ export default function NewClientForm({
                     dateFormat: "Y-m-d",
                     minDate: "today",
                     disableMobile: true,
-                    theme: typeof window !== 'undefined' && (document.documentElement.classList.contains('dark') || window.matchMedia('(prefers-color-scheme: dark)').matches) ? "dark" : "light",
                   }}
                   className={`${inputClass} pl-8`}
                   placeholder="Select date..."

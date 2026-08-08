@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { format, parseISO, differenceInDays } from "date-fns";
-import { Flame, GripVertical, Calendar, Clock, MoreVertical, Eye, Trash2 } from "lucide-react";
+import { Flame, GripVertical, Calendar, Clock, Eye, Trash2 } from "lucide-react";
 import { ScheduledTask } from "@/hooks/scheduler/useTaskSchedulerTimeline";
 
 interface TaskTimelineBarProps {
@@ -229,7 +229,7 @@ export default function TaskTimelineBar({
               <button
                 onClick={() => {
                   handleContextMenuClose();
-                  if (confirm('Are you sure you want to delete this task?')) {
+                  if (confirmAction('Are you sure you want to delete this task?')) {
                     onDeleteTask(task.id);
                   }
                 }}

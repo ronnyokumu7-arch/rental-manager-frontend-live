@@ -2,13 +2,12 @@
 
 import React from "react";
 import Link from "next/link";
-import { 
-  User, 
-  Phone, 
-  Mail, 
-  ShieldCheck, 
-  ExternalLink, 
-  MessageSquare, 
+import {
+  User,
+  Phone,
+  Mail,
+  ShieldCheck,
+  MessageSquare,
   Building2,
   Sparkles,
   ChevronRight
@@ -23,8 +22,8 @@ export function ClientProfileWidget({ booking }: Props) {
   const client = booking.client;
 
   // Resolve display name prioritizing full_name or combined first/last name
-  const clientName = client?.full_name 
-    ? client.full_name 
+  const clientName = client?.full_name
+    ? client.full_name
     : [client?.first_name, client?.last_name].filter(Boolean).join(" ") || "Unassigned VIP Client";
 
   const clientEmail = client?.email || "No email on record";

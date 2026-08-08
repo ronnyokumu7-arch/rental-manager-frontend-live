@@ -4,7 +4,7 @@ import { clientsApi } from "@/lib/api/clients";
 import type { Client } from "@/lib/types";
 import toast from "react-hot-toast";
 
-export function useInlineClient(client: Client, taskId: number) {
+export function useInlineClient(client: Client, _taskId: number) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -53,7 +53,7 @@ export function useInlineClient(client: Client, taskId: number) {
       });
       toast.success("Client details updated successfully!");
       setIsEditing(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to update client details.");
     } finally {
       setIsSaving(false);
@@ -61,7 +61,7 @@ export function useInlineClient(client: Client, taskId: number) {
   };
 
   const handleStatusAction = async (action: "activate" | "suspend" | "reactivate") => {
-    if (!confirm(`Are you sure you want to ${action} this client?`)) return;
+    if (!confirmAction(`Are you sure you want to ${action} this client?`)) return;
     setIsActionLoading(true);
     try {
       if (action === "activate") await clientsApi.activate(client.id);
@@ -82,7 +82,7 @@ export function useInlineClient(client: Client, taskId: number) {
       else if (docType === "id_back") await clientsApi.uploadIdBack(client.id, file);
       else if (docType === "dl_front") await clientsApi.uploadDlFront(client.id, file);
       toast.success(`${docType.replace("_", " ").toUpperCase()} uploaded successfully!`);
-    } catch (error) {
+    } catch {
       toast.error(`Failed to upload ${docType.replace("_", " ")}.`);
     } finally {
       setUploadingDoc(null);

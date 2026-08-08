@@ -58,7 +58,6 @@ export default function InvoicesTab() {
   const paidCount = useMemo(() => invoices.filter(i => i.status === "paid").length, [invoices]);
   const pendingCount = useMemo(() => invoices.filter(i => i.status === "draft" || i.status === "sent" || i.status === "partially_paid").length, [invoices]);
   const overdueCount = useMemo(() => invoices.filter(i => i.status === "overdue").length, [invoices]);
-  const voidCount = useMemo(() => invoices.filter(i => i.status === "void").length, [invoices]);
 
   const openPaymentModal = (invoice: Invoice) => {
     setSelectedInvoice(invoice);

@@ -152,7 +152,7 @@ export function useBusinessSettings() {
       }
 
       setHasLoaded(true);
-    } catch (error) {
+    } catch {
       console.error("Failed to load business settings:", error);
       toast.error("Failed to load business settings");
     } finally {

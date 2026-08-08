@@ -58,7 +58,7 @@ export default function UserTaskScheduler() {
         ]);
         setTeamMembers(members);
         setTasks(fetchedTasks);
-      } catch (error) {
+      } catch {
         console.error("Failed to load scheduler data:", error);
       } finally {
         setIsLoading(false);
@@ -105,7 +105,7 @@ export default function UserTaskScheduler() {
         setNewTaskDescription("");
         setNewTaskPriority("medium");
         handleToggleCreateMode();
-      } catch (error) {
+      } catch {
         console.error("Failed to create task:", error);
       } finally {
         setIsSaving(false);
@@ -183,7 +183,7 @@ export default function UserTaskScheduler() {
         t.id === taskId ? { ...t, status: newStatus, progressPercentage: newStatus === "completed" ? 100 : t.progressPercentage } : t
       ));
       await tasksApi.updateSchedulerTask(taskId, { status: newStatus });
-    } catch (error) {
+    } catch {
       console.error("Failed to update task status:", error);
       setTasks(previousTasks);
     }
@@ -199,7 +199,6 @@ export default function UserTaskScheduler() {
       const { taskId, durationDays } = JSON.parse(data);
       const newStartDate = targetDateStr;
       const newDueDate = format(addDays(parseISO(targetDateStr), durationDays), "yyyy-MM-dd");
-      const previousTasks = [...tasks];
 
       setTasks((prev) => prev.map((t) => 
         t.id === taskId ? { ...t, assignedUserId: targetUserId, startDate: newStartDate, dueDate: newDueDate } : t
@@ -209,7 +208,7 @@ export default function UserTaskScheduler() {
         startDate: newStartDate, 
         dueDate: newDueDate 
       });
-    } catch (error) {
+    } catch {
       console.error("Failed to move task:", error);
       setTasks(previousTasks);
     }
@@ -221,7 +220,7 @@ export default function UserTaskScheduler() {
       const savedUser = await usersApi.updateTeamMember(updatedUser.id, updatedUser);
       setTeamMembers((prev) => prev.map((u) => (u.id === savedUser.id ? savedUser : u)));
       setIsSettingsDrawerOpen(false);
-    } catch (error) {
+    } catch {
       console.error("Failed to save user settings:", error);
     } finally {
       setIsSaving(false);
@@ -237,7 +236,7 @@ export default function UserTaskScheduler() {
       if (selectedStatsUserId === userId) {
         setSelectedStatsUserId(null);
       }
-    } catch (error) {
+    } catch {
       console.error("Failed to deactivate user:", error);
     }
   }, [selectedStatsUserId]);

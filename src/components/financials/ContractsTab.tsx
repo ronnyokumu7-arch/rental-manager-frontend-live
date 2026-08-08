@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, FileText, Filter, ChevronDown, FileSignature, Send, CheckCircle2, XCircle, Plus } from "lucide-react";
+import { Search, FileText, Filter, ChevronDown, FileSignature, Send, CheckCircle2, XCircle } from "lucide-react";
 import { useContracts } from "@/hooks/financials/useContracts";
 import ContractsTable from "./contracts/ContractsTable";
 import GenerateContractModal from "./contracts/GenerateContractModal";
@@ -17,7 +17,7 @@ export default function ContractsTab() {
   } = useContracts();
 
   const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [generateForId, setGenerateForId] = useState<number | null>(null);
+  const [_generateForId, setGenerateForId] = useState<number | null>(null);
 
   const pageSize = 7;
 

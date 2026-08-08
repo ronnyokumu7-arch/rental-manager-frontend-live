@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -12,6 +13,23 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+
+    // ── PRODUCTIVITY ENFORCEMENT ─────────────────────────────────────────
+    // Catches unused imports/variables (dead code cleanup)
+    "noUnusedLocals": true,
+    // Catches unused function parameters (use _ prefix to intentionally ignore)
+    "noUnusedParameters": true,
+    // Catches missing break/return in switch cases (silent logic bugs)
+    "noFallthroughCasesInSwitch": true,
+    // Catches code paths that forget to return a value
+    "noImplicitReturns": true,
+    // Catches import path casing mismatches (breaks Linux/CI builds)
+    "forceConsistentCasingInFileNames": true,
+
+    // ── NEXT LEVEL (enable after initial cleanup pass) ───────────────────
+    // Very noisy on large codebases. Flags every arr[i] as possibly undefined.
+    // "noUncheckedIndexedAccess": true,
+
     "plugins": [
       {
         "name": "next"

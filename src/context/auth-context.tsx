@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isMounted) {
           setState({ user, tenant, token, isLoading: false, isAuthenticated: true });
         }
-      } catch (error) {
+      } catch {
         console.error("[Auth] Initialization failed:", error);
         removeAuthToken();
         if (isMounted) {
@@ -146,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (user.role === "super_admin") router.push("/super-admin");
       else router.push("/dashboard");
-    } catch (error) {
+    } catch {
       console.error("[Auth] Login failed:", error);
       throw error; // Let the login form handle the UI error display
     }
@@ -182,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const tenant = user.tenant_id ? await fetchTenant(user.tenant_id) : null;
       
       setState({ user, tenant, token, isLoading: false, isAuthenticated: true });
-    } catch (error) {
+    } catch {
       console.error("[Auth] Refresh failed, clearing session:", error);
       removeAuthToken();
       setState({

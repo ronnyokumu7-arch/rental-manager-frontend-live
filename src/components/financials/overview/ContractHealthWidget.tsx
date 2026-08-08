@@ -1,5 +1,4 @@
 // src/components/financials/overview/ContractHealthWidget.tsx
-import { FileText, FileEdit, Send } from "lucide-react";
 import type { ContractHealth } from "@/hooks/financials/useFinancialOverview";
 
 interface Props {

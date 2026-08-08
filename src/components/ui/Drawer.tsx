@@ -39,7 +39,7 @@ export default function Drawer({
   closeOnBackdrop = true,
   closeOnEsc = true,
   showCloseButton = true,
-  className = "",
+  className:_className = "",
 }: DrawerProps) {
   // ESC key handler
   useEffect(() => {

@@ -1,7 +1,7 @@
 // src/components/scheduler/UserActionsDrawer.tsx
 "use client";
 
-import { X, Plus, Settings, Trash2, AlertTriangle } from "lucide-react";
+import { X, Plus, Settings, Trash2 } from "lucide-react";
 import { TeamMember } from "@/hooks/scheduler/useTaskSchedulerTimeline";
 
 interface UserActionsDrawerProps {
@@ -112,7 +112,7 @@ export default function UserActionsDrawer({
               
               <button
                 onClick={() => {
-                  if (confirm(`Are you sure you want to deactivate ${user.fullName}?`)) {
+                  if (confirmAction(`Are you sure you want to deactivate ${user.fullName}?`)) {
                     onDeactivate(user.id);
                     onClose();
                   }

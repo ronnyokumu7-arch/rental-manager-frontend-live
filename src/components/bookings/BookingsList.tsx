@@ -26,18 +26,20 @@ const statusStyles: Record<BookingStatus, { bg: string; text: string }> = {
   completed: { bg: "bg-[var(--color-surface-hover)]", text: "text-[var(--color-ink-muted)]" },
   cancelled: { bg: "bg-[var(--color-danger-bg)]", text: "text-[var(--color-danger-text)]" },
   no_show: { bg: "bg-[var(--color-danger-bg)]", text: "text-[var(--color-danger-text)]" },
+  awaiting_mileage: { bg: "bg-[var(--color-warning-bg)]", text: "text-[var(--color-warning-text)]" }, // ✅ ADDED
 };
 
 const statusLabels: Record<BookingStatus, string> = {
   pending: "Pending", confirmed: "Confirmed", active: "Active",
   completed: "Completed",
-  cancelled: "Cancelled", no_show: "No Show",
+  cancelled: "Cancelled", no_show: "No Show", awaiting_mileage: "Awaiting Mileage",
 };
 
 const BOOKING_FILTER_OPTIONS = [
   { value: "pending", label: "Pending" }, { value: "confirmed", label: "Confirmed" },
   { value: "active", label: "Active" }, { value: "completed", label: "Completed" }, { value: "cancelled", label: "Cancelled" },
   { value: "no_show", label: "No Show" },
+  { value: "awaiting_mileage", label: "Awaiting Mileage" },
 ];
 
 const formatDateShort = (dateStr: string) => {
@@ -53,7 +55,7 @@ export default function BookingsList({
   const {
     loading: bookingsLoading, search, setSearch, statusFilter, setStatusFilter,
     currentPage, setCurrentPage, filteredBookings, paginatedBookings, totalPages,
-    upcomingCount, activeTripsCount, completedCount, actionLoadingId, openDropdownId, setOpenDropdownId,
+    upcomingCount, activeTripsCount, completedCount, openDropdownId, setOpenDropdownId,
     handleConfirm, handleStartTrip, handleCompleteTrip, handleCancel, handleNoShow, handleCopyContractLink,
   } = bookingsData;
 
@@ -274,7 +276,7 @@ export default function BookingsList({
                             {b.status === "pending" && (
                               <>
                                 <button 
-                                  onClick={() => { handleConfirm(b.id); setOpenDropdownId(null); setDropdownPos(null); }} 
+                                  onClick={() => { handleConfirm(b.id); setOpenDropdownId(null); setDropdownPos(null); }}
                                   className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-500/10 transition-colors border-t border-[var(--color-surface-border)]"
                                 >
                                   <ShieldAlert size={14} /> Confirm Booking

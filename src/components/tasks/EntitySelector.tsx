@@ -1,5 +1,5 @@
 // src/components/tasks/EntitySelector.tsx
-import { Search, User, Car, Calendar, CheckCircle2, Mail, Phone } from "lucide-react";
+import { Search, User, Car, Calendar, CheckCircle2, } from "lucide-react";
 import type { User as UserType, Client, Vehicle, Booking } from "@/lib/types";
 import type { TabType, RelatedEntity } from "@/hooks/tasks/useCreateTask";
 

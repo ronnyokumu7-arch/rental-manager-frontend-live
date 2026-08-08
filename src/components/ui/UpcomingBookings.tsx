@@ -76,7 +76,6 @@ export default function UpcomingBookings({ bookings, onViewAll }: UpcomingBookin
         <div className="space-y-3">
           {bookings.map((booking) => {
             const config = getStatusConfig(booking.status);
-            const Icon = config.icon;
 
             return (
               <div

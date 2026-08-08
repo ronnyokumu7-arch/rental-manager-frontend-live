@@ -49,7 +49,7 @@ export function useTasksList() {
         }
       }
       setTasks(fetchedTasks);
-    } catch (error) {
+    } catch {
       console.error("Failed to fetch tasks:", error);
       toast.error("Failed to load tasks");
     } finally {
@@ -61,7 +61,7 @@ export function useTasksList() {
     try {
       const staff = await usersApi.list();
       setUsers(staff.filter(u => u.is_active && !u.is_suspended));
-    } catch (error) {
+    } catch {
       console.error("Failed to fetch users:", error);
     }
   }, []);
@@ -124,7 +124,7 @@ export function useTasksList() {
     const globalOverdue = tasks.filter(t => t.status !== "completed" && t.due_date && new Date(t.due_date) < now).length;
     const globalUnassigned = tasks.filter(t => t.status === "unassigned" || t.user_id === null).length;
 
-    let userMetrics = { total: 0, overdue: 0, completed: 0 };
+    const userMetrics = { total: 0, overdue: 0, completed: 0 };
     if (selectedUserId) {
       const userTasks = tasks.filter(t => t.user_id?.toString() === selectedUserId);
       userMetrics.total = userTasks.filter(t => t.status !== "completed").length;
@@ -210,7 +210,7 @@ export function useTasksList() {
   };
 
   const handleArchive = async (taskId: number) => {
-    if (!confirm("Are you sure you want to archive this task?")) return;
+    if (!confirmAction("Are you sure you want to archive this task?")) return;
     try {
       await tasksApi.update(taskId, { status: "completed" });
       toast.success("Task archived successfully!");

@@ -22,7 +22,7 @@ interface TimelineHeaderProps {
 
 export default function TimelineHeader({
   viewStartDate,
-  viewEndDate,
+  viewEndDate: _viewEndDate,
   isCreateMode,
   schedulingStep,
   onShiftWindow,

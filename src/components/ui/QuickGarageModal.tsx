@@ -58,7 +58,7 @@ export default function QuickGarageModal({ vehicle, open, onClose, onSave }: Qui
         current_mileage: mileageNum,
         next_service_km: serviceNum ?? null,
       });
-    } catch (err) {
+    } catch {
       // Error is handled by the hook (toast), but we keep the modal open for retry
       setIsLoading(false);
     }

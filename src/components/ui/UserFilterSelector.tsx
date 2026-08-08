@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Users, X, ChevronDown } from "lucide-react";
+import { Users, X, } from "lucide-react";
 import type { User } from "@/lib/types";
 
 interface UserFilterSelectorProps {

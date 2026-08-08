@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Calendar, AlertCircle } from "lucide-react";
+import { Loader2, Calendar } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import type { Booking } from "@/lib/types";
 import type { ExtendBookingPayload } from "@/lib/api/bookings";

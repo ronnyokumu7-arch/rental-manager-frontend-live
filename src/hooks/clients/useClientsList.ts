@@ -25,7 +25,7 @@ export function useClientsList() {
     try {
       const data = view === "active" ? await clientsApi.list() : await clientsApi.listArchived();
       setClients(data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load clients");
     } finally {
       setLoading(false);
@@ -138,7 +138,7 @@ export function useClientsList() {
   };
 
   const handleArchive = async (clientId: number) => {
-    if (!confirm("Are you sure you want to archive this client? This will move them to the Vault.")) return;
+    if (!confirmAction("Are you sure you want to archive this client? This will move them to the Vault.")) return;
     setActionLoadingId(clientId);
     try {
       await clientsApi.archive(clientId);

@@ -1,7 +1,7 @@
 // src/components/fleet/VehicleDocumentsCard.tsx
 "use client";
 
-import { FileText, Upload, Eye, Loader2 } from "lucide-react";
+import { FileText, Upload, Eye } from "lucide-react";
 import type { Vehicle } from "@/lib/types";
 
 interface VehicleDocumentsCardProps {

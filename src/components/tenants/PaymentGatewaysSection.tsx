@@ -53,7 +53,7 @@ export function PaymentGatewaysSection({ tenantId, onUpdated }: PaymentGatewaysS
   };
 
   const handleDeleteGateway = async (gatewayType: string, configId: number) => {
-    if (!confirm('Are you sure you want to delete this payment gateway configuration? This action cannot be undone.')) return;
+    if (!confirmAction('Are you sure you want to delete this payment gateway configuration? This action cannot be undone.')) return;
     
     try {
       // TODO: Replace with actual delete endpoint when backend is ready

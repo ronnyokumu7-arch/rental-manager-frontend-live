@@ -85,7 +85,7 @@ export function useTaskForm(editingTask: Task | null = null) {
       try {
         const data = await usersApi.list();
         setAllUsers(data.filter((u: any) => u.is_active && !u.is_suspended));
-      } catch (error) {
+      } catch {
         console.error("Failed to fetch users for task form", error);
         setAllUsers([]);
       }
@@ -127,7 +127,7 @@ export function useTaskForm(editingTask: Task | null = null) {
           options = data.map((b: any) => ({ id: b.id, label: `Booking #${b.booking_number || b.id}`, subLabel: b.client_name || b.start_date }));
         } 
         setRelationOptions(options);
-      } catch (error) {
+      } catch {
         console.error(`Failed to fetch ${targetType} options`, error);
         setRelationOptions([]);
       } finally {

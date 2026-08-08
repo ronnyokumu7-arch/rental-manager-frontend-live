@@ -1,7 +1,7 @@
 // src/components/financials/PaymentsTab.tsx
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import { Search, Filter, ChevronDown, CheckCircle2, Clock, AlertCircle, Upload } from "lucide-react";
 import { usePayments } from "@/hooks/financials/usePayments";
 import PaymentsTable from "./payments/PaymentsTable";
@@ -12,7 +12,6 @@ export default function PaymentsTab() {
     methodFilter, setMethodFilter,
     statusFilter, setStatusFilter,
     currentPage, setCurrentPage,
-    refetch
   } = usePayments();
 
   const pageSize = 7;

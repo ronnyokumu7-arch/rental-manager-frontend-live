@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Users, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Users, AlertCircle, } from "lucide-react";
 
 import PageHeader from "@/components/ui/PageHeader";
 import { useClientProfile } from "@/hooks/useClientProfile";

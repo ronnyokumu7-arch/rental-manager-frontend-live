@@ -20,7 +20,7 @@ export function useInvoices() {
       
       // ✅ FIXED: Added safe fallback to guarantee 'invoices' state is always an array
       setInvoices(data || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load invoices");
     } finally {
       setLoading(false);
@@ -77,7 +77,7 @@ export function useInvoices() {
       window.URL.revokeObjectURL(url);
       toast.dismiss();
       toast.success("PDF downloaded");
-    } catch (error) {
+    } catch {
       toast.dismiss();
       toast.error("Failed to download PDF");
     }
@@ -99,7 +99,7 @@ export function useInvoices() {
   };
 
   const handleVoid = async (id: number) => {
-    if (!confirm("Are you sure you want to void this invoice? This action cannot be undone.")) return;
+    if (!confirmAction("Are you sure you want to void this invoice? This action cannot be undone.")) return;
     try {
       const updated = await invoicesApi.void(id);
       

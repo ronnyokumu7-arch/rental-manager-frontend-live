@@ -1,7 +1,6 @@
 import { Search, Filter, Zap, Archive } from "lucide-react";
-import type { UseTenantsListReturn } from "@/hooks/tenants/useTenantsList"; // Assuming you export the return type
-
-interface TenantsToolbarProps extends ReturnType<typeof useTenantsList> {}
+import { useTenantsList } from "@/hooks/tenants/useTenantsList";
+type TenantsToolbarProps = ReturnType<typeof useTenantsList>;
 
 // Alternative if you don't export the hook return type:
 // interface TenantsToolbarProps {

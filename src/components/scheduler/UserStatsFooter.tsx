@@ -1,7 +1,7 @@
 // src/components/scheduler/UserStatsFooter.tsx
 "use client";
 
-import { X, Briefcase, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Briefcase, CheckCircle2, AlertTriangle } from "lucide-react";
 import { TeamMember, ScheduledTask } from "@/hooks/scheduler/useTaskSchedulerTimeline";
 import { isBefore, startOfDay } from "date-fns";
 
@@ -11,7 +11,7 @@ interface UserStatsFooterProps {
   onClose: () => void;
 }
 
-export default function UserStatsFooter({ user, tasks, onClose }: UserStatsFooterProps) {
+export default function UserStatsFooter({ user, tasks, onClose:_onClose }: UserStatsFooterProps) {
   const userTasks = tasks.filter((t) => t.assignedUserId === user.id);
   const activeTasks = userTasks.filter((t) => t.status !== "completed");
   const completedTasks = userTasks.filter((t) => t.status === "completed");

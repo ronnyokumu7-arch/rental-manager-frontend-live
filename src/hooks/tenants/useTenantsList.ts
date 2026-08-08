@@ -70,7 +70,7 @@ export const useTenantsList = () => {
   };
 
   const handleArchive = async (id: number | string) => {
-    if (!confirm("Move this tenant to the Vault?")) return;
+    if (!confirmAction("Move this tenant to the Vault?")) return;
     setActionLoadingId(id);
     try {
       await tenantsApi.archive(id);

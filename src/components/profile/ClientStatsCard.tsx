@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, TrendingUp, DollarSign } from "lucide-react";
+import { Calendar, TrendingUp } from "lucide-react";
 import SectionCard from "@/components/ui/SectionCard";
 import type { ClientStats } from "@/hooks/useClientProfile";
 

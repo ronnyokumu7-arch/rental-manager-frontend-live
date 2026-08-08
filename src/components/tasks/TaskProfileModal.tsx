@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { 
-  X, Save, User, Car, Calendar, FileText, Receipt, 
-  ChevronDown, Loader2, Tag, Clock, CalendarDays, UserPlus, Link2, Check, Building2, Link
+  X, Save, User, Car, Calendar,
+  ChevronDown, Loader2, Tag, Clock, CalendarDays, UserPlus, Check, Building2, Link
 } from "lucide-react";
 import { useTaskForm } from "@/hooks/tasks/useTaskForm";
 import type { Task } from "@/lib/types";

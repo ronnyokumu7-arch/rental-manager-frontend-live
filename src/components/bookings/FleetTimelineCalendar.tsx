@@ -7,7 +7,6 @@ import {
   Car,
   User,
   Search,
-  Clock3,
   Calendar,
   Phone,
   Check,
@@ -16,7 +15,7 @@ import {
   CalendarDays,
   Activity
 } from "lucide-react";
-import { Booking, Vehicle, Client } from "@/lib/types";
+import type { Vehicle, Booking, Client, BookingClientRelation } from "@/lib/types";
 
 import TimelineHeader from "./timeline/TimelineHeader";
 import { useTimelineCalendar } from "@/hooks/bookings/timeline/useTimelineCalendar";
@@ -36,7 +35,7 @@ interface FleetTimelineCalendarProps {
 
 interface TooltipState {
   booking: Booking;
-  client?: Client;
+  client?: Client | BookingClientRelation | null; // ✅ widened to match handleBlockEnter
   x: number;
   y: number;
 }
@@ -72,8 +71,8 @@ export default function FleetTimelineCalendar({
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(
     normalizedVehicles[0]?.id || null
   );
-  const [vehicleSearch, setVehicleSearch] = useState("");
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+const [vehicleSearch, setVehicleSearch] = useState("");
+const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   const filteredVehicles = useMemo(() => {
     if (!vehicleSearch.trim()) return normalizedVehicles;
@@ -149,10 +148,14 @@ export default function FleetTimelineCalendar({
     }
   };
 
-  const handleBlockEnter = (e: React.MouseEvent, booking: Booking, client?: Client) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTooltip({ booking, client, x: rect.right + 12, y: rect.top });
-  };
+const handleBlockEnter = (
+  e: React.MouseEvent,
+  booking: Booking,
+  client?: Client | BookingClientRelation | null,  // ✅ accepts both shapes
+) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  setTooltip({ booking, client, x: rect.right + 12, y: rect.top });
+};
 
   const handleBlockLeave = () => setTooltip(null);
   const todayStart = startOfDay(new Date());

@@ -10,7 +10,6 @@ import {
   CheckCircle2, 
   Timer, 
   Sparkles,
-  ArrowRight
 } from "lucide-react";
 import { useTripTimeline } from "@/hooks/bookings/useTripTimeline";
 import type { Booking } from "@/lib/types";

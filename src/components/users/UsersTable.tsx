@@ -47,7 +47,7 @@ interface UsersTableProps {
 export default function UsersTable({
   users, loading, currentPage, totalPages, setCurrentPage, totalItems, pageSize,
   actionLoadingId, openDropdownId, setOpenDropdownId,
-  onSuspend, onVerify, onDelete, onResetLink, onSendVerification,
+  onSuspend, onVerify:_onVerify, onDelete, onResetLink, onSendVerification,
   currentUserRole
 }: UsersTableProps) {
   const router = useRouter();

@@ -1,6 +1,6 @@
 "use client";
 
-import { User, Banknote, CalendarDays, Car } from "lucide-react";
+import { Banknote, CalendarDays, Car } from "lucide-react";
 import type { Client } from "@/lib/types";
 import Badge from "@/components/ui/Badge";
 

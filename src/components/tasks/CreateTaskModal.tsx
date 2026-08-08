@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import FormGroup from "@/components/forms/FormGroup";
 import Input from "@/components/forms/Input";
@@ -40,7 +39,7 @@ export default function CreateTaskModal({ open, onClose, onCreate }: CreateTaskM
       });
       logic.reset();
       onClose();
-    } catch (error) {
+    } catch {
       console.error("Failed to create task", error);
     } finally {
       setLoading(false);

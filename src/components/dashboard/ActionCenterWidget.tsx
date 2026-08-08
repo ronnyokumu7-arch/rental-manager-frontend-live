@@ -11,7 +11,6 @@ import toast from "react-hot-toast";
 import { useActionCenterTasks } from "@/hooks/dashboard/useActionCenterTasks";
 import { useUpcomingBookings } from "@/hooks/dashboard/useUpcomingBookings";
 import { useRecentActivity } from "@/hooks/dashboard/useRecentActivity";
-import type { Task } from "@/lib/types";
 
 type SubTab = "tasks" | "bookings" | "activity";
 

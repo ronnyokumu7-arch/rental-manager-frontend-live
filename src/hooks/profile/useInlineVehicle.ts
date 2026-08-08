@@ -68,7 +68,7 @@ export function useInlineVehicle(vehicle: Vehicle) {
       });
       toast.success("Vehicle details updated successfully!");
       setIsEditing(false);
-    } catch (error) {
+    } catch {
       toast.error("Failed to update vehicle details.");
     } finally {
       setIsSaving(false);
@@ -76,7 +76,7 @@ export function useInlineVehicle(vehicle: Vehicle) {
   };
 
   const handleStatusAction = async (action: "activate" | "maintenance" | "reactivate" | "retire") => {
-    if (!confirm(`Are you sure you want to ${action.replace(/_/g, " ")} this vehicle?`)) return;
+    if (!confirmAction(`Are you sure you want to ${action.replace(/_/g, " ")} this vehicle?`)) return;
     setIsActionLoading(true);
     try {
       if (action === "activate") await vehiclesApi.activate(vehicle.id);
@@ -92,13 +92,13 @@ export function useInlineVehicle(vehicle: Vehicle) {
     }
   };
 
-  const handleDocUpload = async (docType: "insurance" | "registration" | "inspection", file: File) => {
+  const handleDocUpload = async (docType: "insurance" | "registration" | "inspection", _file: File) => {
     setUploadingDoc(docType);
     try {
       // Note: Backend endpoints for document uploads may need to be added
       // For now, this is a placeholder structure
       toast.success(`${docType.toUpperCase()} uploaded successfully!`);
-    } catch (error) {
+    } catch {
       toast.error(`Failed to upload ${docType}.`);
     } finally {
       setUploadingDoc(null);

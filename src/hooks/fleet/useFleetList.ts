@@ -29,7 +29,7 @@ export function useFleetList() {
       
       const data = await vehiclesApi.list(params);
       setVehicles(data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load fleet data");
     } finally {
       setLoading(false);
@@ -104,7 +104,7 @@ export function useFleetList() {
   };
 
   const handleArchive = async (id: number) => {
-    if (!confirm("Are you sure you want to archive this vehicle?")) return;
+    if (!confirmAction("Are you sure you want to archive this vehicle?")) return;
     setActionLoadingId(id);
     try {
       await vehiclesApi.archive(id);
@@ -120,7 +120,7 @@ export function useFleetList() {
   };
 
   const handleRetire = async (id: number) => {
-    if (!confirm("Are you sure you want to retire this vehicle? This is permanent.")) return;
+    if (!confirmAction("Are you sure you want to retire this vehicle? This is permanent.")) return;
     setActionLoadingId(id);
     try {
       await vehiclesApi.retire(id);

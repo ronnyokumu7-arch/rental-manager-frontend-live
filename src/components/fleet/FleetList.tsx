@@ -65,7 +65,7 @@ const formatPlate = (plate: string) => plate.replace(/([A-Za-z])(\d)/, "$1 $2").
 
 export default function FleetList({
   loading, search, setSearch, statusFilter, setStatusFilter,
-  currentPage, setCurrentPage, pageSize, actionLoadingId, openDropdownId, setOpenDropdownId,
+  currentPage, setCurrentPage, pageSize, actionLoadingId:_actionLoading, openDropdownId, setOpenDropdownId,
   setGarageVehicle, setGarageModalOpen, handleStatusAction, handleArchive, handleRetire,
   filteredVehicles, paginatedVehicles, totalPages, totalVehicles, availableVehicles, rentedVehicles,
 }: FleetListProps) {

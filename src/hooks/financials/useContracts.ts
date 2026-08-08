@@ -28,7 +28,7 @@ export function useContracts() {
       });
       
       setContracts(normalizedData);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load contracts");
     } finally {
       setLoading(false);
@@ -84,7 +84,7 @@ export function useContracts() {
       window.URL.revokeObjectURL(url);
       toast.dismiss();
       toast.success("PDF downloaded");
-    } catch (error) {
+    } catch {
       toast.dismiss();
       toast.error("Failed to download PDF");
     }
@@ -128,7 +128,7 @@ export function useContracts() {
   };
 
   const handleVoid = async (id: number) => {
-    if (!confirm("Are you sure you want to void this contract? This action cannot be undone.")) return;
+    if (!confirmAction("Are you sure you want to void this contract? This action cannot be undone.")) return;
     try {
       const updated = await contractsApi.void(id);
       setContracts(prev => prev.map(c => c.id === id ? updated : c));

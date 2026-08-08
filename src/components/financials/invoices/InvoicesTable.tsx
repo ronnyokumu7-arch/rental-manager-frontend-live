@@ -36,7 +36,7 @@ export default function InvoicesTable({
   onCopyLink, 
   onVoid, 
   onRecordPayment, 
-  onCreate 
+  onCreate: _onCreate 
 }: InvoicesTableProps) {
   const router = useRouter();
   

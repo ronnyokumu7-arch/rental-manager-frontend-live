@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, CheckCircle2, ShieldCheck, Lock } from "lucide-react";
 import apiClient from "@/lib/api-client";
-import toast from "react-hot-toast";
 
 function getPasswordStrength(pw: string) {
   let score = 0;

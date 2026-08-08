@@ -21,7 +21,7 @@ export function PricingGrid({
   selectedPlan,
   billingCycle,
   onSelectPlan,
-  onSelectCycle,
+  onSelectCycle: _onSelectCycle,
   onConfirmSelection,
   currentPlanId,
   isSubmitting = false,

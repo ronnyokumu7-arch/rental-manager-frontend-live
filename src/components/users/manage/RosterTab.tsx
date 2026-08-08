@@ -172,7 +172,7 @@ export default function RosterTab() {
   }, []);
 
   const handleDelete = useCallback(async (userId: number) => {
-    if (!confirm("Are you sure you want to permanently delete this user? This action cannot be undone.")) {
+    if (!confirmAction("Are you sure you want to permanently delete this user? This action cannot be undone.")) {
       return;
     }
     setActionLoadingId(userId);

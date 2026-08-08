@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
-import { Calendar, ChevronRight, Car, Banknote } from "lucide-react";
+import { Calendar, ChevronRight, Banknote } from "lucide-react";
 import toast from "react-hot-toast";
 import { bookingsApi } from "@/lib/api/bookings";
 import { vehiclesApi } from "@/lib/api/vehicles";

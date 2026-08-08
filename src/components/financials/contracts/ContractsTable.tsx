@@ -34,7 +34,7 @@ export default function ContractsTable({
   onCopyLink, 
   onSend, 
   onVoid, 
-  onGenerate 
+  onGenerate: _onGenerate 
 }: ContractsTableProps) {
   const router = useRouter(); // ✅ Initialize router
   
