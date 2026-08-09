@@ -280,7 +280,7 @@ export default function PublicContractPage() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-400">
-            Secured by Rental Manager • Contract generated on {formatDate(contract.created_at)}
+            Secured by Rental Garage • Contract generated on {formatDate(contract.created_at)}
           </p>
         </div>
       </div>

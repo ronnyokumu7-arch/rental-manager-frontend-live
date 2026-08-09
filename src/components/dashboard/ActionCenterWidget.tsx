@@ -6,6 +6,7 @@ import {
   CheckCircle2, UserPlus, Calendar, Clock, ArrowRight,
   Zap, Sparkles, Tag, Loader2, MoreVertical
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { useActionCenterTasks } from "@/hooks/dashboard/useActionCenterTasks";
@@ -14,18 +15,37 @@ import { useRecentActivity } from "@/hooks/dashboard/useRecentActivity";
 
 type SubTab = "tasks" | "bookings" | "activity";
 
+// ✅ Dedicated title, description AND square-balanced icon per tab
+const HEADER_COPY: Record<SubTab, { title: string; description: string; icon: LucideIcon; iconClassName?: string }> = {
+  tasks: {
+    title: "Action Center",
+    description: "What needs your attention today",
+    icon: Zap,
+  },
+  bookings: {
+    title: "Upcoming Rentals",
+    description: "Track pickups and drop-offs before they happen",
+    icon: Calendar,
+    iconClassName: "scale-y-90", // Optical correction: Calendar is 18w×20h, squash to 18×18
+  },
+  activity: {
+    title: "Recent Activities",
+    description: "The live pulse of your fleet's latest moves.",
+    icon: Clock,
+  },
+};
+
 export default function ActionCenterWidget() {
   const router = useRouter();
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("tasks");
   const [updatingId, setUpdatingId] = useState<number | null>(null);
-  // ✅ NEW: Only one kebab menu open at a time
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   const { tasks, loading: tasksLoading, handleClaim, handleComplete } = useActionCenterTasks();
   const { bookings, loading: bookingsLoading } = useUpcomingBookings();
   const { activities, loading: activityLoading } = useRecentActivity();
 
-  // ✅ NEW: Close kebab menu on outside click
+  // Close kebab menu on outside click
   useEffect(() => {
     if (openMenuId === null) return;
     const handle = (e: MouseEvent) => {
@@ -38,9 +58,13 @@ export default function ActionCenterWidget() {
 
   const subTabs = [
     { id: "tasks" as SubTab, label: "Tasks", count: tasks.length },
-    { id: "bookings" as SubTab, label: "Upcoming", count: bookings.length },
-    { id: "activity" as SubTab, label: "Activity", count: activities.length },
+    { id: "bookings" as SubTab, label: "Bookings", count: bookings.length },
+    { id: "activity" as SubTab, label: "Activities", count: activities.length },
   ];
+
+  // ✅ Dynamic header copy + icon per active tab
+  const headerCopy = HEADER_COPY[activeSubTab];
+  const HeaderIcon = headerCopy.icon;
 
   const getPriorityDotColor = (priority?: string) => {
     switch (priority?.toLowerCase()) {
@@ -88,19 +112,20 @@ export default function ActionCenterWidget() {
   return (
     <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden h-full flex flex-col">
       
-      {/* PREMIUM HEADER */}
+      {/* PREMIUM HEADER — title, description & icon switch per tab */}
       <div className="p-5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary)]/70 flex items-center justify-center text-white shadow-lg shadow-[var(--color-primary)]/20">
-              <Zap size={20} />
+              {/* ✅ iconClassName applies optical correction (e.g., scale-y-90 for Calendar) */}
+              <HeaderIcon size={20} className={headerCopy.iconClassName} />
             </div>
             <div>
               <h3 className="text-sm font-bold text-[var(--color-ink)] tracking-tight flex items-center gap-2">
-                Action Center
+                {headerCopy.title}
                 <Sparkles size={12} className="text-[var(--color-primary)] opacity-60" />
               </h3>
-              <p className="text-xs text-[var(--color-ink-muted)] mt-0.5">Manage your daily workflow</p>
+              <p className="text-xs text-[var(--color-ink-muted)] mt-0.5">{headerCopy.description}</p>
             </div>
           </div>
           
@@ -134,7 +159,7 @@ export default function ActionCenterWidget() {
       </div>
 
       {/* SCROLLABLE CONTENT AREA */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-5 max-h-80 space-y-3">
+      <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-4 sm:p-5 max-h-80 space-y-2.5 sm:space-y-3">
         
         {/* TAB 1: TASKS */}
         {activeSubTab === "tasks" && (
@@ -156,14 +181,14 @@ export default function ActionCenterWidget() {
               tasks.map((task) => {
                 const overdue = task.due_date ? isOverdue(task.due_date) : false;
                 const safeTaskId = (task as any).id ?? (task as any).task_id;
-                const hasActions = task.status !== "completed";
+                const hasActions = task.status === "unassigned" || (task.status !== "unassigned" && task.status !== "completed");
 
                 return (
                   <div 
                     key={safeTaskId} 
-                    className="group relative p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200"
+                    className="group relative p-3 sm:p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200"
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       <div className={`mt-1.5 flex-shrink-0 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--color-surface)] ${getPriorityDotColor(task.priority)}`} />
                       
                       <div className="flex-1 min-w-0">
@@ -171,7 +196,7 @@ export default function ActionCenterWidget() {
                           {task.title}
                         </p>
                         {task.description && (
-                          <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed mb-2.5 line-clamp-2">
+                          <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed mb-2 sm:mb-2.5 line-clamp-2">
                             {task.description}
                           </p>
                         )}
@@ -194,7 +219,7 @@ export default function ActionCenterWidget() {
                         </div>
                       </div>
 
-                      {/* ✅ NEW: Kebab (⋮) action menu — replaces Claim/Done buttons */}
+                      {/* Kebab (⋮) action menu */}
                       {hasActions && (
                         <div className="relative flex-shrink-0 -mr-1 -mt-1" data-task-menu>
                           <button
@@ -252,7 +277,7 @@ export default function ActionCenterWidget() {
           </div>
         )}
 
-        {/* TAB 2: UPCOMING BOOKINGS */}
+        {/* TAB 2: BOOKINGS */}
         {activeSubTab === "bookings" && (
           <div className="space-y-3 animate-in fade-in duration-200">
             {bookingsLoading ? (
@@ -265,8 +290,8 @@ export default function ActionCenterWidget() {
                 <div className="w-12 h-12 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center mb-3">
                   <Calendar size={20} className="text-[var(--color-ink-muted)]" />
                 </div>
-                <p className="text-sm font-bold text-[var(--color-ink)]">No upcoming bookings</p>
-                <p className="text-xs text-[var(--color-ink-muted)] mt-1">Future reservations will appear here.</p>
+                <p className="text-sm font-bold text-[var(--color-ink)]">No rentals scheduled</p>
+                <p className="text-xs text-[var(--color-ink-muted)] mt-1">New bookings will show up here.</p>
               </div>
             ) : (
               bookings.map((booking) => (
@@ -298,7 +323,7 @@ export default function ActionCenterWidget() {
           </div>
         )}
 
-        {/* TAB 3: RECENT ACTIVITY */}
+        {/* TAB 3: ACTIVITIES */}
         {activeSubTab === "activity" && (
           <div className="space-y-3 animate-in fade-in duration-200">
             {activityLoading ? (
@@ -311,8 +336,8 @@ export default function ActionCenterWidget() {
                 <div className="w-12 h-12 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center mb-3">
                   <Clock size={20} className="text-[var(--color-ink-muted)]" />
                 </div>
-                <p className="text-sm font-bold text-[var(--color-ink)]">No recent activity</p>
-                <p className="text-xs text-[var(--color-ink-muted)] mt-1">Your activity log will appear here.</p>
+                <p className="text-sm font-bold text-[var(--color-ink)]">No activity yet</p>
+                <p className="text-xs text-[var(--color-ink-muted)] mt-1">As your team works, you will see everything here.</p>
               </div>
             ) : (
               activities.map((item) => (

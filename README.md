@@ -1,4 +1,4 @@
-# Rental Manager - Frontend
+# Rental Garage - Frontend
 
 A premium, modern rental management platform built with Next.js 14, React 18, and Tailwind CSS. This application provides a comprehensive dashboard for managing vehicle rentals, clients, contracts, invoicing, and more.
 
@@ -21,7 +21,7 @@ A premium, modern rental management platform built with Next.js 14, React 18, an
 
 ## 🎯 Project Overview
 
-Rental Manager is an enterprise-grade rental management system designed for vehicle rental companies. The frontend provides:
+Rental Garage is an enterprise-grade rental management system designed for vehicle rental companies. The frontend provides:
 
 - **Dashboard**: Centralized hub for viewing key metrics and activity
 - **Fleet Management**: Vehicle inventory and maintenance tracking
@@ -106,7 +106,7 @@ app/
 
 ### Brand Identity
 
-**Brand Name**: Rental Manager
+**Brand Name**: Rental Garage
 **Logo**: VISUAL (custom branding)
 
 ### Color Palette

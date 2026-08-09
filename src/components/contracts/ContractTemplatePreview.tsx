@@ -192,7 +192,7 @@ export default function ContractTemplatePreview({ data }: ContractTemplatePrevie
                 <CheckCircle2 size={12} /> {c.signed_by_client ? "EXECUTED / SIGNED" : "PENDING SIGNATURE"}
               </span>
               <p className="text-[10px] text-slate-400 font-mono pt-1">
-                SECURED BY RENTAL MANAGER
+                SECURED BY Rental Garage
               </p>
             </div>
           </div>
@@ -403,7 +403,7 @@ export default function ContractTemplatePreview({ data }: ContractTemplatePrevie
         {/* ================= FOOTER ================= */}
         <footer className="pt-6 border-t border-slate-300 flex items-center justify-between text-[9px] text-slate-400 font-mono">
           <div>PAGE 1 OF 1 • CONTRACT #{c.contract_number}</div>
-          <div>POWERED BY RENTAL MANAGER PLATFORM</div>
+          <div>POWERED BY Rental Garage PLATFORM</div>
         </footer>
 
       </div>

@@ -85,7 +85,7 @@ export default function AppearanceSettings() {
       <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl shadow-[var(--shadow-card)] p-6">
         <h3 className="text-lg font-bold text-[var(--color-ink)] mb-1">Theme</h3>
         <p className="text-sm text-[var(--color-ink-muted)] mb-6">
-          Choose how Rental Manager looks across all your devices.
+          Choose how Rental Garage looks across all your devices.
         </p>
         
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

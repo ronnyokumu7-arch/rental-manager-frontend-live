@@ -1,5 +1,5 @@
 export const brand = {
-  name: "Rental Manager",
+  name: "Rental Garage",
   colors: {
     // ── Brand Identity (The "Billion Dollar" Indigo) ──────────────────
     primary:       "#6366f1", // Indigo 500

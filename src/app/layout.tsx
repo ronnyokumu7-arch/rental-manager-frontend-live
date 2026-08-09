@@ -26,7 +26,7 @@ const monoFont = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rental Manager",
+  title: "Rental Garage",
   description: "Enterprise-grade vehicle rental and fleet management platform.",
   icons: {
     icon: "/favicon.ico", 

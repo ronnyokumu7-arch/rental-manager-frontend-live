@@ -351,7 +351,7 @@ export default function BillingSubscriptionSettings() {
                       <p className="font-bold text-[var(--color-primary)] flex items-center gap-1"><Info size={12}/> Bank Wire Transfer Details:</p>
                       <ul className="space-y-1 text-[var(--color-ink-muted)] pl-1">
                         <li>Bank Name: <strong className="text-[var(--color-ink)]">KCB Bank Kenya</strong></li>
-                        <li>Account Name: <strong className="text-[var(--color-ink)]">Rental Manager Systems Ltd</strong></li>
+                        <li>Account Name: <strong className="text-[var(--color-ink)]">Rental Garage Systems Ltd</strong></li>
                         <li>Account Number: <strong className="font-mono text-[var(--color-ink)]">12948572910</strong></li>
                       </ul>
                     </>

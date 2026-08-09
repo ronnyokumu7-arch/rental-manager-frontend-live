@@ -58,7 +58,7 @@ export default function Topbar() {
     }
   };
 
-  const companyName = user?.role === "super_admin" ? "Rental Manager" : tenant?.name || "Agency";
+  const companyName = user?.role === "super_admin" ? "Rental Garage" : tenant?.name || "Agency";
   const greeting = () => {
     const h = new Date().getHours();
     const name = user?.full_name?.split(" ")[0] || "there";

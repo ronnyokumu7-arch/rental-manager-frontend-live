@@ -235,7 +235,7 @@ export default function LoginPage() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white bg-gradient-to-br from-[#1e6fba] to-[#64b5f6] shadow-lg shadow-blue-500/25 border border-white/20">
               RM
             </div>
-            <span className="text-white font-semibold text-xl tracking-tight">Rental Manager</span>
+            <span className="text-white font-semibold text-xl tracking-tight">Rental Garage</span>
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-slate-300 backdrop-blur-md">
             <Sparkles size={13} className="text-blue-400" /> Enterprise Edition
@@ -330,7 +330,7 @@ export default function LoginPage() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white bg-gradient-to-br from-[#1e6fba] to-[#64b5f6] shadow-md">
               RM
             </div>
-            <span className="text-ink font-semibold text-xl tracking-tight">Rental Manager</span>
+            <span className="text-ink font-semibold text-xl tracking-tight">Rental Garage</span>
           </div>
 
           {/* ── Step 1: Email Input ───────────────────────────────────────── */}
@@ -338,7 +338,7 @@ export default function LoginPage() {
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
               <div>
                 <h1 className="text-3xl font-bold text-ink tracking-tight">Welcome back!</h1>
-                <p className="text-ink-muted text-base mt-2">Sign in to your workspace to manage your car rental business.</p>
+                <p className="text-ink-muted text-base mt-2">Sign in to your garage to manage your business operations.</p>
               </div>
 
               <form onSubmit={handleEmailNext} className="space-y-5">

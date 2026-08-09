@@ -15,7 +15,7 @@ export default function PublicDocLayout({ children, footerText }: PublicDocLayou
         {/* Footer */}
         <div className="text-center pt-8 pb-4">
           <p className="text-xs text-slate-400">
-            {footerText || "© 2024 Rental Manager. Secure Document Portal."}
+            {footerText || "© 2024 Rental Garage. Secure Document Portal."}
           </p>
         </div>
       </div>

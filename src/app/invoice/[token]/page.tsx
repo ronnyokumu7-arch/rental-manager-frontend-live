@@ -260,7 +260,7 @@ export default function PublicInvoicePage() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-400">
-            Secured by Rental Manager • Invoice generated on {new Date(invoice.created_at).toLocaleDateString()}
+            Secured by Rental Garage • Invoice generated on {new Date(invoice.created_at).toLocaleDateString()}
           </p>
         </div>
       </div>
