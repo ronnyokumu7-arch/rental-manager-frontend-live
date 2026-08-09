@@ -181,7 +181,7 @@ export default function ActionCenterWidget() {
               tasks.map((task) => {
                 const overdue = task.due_date ? isOverdue(task.due_date) : false;
                 const safeTaskId = (task as any).id ?? (task as any).task_id;
-                const hasActions = task.status === "unassigned" || (task.status !== "unassigned" && task.status !== "completed");
+                const hasActions = task.status !== "completed";
 
                 return (
                   <div 
