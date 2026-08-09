@@ -145,22 +145,53 @@ export default function DashboardPage() {
             {/* Right Column: Fleet Health & Alerts (stacked, full-size) */}
             <div className="space-y-6 min-w-0">
               
-<div className="flex items-center justify-between mb-4">
-  <div>
-    <p className="text-[11px] font-bold text-[var(--color-ink-muted)] sentencecase tracking-wider">Fleet Status</p>
-    {/* ✅ NEW: live operational summary (all vehicles not in maintenance) */}
-    <p className="text-xs text-[var(--color-ink-muted)] mt-0.5">
-      {vehicles.filter((v) => v.status !== "maintenance").length}/{vehicles.length} vehicles operational
-    </p>
-  </div>
-  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--color-success-bg)] border border-[var(--color-success-bg)]">
-    <span className="relative flex h-2 w-2">
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-success)] opacity-75"></span>
-      <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-success)]"></span>
-    </span>
-    <span className="text-[10px] font-bold text-[var(--color-success-text)] sentencecase tracking-wide">Live</span>
-  </div>
+              {/* Fleet Health Card */}
+              <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+  <p className="text-[11px] font-bold text-[var(--color-ink-muted)] sentencecase tracking-wider">Fleet Status</p>
+  <p className="text-[11px] font-medium text-[var(--color-ink-subtle)] mt-0.5">
+    {vehicles.filter((v) => v.status !== "maintenance").length}/{vehicles.length} vehicles operational
+  </p>
 </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--color-success-bg)] border border-[var(--color-success-bg)]">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-success)] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-success)]"></span>
+                    </span>
+                    <span className="text-[10px] font-bold text-[var(--color-success-text)] sentencecase tracking-wide">Live</span>
+                  </div>
+                </div>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
+                      <span className="text-xs font-semibold text-[var(--color-ink)]">Available</span>
+                    </div>
+                    <span className="text-lg font-extrabold text-[var(--color-success-text)] tabular-nums">
+                      {vehicles.filter((v) => v.status === "available").length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
+                      <span className="text-xs font-semibold text-[var(--color-ink)]">Rented</span>
+                    </div>
+                    <span className="text-lg font-extrabold text-[var(--color-primary-text)] tabular-nums">
+                      {vehicles.filter((v) => v.status === "rented").length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-warning)]" />
+                      <span className="text-xs font-semibold text-[var(--color-ink)]">Maintenance</span>
+                    </div>
+                    <span className="text-lg font-extrabold text-[var(--color-warning-text)] tabular-nums">
+                      {vehicles.filter((v) => v.status === "maintenance").length}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
               {/* Needs Attention Card */}
               <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-5">
