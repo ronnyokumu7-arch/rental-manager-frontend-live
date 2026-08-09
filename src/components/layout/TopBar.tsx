@@ -1,4 +1,3 @@
-// src/components/layout/TopBar.tsx
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -6,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Search, Bell, Sun, Moon, User, Settings,
-  LogOut, ChevronRight, Command,
+  LogOut, ChevronRight, Command, Briefcase,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 
@@ -81,8 +80,19 @@ export default function Topbar() {
     );
   };
 
+  const renderRoleIcon = (role?: string) => {
+    if (!role) return <Briefcase size={12} strokeWidth={2} className="text-[var(--color-ink-subtle)]" />;
+    const roleLower = role.toLowerCase();
+    if (roleLower.includes("admin") || roleLower.includes("super")) {
+      return <Settings size={12} strokeWidth={2} className="text-[var(--color-primary)]" />;
+    }
+    if (roleLower.includes("manager") || roleLower.includes("owner")) {
+      return <Briefcase size={12} strokeWidth={2} className="text-[var(--color-primary)]" />;
+    }
+    return <User size={12} strokeWidth={2} className="text-[var(--color-ink-subtle)]" />;
+  };
+
   return (
-    // ✅ GLASSMORPHIC TOPBAR: Transparent background with backdrop-blur to show ambient glows
     <header className="h-14 sm:h-16 flex items-center gap-4 px-4 sm:px-6 sticky top-0 z-30 border-b border-[var(--color-surface-border)] bg-[var(--color-bg)] transition-colors duration-300">
       
       {/* Left: Greeting - Hidden on mobile */}
@@ -106,8 +116,12 @@ export default function Topbar() {
 
       {/* Right: Controls */}
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto sm:ml-0">
-        {/* Theme Toggle - Hidden on mobile */}
-        <button onClick={toggleTheme} className="hidden sm:flex w-9 h-9 rounded-xl items-center justify-center text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all duration-150">
+        {/* ✅ THEME TOGGLE: Mobile only, placed directly in topbar */}
+        <button 
+          onClick={toggleTheme} 
+          className="sm:hidden w-9 h-9 rounded-xl flex items-center justify-center text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all duration-150"
+          aria-label="Toggle theme"
+        >
           {isDark ? <Sun size={17} strokeWidth={1.8} /> : <Moon size={17} strokeWidth={1.8} />}
         </button>
 
@@ -134,8 +148,7 @@ export default function Topbar() {
           </button>
 
           {showUserMenu && (
-            // ✅ MOBILE-SAFE DROPDOWN: w-[calc(100vw-2rem)] prevents left-edge clipping on 360px screens
-            <div className="absolute right-0 top-[calc(100%+8px)] w-[calc(100vw-2rem)] sm:w-[260px] max-w-[260px] rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in slide-up fade-in duration-200">
+            <div className="absolute right-0 top-[calc(100%+8px)] w-[calc(100vw-2rem)] sm:w-[260px] max-w-[260px] rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-dropdown)] z-[9999] overflow-hidden animate-in slide-up fade-in duration-200">
               <div className="px-4 pt-4 pb-3">
                 <div className="flex items-center gap-3">
                   <div className="relative flex-shrink-0">
@@ -144,11 +157,8 @@ export default function Topbar() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-[var(--color-ink)] truncate leading-tight">{user?.full_name}</p>
-                    <p className="text-xs text-[var(--color-ink-muted)] truncate leading-tight mt-0.5">{user?.email}</p>
                     <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
-                      <span className="text-[11px] text-[var(--color-success-text)] font-medium">Active</span>
-                      <span className="text-[var(--color-surface-border)]">·</span>
+                      {renderRoleIcon(user?.role)}
                       <span className="text-[11px] text-[var(--color-ink-subtle)] capitalize">
                         {user?.job_title || (user?.role === "tenant_admin" ? "Administrator" : user?.role?.replace("_", " "))}
                       </span>
@@ -187,7 +197,7 @@ export default function Topbar() {
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--color-danger-bg)] border border-[var(--color-danger)]/20">
                     <LogOut size={14} strokeWidth={1.8} className="text-[var(--color-danger-text)]" />
                   </div>
-                  Sign out
+                  <span className="flex-1 text-left">Sign out</span>
                 </button>
               </div>
             </div>

@@ -3,19 +3,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, User, Bell, CheckCircle2, Camera, Layers } from "lucide-react";
+import { ArrowLeft, User, CheckCircle2, Camera, Layers } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile"; 
 
 // ✅ Import the modular components
 import UserPersonalInfoCard from "@/components/profile/UserPersonalInfoCard";
 import UserStatusCard from "@/components/profile/UserStatusCard";
-import UserNotificationsCard from "@/components/profile/UserNotificationsCard";
 import OperationsTab from "@/components/profile/OperationsTab";
+// ❌ REMOVED: UserNotificationsCard (no longer needed)
 
 const TABS = [
-  { id: "profile", label: "Profile & Security", icon: User },
+  { id: "profile", label: "Profile", icon: User },
   { id: "operations", label: "Operations", icon: CheckCircle2 },
-  { id: "preferences", label: "Preferences", icon: Bell },
+  // ❌ REMOVED: Preferences tab
 ];
 
 export default function UserProfilePage() {
@@ -83,7 +83,8 @@ export default function UserProfilePage() {
     if (activeTab === "profile") {
       return (
         <div className="flex items-center gap-4">
-          <div className="relative group cursor-pointer shrink-0">
+          {/* ✅ MOBILE FIX: Hide hero avatar on mobile (<768px) to save space and clean up the vibe */}
+          <div className="relative group cursor-pointer shrink-0 hidden md:block">
             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-purple-600 flex items-center justify-center text-xl font-bold text-white shadow-lg ring-4 ring-[var(--color-surface)] transition-transform group-hover:scale-105">
               {initials}
             </div>
@@ -116,24 +117,15 @@ export default function UserProfilePage() {
             <Layers size={22} />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-[var(--color-ink)]">Operations Command Center</h1>
-            <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">Manage tasks, assign actions, and execute workflows in real-time.</p>
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-500">
-            <Bell size={22} />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-[var(--color-ink)]">Preferences</h1>
-            <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">Customize your workspace appearance and layout</p>
+            <h1 className="text-lg font-bold text-[var(--color-ink)]">Operations Center</h1>
+            <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">Manage tasks and complete your assignments in real-time.</p>
           </div>
         </div>
       );
     }
+    
+    // ❌ REMOVED: Preferences header fallback
+    return null;
   };
 
   return (
@@ -142,7 +134,6 @@ export default function UserProfilePage() {
       {/* ─ FLOATING BACK BUTTON (Bottom Right) ── */}
       <button
         onClick={() => router.push("/dashboard/users")}
-        // ✅ FIX: Added a premium soft dark outer shadow to bring it to life
         className="fixed bottom-10 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[0_5px_10px_-5px_rgba(0,0,0,0.8)] hover:shadow-[0_5px_10px_-5px_rgba(0,0,0,0.95)] transition-all duration-300 group overflow-hidden min-w-[48px]"
         title="Back to Users"
       >
@@ -153,9 +144,10 @@ export default function UserProfilePage() {
       </button>
 
       {/* ─ PAGE HEADER WITH TABS ── */}
-      <div className="flex items-center justify-between gap-4 mb-6">
+      {/* ✅ MOBILE FIX: Stack vertically on mobile (flex-col) so tabs don't squish the header text */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 w-full">
           {renderDynamicHeader()}
         </div>
 
@@ -182,7 +174,6 @@ export default function UserProfilePage() {
       </div>
 
       {/* ── TAB CONTENT AREA (Aligned with floating button) ── */}
-      {/* ✅ FIX: Reduced height by ~16px (approx 4mm) to eliminate page scrolling */}
       <div className="h-[calc(100vh-226px)] overflow-hidden">
         
         {/* TAB 1: PROFILE & SECURITY */}
@@ -217,15 +208,7 @@ export default function UserProfilePage() {
           </div>
         )}
 
-        {/* TAB 3: PREFERENCES */}
-        {activeTab === "preferences" && (
-          <div className="h-full overflow-y-auto custom-scrollbar max-w-3xl animate-in fade-in duration-200">
-            <UserNotificationsCard 
-              user={user} 
-              onSave={handleUpdateUser} 
-            />
-          </div>
-        )}
+        {/* ❌ REMOVED: TAB 3: PREFERENCES */}
 
       </div>
     </div>

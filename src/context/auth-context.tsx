@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useCallback, // ✅ Added for stable refresh interval
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -62,7 +63,6 @@ async function fetchTenant(tenantId: number): Promise<Tenant | null> {
     const res = await apiClient.get<Tenant>(`/tenants/${tenantId}`);
     return res.data;
   } catch {
-    // ✅ FIXED: Removed unused 'error' variable - silent failure is intentional
     return null;
   }
 }
@@ -72,8 +72,6 @@ async function fetchTenant(tenantId: number): Promise<Tenant | null> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   
-  // ✅ CRITICAL: isLoading MUST start as true to prevent race conditions 
-  // where protected routes render before auth state is resolved.
   const [state, setState] = useState<AuthState>({
     user: null,
     tenant: null,
@@ -83,10 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   /**
-   * ✅ FIXED: Safe Initialization
-   * Wraps the initial auth check in an async function with a try/catch/finally.
-   * Uses an `isMounted` flag to prevent state updates if the component unmounts 
-   * before the API calls finish (prevents React memory leak/race condition warnings).
+   * Safe Initialization
    */
   useEffect(() => {
     let isMounted = true;
@@ -118,16 +113,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth();
 
-    // Cleanup function to prevent race conditions on unmount
     return () => {
       isMounted = false;
     };
   }, []);
 
   /**
-   * ✅ FIXED: Safe Login
-   * Wrapped in try/catch to prevent Uncaught Promise Rejections.
-   * Re-throws the error so the Login UI component can catch it and display a toast.
+   * Safe Login
    */
   const login = async (email: string, password: string) => {
     try {
@@ -149,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       else router.push("/dashboard");
     } catch (error) {
       console.error("[Auth] Login failed:", error);
-      throw error; // Let the login form handle the UI error display
+      throw error; 
     }
   };
 
@@ -169,11 +161,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /**
-   * ✅ FIXED: Safe Refresh
-   * If the refresh fails (e.g., token expired on backend), it safely logs 
-   * the user out instead of leaving the app in a corrupted state.
+   * ✅ UPDATED: Safe Refresh (Wrapped in useCallback)
+   * Wrapped in useCallback to provide a stable memory reference for the 
+   * auto-refresh interval below, preventing unnecessary interval resets.
    */
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     try {
       const token = getAuthToken();
       if (!token) return;
@@ -194,7 +186,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: false,
       });
     }
-  };
+  }, []);
+
+  /**
+   * ✅ NEW: Automatic Session Keep-Alive
+   * Since the backend token expires in 60 minutes, we proactively refresh 
+   * the session every 45 minutes while the user is active and authenticated.
+   * This prevents unexpected logouts during long work sessions.
+   */
+  useEffect(() => {
+    if (!state.isAuthenticated) return;
+
+    // 45 minutes in milliseconds (Safe buffer before the 60-min backend expiry)
+    const REFRESH_INTERVAL_MS = 45 * 60 * 1000;
+
+    const intervalId = setInterval(() => {
+      console.log("[Auth] Proactive session refresh triggered.");
+      refresh();
+    }, REFRESH_INTERVAL_MS);
+
+    // Cleanup interval on unmount or when user logs out
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [state.isAuthenticated, refresh]);
 
   return (
     <AuthContext.Provider value={{ ...state, login, logout, refresh }}>

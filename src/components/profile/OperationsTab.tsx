@@ -29,21 +29,24 @@ export default function OperationsTab({
     // ✅ FULL HEIGHT LAYOUT: No outer spacing, fits within parent container
     <div className="h-full flex flex-col">
       
-      {/* ✅ CONDITIONAL HEADER: Only show if not hidden by parent */}
+      {/* ✅ CONDITIONAL HEADER: Only show if not hidden by parent
+          Mobile: slightly tighter spacing (mb-4 vs mb-6), smaller icon tile */}
       {!hideHeader && (
-        <div className="flex items-center gap-4 px-2 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center">
-            <Layers size={22} className="text-[var(--color-primary)]" />
+        <div className="flex items-center gap-3 sm:gap-4 px-2 mb-4 sm:mb-6">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center shrink-0">
+            <Layers size={20} className="text-[var(--color-primary)]" />
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-[var(--color-ink)]">Operations Command Center</h2>
-            <p className="text-xs text-[var(--color-ink-muted)]">Manage tasks, assign actions, and execute workflows in real-time.</p>
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-bold text-[var(--color-ink)]">Operations Command Center</h2>
+            <p className="text-xs text-[var(--color-ink-muted)] mt-0.5">Manage tasks, assign actions, and execute workflows in real-time.</p>
           </div>
         </div>
       )}
 
-      {/* ✅ SPLIT LAYOUT: Full height, no overflow */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0">
+      {/* ✅ SPLIT LAYOUT: 
+          - Mobile: single column, right panel hidden when nothing selected
+          - Desktop (lg+): 12-col grid, both panels always visible */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:min-h-0">
         
         {/* LEFT: Action Center List */}
         <div className="lg:col-span-7 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden flex flex-col">
@@ -71,8 +74,10 @@ export default function OperationsTab({
           />
         </div>
 
-        {/* RIGHT: Smart Profile Viewer / Empty State */}
-        <div className="lg:col-span-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden flex flex-col">
+        {/* RIGHT: Smart Profile Viewer / Empty State
+            ✅ Mobile: hidden when no task selected (action center takes full width)
+            ✅ Desktop: always visible with empty state or viewer */}
+        <div className={`lg:col-span-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden flex flex-col ${!selectedTask ? 'hidden lg:flex' : ''}`}>
           {selectedTask ? (
             <SmartProfileViewer task={selectedTask} />
           ) : (

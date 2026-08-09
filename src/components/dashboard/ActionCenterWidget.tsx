@@ -58,8 +58,8 @@ export default function ActionCenterWidget() {
 
   const subTabs = [
     { id: "tasks" as SubTab, label: "Tasks", count: tasks.length },
-    { id: "bookings" as SubTab, label: "Bookings", count: bookings.length },
-    { id: "activity" as SubTab, label: "Activities", count: activities.length },
+    { id: "bookings" as SubTab, label: "Rentals", count: bookings.length },
+    { id: "activity" as SubTab, label: "Activity", count: activities.length },
   ];
 
   // ✅ Dynamic header copy + icon per active tab
