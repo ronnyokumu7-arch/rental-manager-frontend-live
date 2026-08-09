@@ -35,8 +35,8 @@ export function useBookingForm() {
         ]);
         setClients(clientsRes);
         setVehicles(vehiclesRes);
-      } catch {
-        console.error("Failed to load form data:", error);
+      } catch (_error) {
+        console.error("Failed to load form data:", _error);
         toast.error("Failed to load clients or vehicles.");
       }
     };
@@ -111,8 +111,8 @@ export function useBookingForm() {
       } else {
         router.push("/dashboard/bookings");
       }
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.detail;
+    } catch (_error: any) {
+      const errorMsg = _error.response?.data?.detail;
       console.error("Booking Creation Failed:", errorMsg);
       toast.error(Array.isArray(errorMsg) ? errorMsg.map((e: any) => e.msg).join(', ') : errorMsg || "Failed to create booking.");
     } finally {

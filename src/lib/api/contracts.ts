@@ -5,6 +5,9 @@ export const contractsApi = {
   // ✅ FIXED: Unwrap .items from PaginatedResponse, added page/page_size params
   list: (params?: { booking_id?: number; contract_status?: string; page?: number; page_size?: number }) =>
     apiClient.get<PaginatedResponse<Contract>>("/contracts/", { params }).then((r) => r.data.items),
+
+  generateForBooking: (bookingId: number) =>
+    apiClient.post<Contract>("/contracts/generate-for-booking/", { booking_id: bookingId }).then((r) => r.data),
     
   getById: (id: number) =>
     apiClient.get<Contract>(`/contracts/${id}`).then((r) => r.data),
@@ -20,7 +23,7 @@ export const contractsApi = {
     apiClient.get(`/contracts/${id}/pdf`, { responseType: "blob" }),
 
   generateShareLink: (id: number) =>
-    apiClient.post<{ share_token: string; share_url: string; expires_at: string }>(
+    apiClient.post<{ share_token: string; expires_at: string }>(
       `/contracts/${id}/share-link`
     ).then((r) => r.data),
 

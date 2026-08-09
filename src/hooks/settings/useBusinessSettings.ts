@@ -152,7 +152,7 @@ export function useBusinessSettings() {
       }
 
       setHasLoaded(true);
-    } catch {
+    } catch (error) {
       console.error("Failed to load business settings:", error);
       toast.error("Failed to load business settings");
     } finally {
@@ -176,7 +176,7 @@ export function useBusinessSettings() {
       const dataUrl = await fileToDataUrl(file);
       setLogoPreview(dataUrl);
       setIsLogoDirty(true);
-    } catch {
+    } catch (error) {
       toast.error("Could not process that image");
     }
   };
@@ -231,7 +231,7 @@ export function useBusinessSettings() {
 
     setIsSavingAdmin(true);
     try {
-      const updatedUser = await usersApi.updateUser(activeTenant.owner_id, {
+      const updatedUser = await usersApi.update(activeTenant.owner_id, {
         full_name: data.full_name,
         email: data.email,
         phone_number: data.phone_number,

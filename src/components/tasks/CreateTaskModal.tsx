@@ -39,8 +39,8 @@ export default function CreateTaskModal({ open, onClose, onCreate }: CreateTaskM
       });
       logic.reset();
       onClose();
-    } catch {
-      console.error("Failed to create task", error);
+    } catch (_error) {
+      console.error("Failed to create task", _error);
     } finally {
       setLoading(false);
     }

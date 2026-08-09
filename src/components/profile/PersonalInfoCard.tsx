@@ -85,10 +85,6 @@ export default function PersonalInfoCard({ client, onSave }: PersonalInfoCardPro
     value: string; 
     onChange: (dates: Date[]) => void;
   }) => {
-    const isDarkMode = typeof window !== 'undefined' && 
-      (document.documentElement.classList.contains('dark') || 
-       window.matchMedia('(prefers-color-scheme: dark)').matches);
-
     return (
       <div>
         <label className="label">{label}</label>
@@ -101,7 +97,6 @@ export default function PersonalInfoCard({ client, onSave }: PersonalInfoCardPro
               dateFormat: "Y-m-d",
               minDate: "today",
               disableMobile: true,
-              theme: isDarkMode ? "dark" : "light",
             }}
             className="input pl-10"
             placeholder="Select expiry date..."

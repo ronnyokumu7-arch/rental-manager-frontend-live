@@ -1,3 +1,4 @@
+import { confirmAction } from "@/lib/utils/confirmAction";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { tasksApi } from "@/lib/api/tasks";
 import { usersApi } from "@/lib/api/users";
@@ -40,16 +41,16 @@ export function useTasksList() {
     try {
       let fetchedTasks: Task[] = [];
       if (activeTab === "completed") {
-        fetchedTasks = await tasksApi.getMyTasks({ limit: 200, status: "completed" });
+        fetchedTasks = await tasksApi.getMyTasks({ page_size: 200, status: "completed" });
       } else {
-        fetchedTasks = await tasksApi.getMyTasks({ limit: 200 });
+        fetchedTasks = await tasksApi.getMyTasks({ page_size: 200 });
         // Only filter out completed tasks if we are strictly on the main "Tasks" tab
         if (activeTab === "tasks") {
           fetchedTasks = fetchedTasks.filter(t => t.status !== "completed");
         }
       }
       setTasks(fetchedTasks);
-    } catch {
+    } catch (error) {
       console.error("Failed to fetch tasks:", error);
       toast.error("Failed to load tasks");
     } finally {
@@ -61,7 +62,7 @@ export function useTasksList() {
     try {
       const staff = await usersApi.list();
       setUsers(staff.filter(u => u.is_active && !u.is_suspended));
-    } catch {
+    } catch (error) {
       console.error("Failed to fetch users:", error);
     }
   }, []);

@@ -7,8 +7,8 @@ export interface MileageUpdatePayload {
 }
 
 export const vehiclesApi = {
-  // ✅ FIXED: Unwrap .items
-  list: (params?: { status?: string; page?: number; page_size?: number }) =>
+  // ✅ FIXED: Unwrap .items & Add include_archived
+  list: (params?: { status?: string; page?: number; page_size?: number; include_archived?: boolean }) =>
     apiClient.get<PaginatedResponse<Vehicle>>("/vehicles/", { params }).then((r) => r.data.items),
 
   // ✅ FIXED: Unwrap .items

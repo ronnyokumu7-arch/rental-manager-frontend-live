@@ -1,5 +1,5 @@
-// src/hooks/bookings/useBookingsList.ts
 "use client";
+import { confirmAction } from "@/lib/utils/confirmAction";
 
 import { useState, useEffect, useMemo } from "react";
 import { bookingsApi } from "@/lib/api/bookings";
@@ -29,8 +29,8 @@ export function useBookingsList() {
         ? await bookingsApi.listArchived() 
         : await bookingsApi.list();
       setBookings(data);
-    } catch {
-      console.error("Failed to fetch bookings", error);
+    } catch (_error) {
+      console.error("Failed to fetch bookings", _error);
       toast.error("Failed to load bookings");
     } finally {
       setLoading(false);
@@ -47,6 +47,7 @@ export function useBookingsList() {
       document.addEventListener("click", handleClickOutside);
       return () => document.removeEventListener("click", handleClickOutside);
     }
+    return undefined; // ✅ FIXED: explicit return so all paths return a value
   }, [openDropdownId]);
 
   const activeCount = useMemo(() => bookings.filter(b => !b.is_archived).length, [bookings]);
@@ -92,7 +93,7 @@ export function useBookingsList() {
   const handleConfirm = async (bookingId: number) => {
     setActionLoadingId(bookingId);
     try {
-      await bookingsApi.confirmAction(bookingId);
+      await bookingsApi.confirm(bookingId);
       toast.success("Booking confirmed! Contract & Invoice generated.");
       await fetchBookings();
     } catch (error: any) {
@@ -149,21 +150,21 @@ export function useBookingsList() {
     }
   };
 
-// ✅ FIXED: Uses bookingsApi.noShow (Matches the API client)
-const handleNoShow = async (bookingId: number) => {
-  if (!confirmAction("Mark this booking as a No-Show?")) return;
-  setActionLoadingId(bookingId);
-  try {
-    await bookingsApi.noShow(bookingId);  // ✅ Changed from markNoShow to noShow
-    toast.success("Booking marked as No-Show");
-    await fetchBookings();
-  } catch (error: any) {
-    toast.error(error.response?.data?.detail || "Failed to mark as No-Show");
-  } finally {
-    setActionLoadingId(null);
-    setOpenDropdownId(null);
-  }
-};
+  // ✅ FIXED: Uses bookingsApi.noShow (Matches the API client)
+  const handleNoShow = async (bookingId: number) => {
+    if (!confirmAction("Mark this booking as a No-Show?")) return;
+    setActionLoadingId(bookingId);
+    try {
+      await bookingsApi.noShow(bookingId);  // ✅ Changed from markNoShow to noShow
+      toast.success("Booking marked as No-Show");
+      await fetchBookings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || "Failed to mark as No-Show");
+    } finally {
+      setActionLoadingId(null);
+      setOpenDropdownId(null);
+    }
+  };
 
   const handleCopyContractLink = async (bookingId: number) => {
     try {
@@ -185,7 +186,7 @@ const handleNoShow = async (bookingId: number) => {
       } else {
         toast.loading("Generating share link...", { duration: 1000 });
         const res = await contractsApi.generateShareLink(contract.id);
-        shareUrl = res.share_url || `${window.location.origin}/contracts/view/${res.share_token}`;
+        shareUrl = res.share_token || `${window.location.origin}/contracts/view/${res.share_token}`;
       }
 
       await navigator.clipboard.writeText(shareUrl);
@@ -223,7 +224,7 @@ const handleNoShow = async (bookingId: number) => {
     handleStartTrip,    // ✅ Maps to bookingsApi.activate
     handleCompleteTrip, // ✅ Maps to bookingsApi.complete
     handleCancel,       // ✅ Maps to bookingsApi.cancel
-    handleNoShow,       // ✅ Maps to bookingsApi.markNoShow
+    handleNoShow,       // ✅ Maps to bookingsApi.noShow
     handleCopyContractLink,
     refetch: fetchBookings
   };

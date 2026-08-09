@@ -75,7 +75,6 @@ export default function ConfirmDialog({
       open={open}
       onClose={onClose}
       size="sm"
-      showCloseButton={false}
     >
       <div className="flex flex-col items-center text-center py-2">
         {/* Icon */}

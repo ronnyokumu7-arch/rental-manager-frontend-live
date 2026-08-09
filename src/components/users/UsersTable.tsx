@@ -203,7 +203,7 @@ export default function UsersTable({
                           <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
                           <span className="truncate">{u.email}</span>
                           {emailVerified && (
-                            <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0" title="Email Verified" />
+                            <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0" />
                           )}
                         </a>
                       </div>
@@ -231,7 +231,7 @@ export default function UsersTable({
                         <Phone size={12} className="text-[var(--color-ink-subtle)]" />
                         <span className="font-medium">{u.phone_number}</span>
                         {phoneVerified && (
-                          <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0" title="Phone Verified" />
+                          <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0" />
                         )}
                       </div>
                     ) : (

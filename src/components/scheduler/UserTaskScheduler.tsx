@@ -58,8 +58,8 @@ export default function UserTaskScheduler() {
         ]);
         setTeamMembers(members);
         setTasks(fetchedTasks);
-      } catch {
-        console.error("Failed to load scheduler data:", error);
+      } catch (_error) {
+        console.error("Failed to load scheduler data:", _error);
       } finally {
         setIsLoading(false);
       }
@@ -105,8 +105,8 @@ export default function UserTaskScheduler() {
         setNewTaskDescription("");
         setNewTaskPriority("medium");
         handleToggleCreateMode();
-      } catch {
-        console.error("Failed to create task:", error);
+      } catch (_error) {
+        console.error("Failed to create task:", _error);
       } finally {
         setIsSaving(false);
       }
@@ -183,49 +183,54 @@ export default function UserTaskScheduler() {
         t.id === taskId ? { ...t, status: newStatus, progressPercentage: newStatus === "completed" ? 100 : t.progressPercentage } : t
       ));
       await tasksApi.updateSchedulerTask(taskId, { status: newStatus });
-    } catch {
-      console.error("Failed to update task status:", error);
+    } catch (_error) {
+      console.error("Failed to update task status:", _error);
       setTasks(previousTasks);
     }
   }, [tasks]);
 
   const handleDrop = useCallback(async (e: React.DragEvent, targetUserId: number, targetDateStr: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const data = e.dataTransfer.getData("application/json");
-    if (!data) return;
-    
-    try {
-      const { taskId, durationDays } = JSON.parse(data);
-      const newStartDate = targetDateStr;
-      const newDueDate = format(addDays(parseISO(targetDateStr), durationDays), "yyyy-MM-dd");
+  e.preventDefault();
+  e.stopPropagation();
+  const data = e.dataTransfer.getData("application/json");
+  if (!data) return;
 
-      setTasks((prev) => prev.map((t) => 
-        t.id === taskId ? { ...t, assignedUserId: targetUserId, startDate: newStartDate, dueDate: newDueDate } : t
-      ));
-      await tasksApi.updateSchedulerTask(taskId, { 
-        assignedUserId: targetUserId, 
-        startDate: newStartDate, 
-        dueDate: newDueDate 
-      });
-    } catch {
-      console.error("Failed to move task:", error);
-      setTasks(previousTasks);
-    }
-  }, [tasks]);
+  const previousTasks = tasks; // ✅ FIXED: Snapshot BEFORE the optimistic update
 
-  const handleSaveUserSettings = useCallback(async (updatedUser: TeamMember, _permissions: UserPermissions) => {
-    setIsSaving(true);
-    try {
-      const savedUser = await usersApi.updateTeamMember(updatedUser.id, updatedUser);
-      setTeamMembers((prev) => prev.map((u) => (u.id === savedUser.id ? savedUser : u)));
-      setIsSettingsDrawerOpen(false);
-    } catch {
-      console.error("Failed to save user settings:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  }, []);
+  try {
+    const { taskId, durationDays } = JSON.parse(data);
+    const newStartDate = targetDateStr;
+    const newDueDate = format(addDays(parseISO(targetDateStr), durationDays), "yyyy-MM-dd");
+
+    // Optimistic update: update UI immediately
+    setTasks((prev) => prev.map((t) =>
+      t.id === taskId ? { ...t, assignedUserId: targetUserId, startDate: newStartDate, dueDate: newDueDate } : t
+    ));
+
+    // API call: persist to backend
+    await tasksApi.updateSchedulerTask(taskId, {
+      assignedUserId: targetUserId,
+      startDate: newStartDate,
+      dueDate: newDueDate
+    });
+  } catch (_error) {
+    console.error("Failed to move task:", _error);
+    setTasks(previousTasks); // ✅ Rollback on failure — now works!
+  }
+}, [tasks]);
+
+const handleSaveUserSettings = useCallback(async (updatedUser: TeamMember, _permissions: UserPermissions) => {
+  setIsSaving(true);
+  try {
+    const savedUser = await usersApi.updateTeamMember(updatedUser.id, updatedUser);
+    setTeamMembers((prev) => prev.map((u) => (u.id === savedUser.id ? savedUser : u)));
+    setIsSettingsDrawerOpen(false);
+  } catch (_error) {
+    console.error("Failed to save user settings:", _error);
+  } finally {
+    setIsSaving(false);
+  }
+}, []);
 
   const handleDeactivateUser = useCallback(async (userId: number) => {
     try {
@@ -236,8 +241,8 @@ export default function UserTaskScheduler() {
       if (selectedStatsUserId === userId) {
         setSelectedStatsUserId(null);
       }
-    } catch {
-      console.error("Failed to deactivate user:", error);
+    } catch (_error) {
+      console.error("Failed to deactivate user:", _error);
     }
   }, [selectedStatsUserId]);
 
@@ -339,6 +344,7 @@ export default function UserTaskScheduler() {
         <UserStatsFooter
           user={displayedUser}
           tasks={tasks}
+          onClose={() => {}}
         />
       )}
 

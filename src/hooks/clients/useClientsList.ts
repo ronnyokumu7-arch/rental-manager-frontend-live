@@ -1,5 +1,5 @@
-// src/hooks/clients/useClientsList.ts
 "use client";
+import { confirmAction } from "@/lib/utils/confirmAction";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { clientsApi } from "@/lib/api/clients";

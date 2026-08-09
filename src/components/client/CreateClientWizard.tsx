@@ -56,7 +56,7 @@ export default function CreateClientWizard({ open, onClose, onSave }: CreateClie
       const payload = Object.fromEntries(
         Object.entries(formData).map(([k, v]) => [k, v === "" ? null : v])
       ) as ClientCreatePayload;
-      
+
       await onSave(payload);
       toast.success("Client created successfully!");
       // Reset form
@@ -157,11 +157,13 @@ export default function CreateClientWizard({ open, onClose, onSave }: CreateClie
             </div>
           </div>
         );
+      default:
+        return null; // ✅ FIX 2: satisfies noImplicitReturns
     }
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Create New Client" subtitle="Follow the steps to add a client to your database" icon={User} size="lg" footer={null}>
+    <Modal open={open} onClose={onClose} title="Create New Client" subtitle="Follow the steps to add a client to your database" size="lg">
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar Stepper */}
         <div className="w-full md:w-48 flex-shrink-0">
@@ -201,7 +203,7 @@ export default function CreateClientWizard({ open, onClose, onSave }: CreateClie
             <button onClick={prevStep} disabled={currentStep === 1} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
               <ArrowLeft size={16} /> Back
             </button>
-            
+
             {currentStep < 4 ? (
               <button onClick={nextStep} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm">
                 Next Step <ArrowRight size={16} />

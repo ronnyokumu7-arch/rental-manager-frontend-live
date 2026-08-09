@@ -61,7 +61,7 @@ async function fetchTenant(tenantId: number): Promise<Tenant | null> {
   try {
     const res = await apiClient.get<Tenant>(`/tenants/${tenantId}`);
     return res.data;
-  } catch {
+  } catch (error) {
     return null;
   }
 }
@@ -106,8 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isMounted) {
           setState({ user, tenant, token, isLoading: false, isAuthenticated: true });
         }
-      } catch {
-        console.error("[Auth] Initialization failed:", error);
+      } catch (error) {
+        console.error("[Auth] Initialization failed:");
         removeAuthToken();
         if (isMounted) {
           setState((s) => ({ ...s, user: null, tenant: null, token: null, isLoading: false, isAuthenticated: false }));
@@ -146,8 +146,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (user.role === "super_admin") router.push("/super-admin");
       else router.push("/dashboard");
-    } catch {
-      console.error("[Auth] Login failed:", error);
+    } catch (error) {
+      console.error("[Auth] Login failed:");
       throw error; // Let the login form handle the UI error display
     }
   };
@@ -183,7 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setState({ user, tenant, token, isLoading: false, isAuthenticated: true });
     } catch {
-      console.error("[Auth] Refresh failed, clearing session:", error);
+      console.error("[Auth] Refresh failed, clearing session:");
       removeAuthToken();
       setState({
         user: null,

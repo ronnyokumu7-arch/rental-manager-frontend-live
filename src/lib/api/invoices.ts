@@ -38,7 +38,7 @@ export const invoicesApi = {
     apiClient.get(`/invoices/${id}/pdf`, { responseType: "blob" }),
 
   generateShareLink: (id: number) =>
-    apiClient.post<{ share_token: string; share_url: string; expires_at: string }>(
+    apiClient.post<{ share_token: string; expires_at: string }>(
       `/invoices/${id}/share-link`
     ).then((r) => r.data),
 

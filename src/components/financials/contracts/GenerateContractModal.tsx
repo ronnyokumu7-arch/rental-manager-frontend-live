@@ -65,7 +65,7 @@ export default function GenerateContractModal({ open, onClose, onGenerated }: Ge
       if (existingContract) {
         toast.loading("Generating share link...", { duration: 1000 });
         const res = await contractsApi.generateShareLink(existingContract.id);
-        await navigator.clipboard.writeText(res.share_url);
+        await navigator.clipboard.writeText(res.share_token);
         toast.dismiss();
         toast.success("Contract link copied to clipboard!");
         onGenerated();

@@ -1,3 +1,4 @@
+import { confirmAction } from "@/lib/utils/confirmAction";
 // src/hooks/financials/useInvoices.ts
 import { useState, useEffect, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
@@ -86,7 +87,7 @@ export function useInvoices() {
   const handleCopyLink = async (id: number) => {
     try {
       const res = await invoicesApi.generateShareLink(id);
-      await navigator.clipboard.writeText(res.share_url);
+      await navigator.clipboard.writeText(res.share_token);
       
       setInvoices(prev => prev.map(i => 
         i.id === id ? { ...i, share_token: res.share_token } : i

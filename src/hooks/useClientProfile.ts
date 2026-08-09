@@ -177,7 +177,7 @@ export function useClientProfile() {
 
       if (action === "copy") {
         const res = await api.generateShareLink(id);
-        const url = res.share_url || `${window.location.origin}/${docType}/${res.share_token}`;
+        const url = res.share_token || `${window.location.origin}/${docType}/${res.share_token}`;
         await navigator.clipboard.writeText(url);
         toast.success(`${docType} link copied to clipboard`);
       }

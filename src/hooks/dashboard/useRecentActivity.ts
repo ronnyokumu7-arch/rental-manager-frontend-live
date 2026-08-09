@@ -27,7 +27,7 @@ export function useRecentActivity() {
           icon: 'Calendar'
         }));
         setActivities(mapped);
-      } catch {
+      } catch (error) {
         console.error("Failed to fetch activity", error);
       } finally {
         setLoading(false);

@@ -1,3 +1,4 @@
+import { confirmAction } from "@/lib/utils/confirmAction";
 // src/hooks/profile/useInlineBooking.ts
 import { useState, useEffect } from "react";
 import { bookingsApi } from "@/lib/api/bookings";
@@ -107,11 +108,11 @@ export function useInlineBooking(booking: Booking) {
     if (!confirmAction(`Are you sure you want to ${action.replace("_", " ")} this booking?`)) return;
     setIsActionLoading(true);
     try {
-      if (action === "confirm") await bookingsApi.confirmAction(booking.id);
+      if (action === "confirm") await bookingsApi.confirm(booking.id);
       else if (action === "activate") await bookingsApi.activate(booking.id);
       else if (action === "complete") await bookingsApi.complete(booking.id);
       else if (action === "cancel") await bookingsApi.cancel(booking.id);
-      else if (action === "no_show") await bookingsApi.markNoShow(booking.id);
+      else if (action === "no_show") await bookingsApi.noShow(booking.id);
       toast.success(`Booking ${action.replace("_", " ")} successfully!`);
     } catch (error: any) {
       toast.error(error.response?.data?.detail || `Failed to ${action.replace("_", " ")} booking.`);
@@ -127,9 +128,9 @@ export function useInlineBooking(booking: Booking) {
     }
     try {
       const res = await contractsApi.generateShareLink(contract.id);
-      setContract(prev => prev ? { ...prev, status: 'sent' as any, share_url: res.share_url } : null);
+      setContract(prev => prev ? { ...prev, status: 'sent' as any, share_token: res.share_token } : null);
       toast.success("Contract link copied to clipboard!");
-      return res.share_url;
+      return res.share_token;
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Failed to generate contract link.");
       return null;
@@ -144,7 +145,7 @@ export function useInlineBooking(booking: Booking) {
     try {
       const res = await invoicesApi.generateShareLink(booking.invoices[0].id);
       toast.success("Invoice link copied to clipboard!");
-      return res.share_url;
+      return res.share_token;
     } catch {
       toast.error("Failed to copy invoice link.");
       return null;

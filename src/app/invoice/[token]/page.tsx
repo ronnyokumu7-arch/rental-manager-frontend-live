@@ -63,7 +63,9 @@ export default function PublicInvoicePage() {
     if (!amount || parseFloat(amount) <= 0) return toast.error("Enter a valid amount");
     if (!reference && method === "mpesa") return toast.error("M-Pesa reference is required");
     handleRecordPayment(parseFloat(amount), method, reference);
+    return;
   };
+
 
   // 3. Main Render (Matches PublicContractPage design exactly)
   return (

@@ -114,7 +114,6 @@ export default function VehicleSpecsCard({ vehicle, isEditing, onSave, onCancel,
                 options={{
                   dateFormat: "Y-m-d",
                   disableMobile: true,
-                  theme: typeof window !== 'undefined' && (document.documentElement.classList.contains('dark') || window.matchMedia('(prefers-color-scheme: dark)').matches) ? "dark" : "light",
                 }}
                 className={`${inputClass} pl-10`}
                 placeholder="Select expiry date..."

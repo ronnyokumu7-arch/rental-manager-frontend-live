@@ -108,7 +108,7 @@ export function FinancialsWidget({
       // Construct robust URL
       const baseUrl = getBaseUrl();
       const rawToken = rawShare?.share_token || rawShare?.token || rawInvoice?.share_token;
-      const finalShareUrl = rawShare?.share_url || (rawToken ? `${baseUrl}/invoice/${rawToken}` : null);
+      const finalShareUrl = rawShare?.share_token || (rawToken ? `${baseUrl}/invoice/${rawToken}` : null);
 
       if (!finalShareUrl) {
         throw new Error("Could not construct share URL from response payload.");

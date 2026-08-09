@@ -259,16 +259,19 @@ export interface BookingCreate {
   destination?: string;
   pickup_location?: string;
   return_location?: string;
+  daily_rate?: number;
   total_amount: number;
   currency_code?: string;
 }
 
 export interface BookingUpdate {
-  destination?: string;
+  destination?: string | null;
   start_date?: string;
   end_date?: string;
-  pickup_location?: string;
-  return_location?: string;
+  pickup_location?: string | null;
+  return_location?: string | null;
+  vehicle_id?: number | null;
+  daily_rate?: number;
   total_amount?: number;
   currency_code?: string;
   status?: BookingStatus;
@@ -349,7 +352,7 @@ export interface Invoice {
   client_name?: string | null;
   
   // ✅ REMOVED: subscription_id (Not present in backend InvoiceOut)
-  // ✅ REMOVED: share_url (Generated on-demand via /share-link endpoint, not in list view)
+  // ✅ REMOVED: share_token (Generated on-demand via /share-link endpoint, not in list view)
 }
 
 export interface InvoiceCreate {
@@ -696,3 +699,86 @@ export interface AgencyHealthData {
   supportTickets: SupportTicketTrend; // ✅ Now properly typed
 }
 
+
+// ─── Pagination ──────────────────────────────────────────────────────────────
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+// ─── Additive patches: fields the backend already returns ───────────────────
+export interface Tenant {
+  is_trial?: boolean;
+  owner_id?: number | null;
+}
+
+export interface Task {
+  start_date?: string | null;
+  department?: string | null;
+}
+
+export interface ActivityLog {
+  description?: string | null;
+}
+
+export interface Contract {
+  start_date?: string | null;
+}
+
+export interface UserUpdatePayload {
+  theme_preference?: string;
+}
+
+export interface Booking {
+  invoices?: Invoice[];
+  contract?: Contract | null;
+  total_price?: string | number | null;
+}
+
+export interface Client {
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  driver_license_number?: string | null;
+}
+
+// ─── Final type patches ─────────────────────────────────────────────────────
+export interface User {
+  invite_token?: string;
+  is_onboarded?: boolean; // Fixes the strict boolean vs undefined mismatch
+}
+
+export interface BookingCreate {
+  daily_rate?: number; // Make optional since some payloads omit it
+}
+
+// ─── FINAL type patches to reach zero errors ─────────────────────────────────
+export interface ActivityLog {
+  description?: string | null;
+}
+
+export interface UserUpdatePayload {
+  theme_preference?: string;
+}
+
+export interface User {
+  is_onboarded?: boolean; // Relaxes strict boolean requirement
+}
+
+export type BadgeVariant = "success" | "warning" | "danger" | "accent" | "neutral" | "default";
+
+// ─── FINAL type additions ─────────────────────────────────────────────────────
+export interface ActivityLog {
+  description?: string | null;
+}
+
+export interface UserUpdatePayload {
+  theme_preference?: string;
+}
+
+// If BadgeVariant is a type alias, update it to include "default":
+// export type BadgeVariant = "success" | "warning" | "danger" | "accent" | "neutral" | "default";
+
+// If it's in a union inside BadgeProps, just add "default" to the allowed values

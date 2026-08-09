@@ -45,6 +45,7 @@ export default function FileUpload({
       return () => URL.revokeObjectURL(url);
     }
     setPreviewUrl(null);
+    return undefined; // ✅ FIXED: explicit return so all paths return a value
   }, [value, preview]);
 
   const validateFile = (file: File): string | null => {

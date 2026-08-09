@@ -1,3 +1,4 @@
+import { confirmAction } from "@/lib/utils/confirmAction";
 // src/components/tenants/PaymentGatewaysSection.tsx
 import { useState, useEffect } from 'react';
 import { 

@@ -17,23 +17,23 @@ export function useActionCenterTasks() {
 
       // 1. Fetch personal tasks (Accessible by all roles)
       try {
-        myTasks = await tasksApi.getMyTasks({ limit: 50 });
+        myTasks = await tasksApi.getMyTasks({ page_size: 50 }); // ✅ FIXED: 'limit' → 'page_size'
       } catch {
-        console.error("Failed to fetch personal tasks:", error);
+        console.error("Failed to fetch personal tasks:");
       }
 
       // 2. Safely attempt to fetch unassigned tasks (Gracefully absorb 403 errors for standard staff)
       try {
-        unassignedTasks = await tasksApi.getUnassigned(50);
-      } catch (error: any) {
-        if (error.response?.status !== 403) {
-          console.error("Failed to fetch unassigned tasks:", error);
+        unassignedTasks = await tasksApi.getUnassigned({ page_size: 50 }); // ✅ FIXED: number → params object
+      } catch (_error: any) {
+        if (_error.response?.status !== 403) {
+          console.error("Failed to fetch unassigned tasks:");
         }
       }
 
       // 3. Merge, filter out completed, and organize by priority rules
       const combined = [...myTasks, ...unassignedTasks]
-        .filter(t => t.status !== "completed") // ✅ ADDED: Action Center is for active work only
+        .filter((t) => t.status !== "completed") // ✅ ADDED: Action Center is for active work only
         .sort((a, b) => {
           const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
           return (priorityOrder[a.priority] ?? 4) - (priorityOrder[b.priority] ?? 4);
@@ -41,7 +41,7 @@ export function useActionCenterTasks() {
 
       setTasks(combined);
     } catch {
-      console.error("Failed to compile tasks pipeline:", error);
+      console.error("Failed to compile tasks pipeline:");
     } finally {
       setLoading(false);
     }
@@ -51,17 +51,17 @@ export function useActionCenterTasks() {
   const fetchUsers = async () => {
     try {
       const staff = await usersApi.list();
-      setUsers(staff.filter(u => u.is_active && !u.is_suspended));
-    } catch (error: any) {
-      if (error.response?.status !== 403) {
-        console.error("Failed to fetch user directory:", error);
+      setUsers(staff.filter((u: User) => u.is_active && !u.is_suspended)); // ✅ FIXED: typed callback param
+    } catch (_error: any) {
+      if (_error.response?.status !== 403) { // ✅ FIXED: 'error' → '_error' (consistent naming)
+        console.error("Failed to fetch user directory:", _error); // ✅ FIXED: 'error' → '_error'
       }
     }
   };
 
-  useEffect(() => { 
-    fetchTasks(); 
-    fetchUsers(); 
+  useEffect(() => {
+    fetchTasks();
+    fetchUsers();
   }, []);
 
   const handleComplete = async (taskId: number) => {
@@ -98,13 +98,13 @@ export function useActionCenterTasks() {
     }
   };
 
-  return { 
-    tasks, 
-    users, 
-    loading, 
-    handleComplete, 
-    handleClaim, 
-    handleAssign, 
-    refetch: fetchTasks 
+  return {
+    tasks,
+    users,
+    loading,
+    handleComplete,
+    handleClaim,
+    handleAssign,
+    refetch: fetchTasks,
   };
 }

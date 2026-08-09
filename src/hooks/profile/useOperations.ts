@@ -17,17 +17,17 @@ export function useOperations(userId: number, currentUserRole: string, isSelfVie
   const isAdmin = currentUserRole === "tenant_admin" || currentUserRole === "super_admin";
 
   // ✅ Helper to fetch tasks based on context
-  const fetchTasksForContext = useCallback(async () => {
+  const fetchTasksForContext = useCallback(async (): Promise<Task[]> => {
     try {
       if (isAdmin && !isSelfView) {
         return await tasksApi.getByUser(userId);
       } else {
-        return await tasksApi.getMyTasks({ limit: 100 });
+        return await tasksApi.getMyTasks({ page_size: 100 }); // ✅ FIXED: limit → page_size
       }
-    } catch {
+    } catch (error) { // ✅ FIXED: catch now declares error (body logs it)
       console.error("Failed to fetch tasks for context", error);
       // Fallback to my-tasks if specific user fetch fails
-      return await tasksApi.getMyTasks({ limit: 100 });
+      return await tasksApi.getMyTasks({ page_size: 100 }); // ✅ FIXED: limit → page_size
     }
   }, [userId, isAdmin, isSelfView]);
 
@@ -38,24 +38,24 @@ export function useOperations(userId: number, currentUserRole: string, isSelfVie
       try {
         const targetTasks = await fetchTasksForContext();
         setTasks(targetTasks);
-        
+
         // Auto-select the first pending task ONLY if no task is currently selected
         // and there are pending tasks available
         if (!selectedTask && targetTasks.length > 0) {
-           const firstPending = targetTasks.find(t => t.status === "pending");
-           if (firstPending) {
-             setSelectedTask(firstPending);
-           } else if (targetTasks.length > 0) {
-             // If no pending tasks, select the first one regardless of status
-             setSelectedTask(targetTasks[0]);
-           }
+          const firstPending = targetTasks.find((t: Task) => t.status === "pending"); // ✅ typed param
+          if (firstPending) {
+            setSelectedTask(firstPending);
+          } else if (targetTasks.length > 0) {
+            // If no pending tasks, select the first one regardless of status
+            setSelectedTask(targetTasks[0]);
+          }
         }
 
         // Fetch admin-specific data (Unassigned Pool + Staff List)
         if (isAdmin) {
           try {
             const [pool, staff] = await Promise.all([
-              tasksApi.getUnassigned(100),
+              tasksApi.getUnassigned({ page_size: 100 }), // ✅ FIXED: number → params object
               usersApi.list({ is_active: true })
             ]);
             setUnassignedTasks(pool);
@@ -65,16 +65,16 @@ export function useOperations(userId: number, currentUserRole: string, isSelfVie
             // Non-critical error, we can still show the main task list
           }
         }
-      } catch {
+      } catch (error) { // ✅ FIXED: catch now declares error
         console.error("Failed to fetch operations data", error);
         toast.error("Failed to load tasks");
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchData();
-  }, [userId, isAdmin, isSelfView, fetchTasksForContext]); 
+  }, [userId, isAdmin, isSelfView, fetchTasksForContext]);
   // ✅ REMOVED 'selectedTask' from deps to prevent infinite loops
 
   // 2. Actions
@@ -87,17 +87,17 @@ export function useOperations(userId: number, currentUserRole: string, isSelfVie
         completed_at: new Date().toISOString(),
       });
       toast.success("Task completed!");
-      
+
       // Refresh list using the correct context-aware endpoint
       const updatedTasks = await fetchTasksForContext();
       setTasks(updatedTasks);
-      
+
       // If the completed task was selected, clear the selection or pick the next one
       if (selectedTask?.id === taskId) {
-        const nextTask = updatedTasks.find(t => t.id !== taskId && t.status === "pending") || null;
+        const nextTask = updatedTasks.find((t: Task) => t.id !== taskId && t.status === "pending") || null; // ✅ typed param
         setSelectedTask(nextTask);
       }
-    } catch {
+    } catch (error) { // ✅ FIXED: catch now declares error
       console.error("Failed to complete task", error);
       toast.error("Failed to update task");
     } finally {
@@ -110,18 +110,18 @@ export function useOperations(userId: number, currentUserRole: string, isSelfVie
     try {
       await tasksApi.assign(taskId, targetUserId);
       toast.success("Task assigned successfully!");
-      
+
       // Refresh unassigned pool
       if (isAdmin) {
-        const pool = await tasksApi.getUnassigned(100);
+        const pool = await tasksApi.getUnassigned({ page_size: 100 }); // ✅ FIXED: number → params object
         setUnassignedTasks(pool);
       }
-      
+
       // If the assigned task was selected, clear selection
       if (selectedTask?.id === taskId) {
         setSelectedTask(null);
       }
-    } catch {
+    } catch (error) { // ✅ FIXED: catch now declares error
       console.error("Failed to assign task", error);
       toast.error("Failed to assign task");
     } finally {
@@ -130,17 +130,17 @@ export function useOperations(userId: number, currentUserRole: string, isSelfVie
   };
 
   return {
-    tasks, 
-    unassignedTasks, 
-    staffMembers, 
-    selectedTask, 
+    tasks,
+    unassignedTasks,
+    staffMembers,
+    selectedTask,
     setSelectedTask,
-    activeTab, 
-    setActiveTab, 
-    loading, 
-    updatingId, 
+    activeTab,
+    setActiveTab,
+    loading,
+    updatingId,
     isAdmin,
-    handleToggleComplete, 
+    handleToggleComplete,
     handleAssignTask
   };
 }

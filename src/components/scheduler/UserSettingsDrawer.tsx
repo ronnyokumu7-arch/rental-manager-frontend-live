@@ -128,8 +128,8 @@ export default function UserSettingsDrawer({
         permissions
       );
       onClose();
-    } catch {
-      console.error("Failed to save user settings:", error);
+    } catch (_error) {
+      console.error("Failed to save user settings:", _error);
     } finally {
       setIsSaving(false);
     }

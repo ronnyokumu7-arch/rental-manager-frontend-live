@@ -16,7 +16,7 @@ export function useUpcomingBookings() {
           .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
           .slice(0, 5);
         setBookings(upcoming);
-      } catch {
+      } catch (error) {
         console.error("Failed to fetch bookings", error);
       } finally {
         setLoading(false);

@@ -69,6 +69,7 @@ export default function RecordPaymentModal({
     } finally {
       setLoading(false);
     }
+    return;
   };
 
   return (

@@ -34,7 +34,7 @@ export const bookingsApi = {
     apiClient.delete(`/bookings/${id}`),
   
   generateInvoice: (id: number, payload?: GenerateInvoicePayload) =>
-    apiClient.post<{ share_url: string; token: string; expires_at: string }>(
+    apiClient.post<{ share_token: string; token: string; expires_at: string }>(
       `/bookings/${id}/generate-invoice`,
       payload || {}
     ).then((r) => r.data),

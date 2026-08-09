@@ -18,7 +18,7 @@ interface User {
   job_title?: string | null;
   is_active: boolean;
   is_suspended: boolean;
-  is_onboarded: boolean;
+  is_onboarded?: boolean; // ✅ FIXED: optional — API may return undefined
   invite_token?: string | null;
 }
 
@@ -231,7 +231,7 @@ export default function UserManagementSettings() {
                     <div>
                       <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Department</label>
                       <select className="w-full px-3 py-2 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
-                        value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})}>
+                        value={formData.department ?? ""} onChange={e => setFormData({...formData, department: e.target.value})}>
                         <option value="">Select...</option>
                         <option value="Fleet & Operations">Fleet & Operations</option>
                         <option value="Finance">Finance</option>
@@ -241,7 +241,7 @@ export default function UserManagementSettings() {
                     <div>
                       <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Job Title</label>
                       <input className="w-full px-3 py-2 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20" 
-                        value={formData.job_title} onChange={e => setFormData({...formData, job_title: e.target.value})} placeholder="e.g. Dispatcher" />
+                        value={formData.job_title ?? ""} onChange={e => setFormData({...formData, job_title: e.target.value})} placeholder="e.g. Dispatcher" />
                     </div>
                   </div>
                 </div>

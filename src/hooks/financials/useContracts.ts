@@ -1,3 +1,4 @@
+import { confirmAction } from "@/lib/utils/confirmAction";
 // src/hooks/financials/useContracts.ts
 import { useState, useEffect, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
@@ -93,7 +94,7 @@ export function useContracts() {
   const handleCopyLink = async (id: number) => {
     try {
       const res = await contractsApi.generateShareLink(id);
-      await navigator.clipboard.writeText(res.share_url);
+      await navigator.clipboard.writeText(res.share_token);
       
       // ✅ FIX: Preserve existing status unless it's a draft
       setContracts(prev => prev.map(c => {

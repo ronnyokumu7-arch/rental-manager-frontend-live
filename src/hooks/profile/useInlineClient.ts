@@ -1,3 +1,4 @@
+import { confirmAction } from "@/lib/utils/confirmAction";
 // src/hooks/profile/useInlineClient.ts
 import { useState, useEffect, useRef } from "react";
 import { clientsApi } from "@/lib/api/clients";

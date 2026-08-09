@@ -200,8 +200,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-    } catch {
-      setErrorType(getErrorType(err));
+    } catch (_err) {
+      setErrorType(getErrorType(_err));
     } finally {
       setLoading(false);
     }

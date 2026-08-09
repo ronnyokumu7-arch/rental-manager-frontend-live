@@ -76,8 +76,8 @@ export default function SmartProfileViewer({ task }: SmartProfileViewerProps) {
       } else if (task.target_type === "booking") {
         setBookingData(await bookingsApi.get(task.target_id));
       }
-    } catch {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       setError("Resource not found or access denied.");
     } finally {
       setLoading(false);

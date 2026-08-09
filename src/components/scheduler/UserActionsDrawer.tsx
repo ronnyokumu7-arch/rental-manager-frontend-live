@@ -1,5 +1,5 @@
-// src/components/scheduler/UserActionsDrawer.tsx
 "use client";
+import { confirmAction } from "@/lib/utils/confirmAction";
 
 import { X, Plus, Settings, Trash2 } from "lucide-react";
 import { TeamMember } from "@/hooks/scheduler/useTaskSchedulerTimeline";
