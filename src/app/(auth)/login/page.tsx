@@ -337,8 +337,8 @@ export default function LoginPage() {
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
               <div>
-                <h1 className="text-3xl font-bold text-ink tracking-tight">Welcome back</h1>
-                <p className="text-ink-muted text-base mt-2">Sign in to your dashboard to manage your fleet.</p>
+                <h1 className="text-3xl font-bold text-ink tracking-tight">Welcome back!</h1>
+                <p className="text-ink-muted text-base mt-2">Sign in to your workspace to manage your car rental business.</p>
               </div>
 
               <form onSubmit={handleEmailNext} className="space-y-5">
@@ -350,7 +350,7 @@ export default function LoginPage() {
                     <input
                       type="email"
                       className="w-full h-12 pl-11 pr-4 rounded-xl bg-surface border border-surface-border text-ink focus:border-accent-dark focus:ring-2 focus:ring-accent-dark/20 outline-none transition-all text-base placeholder:text-ink-subtle"
-                      placeholder="name@company.com"
+                      placeholder="ex: name@company.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
