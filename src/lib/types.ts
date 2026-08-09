@@ -42,11 +42,10 @@ export interface User {
   is_onboarded?: boolean;
   
   // Invite System
-  // ✅ REMOVED: invite_token (Backend stripped this for security; it is never exposed in UserOut)
+  invite_token?: string | null;
   invite_expires_at?: string | null;
   
   // Security Audit
-  // ✅ REMOVED: failed_login_attempts (Backend stripped this to prevent brute-force recon)
   account_locked_until?: string | null;
   
   // UI Preferences
@@ -101,26 +100,21 @@ export interface Client {
   archived_at: string | null;
   created_at: string;
   updated_at: string;
+
+  // ✅ Backend often returns these variations
+  name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  driver_license_number?: string | null;
 }
 
-// ✅ Cleanly derives the creation payload by omitting backend-generated/read-only fields
-// Note: "status" is omitted here because the backend assigns it automatically on creation.
 export type ClientCreate = Omit<
   Client,
-  | "id"
-  | "tenant_id"
-  | "status" 
-  | "created_at"
-  | "updated_at"
-  | "is_archived"
-  | "archived_at"
-  | "avatar_image"
-  | "id_image_front"
-  | "id_image_back"
-  | "dl_image_front"
+  | "id" | "tenant_id" | "status" | "created_at" | "updated_at" 
+  | "is_archived" | "archived_at" | "avatar_image" 
+  | "id_image_front" | "id_image_back" | "dl_image_front"
 >;
 
-// ✅ Alias to instantly fix the import error in CreateClientWizard.tsx
 export type ClientCreatePayload = ClientCreate;
 
 export type ClientUpdate = Partial<
@@ -129,12 +123,8 @@ export type ClientUpdate = Partial<
 
 // ─── Vehicles ────────────────────────────────────────────────────────────────
 export type VehicleStatus =
-  | "pending_activation"
-  | "available"
-  | "rented"
-  | "maintenance"
-  | "awaiting_mileage"
-  | "retired";
+  | "pending_activation" | "available" | "rented" 
+  | "maintenance" | "awaiting_mileage" | "retired";
 
 export interface Vehicle {
   id: number;
@@ -194,13 +184,8 @@ export interface VehicleUpdate {
 
 // ─── Bookings ────────────────────────────────────────────────────────────────
 export type BookingStatus = 
-  | "pending" 
-  | "confirmed" 
-  | "active" 
-  | "awaiting_mileage"
-  | "completed" 
-  | "cancelled" 
-  | "no_show";
+  | "pending" | "confirmed" | "active" | "awaiting_mileage"
+  | "completed" | "cancelled" | "no_show";
 
 export interface BookingClientRelation {
   id: number;
@@ -218,16 +203,16 @@ export interface BookingVehicleRelation {
   id: number;
   make: string;
   model: string;
-  year?: number | null;               // ✅ Added: Often included in nested responses
-  plate_number?: string | null;       // ✅ Aligned with backend Vehicle (replaces license_plate)
-  current_mileage?: number | null;    // ✅ Aligned with backend Vehicle (replaces mileage/odometer)
+  year?: number | null;
+  plate_number?: string | null;
+  current_mileage?: number | null;
   daily_rate?: number | null;
-  status?: VehicleStatus;             // ✅ Added: Helpful for UI status badges
+  status?: VehicleStatus;
 }
 
 export interface Booking {
   id: number;
-  booking_number?: string | null;     // ✅ FIXED: Made optional/nullable to match backend BookingOut
+  booking_number?: string | null;
   tenant_id: number;
   client_id: number;
   vehicle_id: number;
@@ -236,7 +221,7 @@ export interface Booking {
   return_location?: string | null;
   start_date: string;
   end_date: string;
-  original_end_date?: string | null;  // ✅ ADDED: Matches backend's immutable audit trail for extensions
+  original_end_date?: string | null;
   daily_rate?: number | string | null;
   total_amount: number;
   currency_code: string;
@@ -249,6 +234,11 @@ export interface Booking {
   // Joined Relations
   client?: BookingClientRelation | null;
   vehicle?: BookingVehicleRelation | null;
+  
+  // ✅ Nested relations often returned by backend
+  contract?: Contract | null;
+  invoices?: Invoice[];
+  total_price?: string | number | null;
 }
 
 export interface BookingCreate {
@@ -277,7 +267,6 @@ export interface BookingUpdate {
   status?: BookingStatus;
 }
 
-
 // ─── Contracts ───────────────────────────────────────────────────────────────
 export type ContractStatus = "draft" | "sent" | "signed" | "void";
 
@@ -288,22 +277,21 @@ export interface Contract {
   contract_number: string;
   status: ContractStatus;
   pdf_path: string | null;
-  signature_image_path?: string | null; // ✅ Made optional to match backend
-  share_token?: string | null;          // ✅ Made optional to match backend
-  share_token_expires_at?: string | null; // ✅ Made optional to match backend
+  start_date?: string | null;
+  signature_image_path?: string | null;
+  share_token?: string | null;
+  share_token_expires_at?: string | null;
   signed_by_client: boolean;
   client_signed_at: string | null;
   signed_at: string | null; 
   created_at: string;
   updated_at: string;
   
-  // Computed fields from backend relationship
   booking_number?: string | null;
   client_id?: number | null;
   client_name?: string | null;
 }
 
-// Ensure PublicContractView matches the backend schema
 export interface PublicContractView {
   contract_number: string;
   booking_id: number;
@@ -332,12 +320,12 @@ export interface Invoice {
   invoice_number: string;
   status: InvoiceStatus;
   share_token?: string | null;
-  share_token_expires_at?: string | null; // ✅ ADDED: Backend tracks expiration
+  share_token_expires_at?: string | null;
   amount_due: number;
   amount_paid: number;
-  remaining_balance: number;              // ✅ ADDED: Computed field from backend
-  discount_amount: number;                // ✅ ADDED: Backend supports discounts
-  discount_reason?: string | null;        // ✅ ADDED: Backend supports discounts
+  remaining_balance: number;
+  discount_amount: number;
+  discount_reason?: string | null;
   currency_code: string;
   due_date: string;
   paid_at: string | null;
@@ -346,13 +334,9 @@ export interface Invoice {
   created_at: string;
   updated_at: string;
   
-  // Computed fields from backend relationship
   booking_number?: string | null;
   client_id?: number | null;
   client_name?: string | null;
-  
-  // ✅ REMOVED: subscription_id (Not present in backend InvoiceOut)
-  // ✅ REMOVED: share_token (Generated on-demand via /share-link endpoint, not in list view)
 }
 
 export interface InvoiceCreate {
@@ -361,8 +345,8 @@ export interface InvoiceCreate {
   notes?: string;
   amount_due?: number;
   currency_code?: string;
-  discount_amount?: number;               // ✅ ADDED
-  discount_reason?: string;               // ✅ ADDED
+  discount_amount?: number;
+  discount_reason?: string;
 }
 
 export interface InvoiceUpdate {
@@ -370,11 +354,10 @@ export interface InvoiceUpdate {
   currency_code?: string;
   due_date?: string;
   notes?: string;
-  discount_amount?: number;               // ✅ ADDED
-  discount_reason?: string;               // ✅ ADDED
+  discount_amount?: number;
+  discount_reason?: string;
   status?: InvoiceStatus;
 }
-
 
 // ─── Payments ────────────────────────────────────────────────────────────────
 export type PaymentMethod = "mpesa" | "airtel_money" | "card" | "paypal" | "bank" | "manual";
@@ -394,7 +377,6 @@ export interface Payment {
   notes: string | null;
   created_at: string;
   
-  // ✅ PERFECT MATCH: Computed fields from backend PaymentOut
   booking_id?: number | null;
   invoice_number?: string | null;
   client_id?: number | null;
@@ -432,15 +414,13 @@ export interface RoleTemplate {
   id: number;
   tenant_id: number;
   job_title: string;
-  description?: string | null; // ✅ ADDED: Matches backend RoleTemplateOut
+  description?: string | null;
   permissions: string[];
 }
 
 // ─── Tasks & Action Center ──────────────────────────────────────────────────
 export type TaskStatus = "unassigned" | "pending" | "in_progress" | "in_review" | "blocked" | "completed";
-
 export type TaskCategory = "fleet" | "finance" | "hr" | "booking" | "compliance" | "maintenance" | "operations" | "other";
-
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
 export interface Task {
@@ -461,9 +441,10 @@ export interface Task {
   target_type: string | null;
   target_id: number | null;
   location_id: number | null;
+  start_date?: string | null;
+  department?: string | null;
   created_at: string;
   updated_at: string;
-  // ✅ REMOVED: start_date (Backend TaskOut does not support this field)
 }
 
 export interface TaskCreate {
@@ -478,8 +459,6 @@ export interface TaskCreate {
   user_id?: number | null;
   requires_role?: string | null;
   is_system_generated?: boolean;
-  // ✅ REMOVED: start_date (Backend TaskCreate does not support this field)
-  // ✅ REMOVED: created_by (Backend sets this securely server-side from current_user.id)
 }
 
 export interface TaskUpdate {
@@ -491,20 +470,12 @@ export interface TaskUpdate {
   user_id?: number | null;
   due_date?: string | null;
   completed_at?: string | null;
-  // ✅ REMOVED: start_date (Backend TaskUpdate does not support this field)
 }
 
 // ─── Tenants & Subscriptions ─────────────────────────────────────────────────
-
-// ✅ FIX 1: Added "pending_verification" to match backend enum
 export type SubscriptionStatus =
-  | "trial"
-  | "starter_trial"
-  | "pending_verification" 
-  | "active"
-  | "past_due"
-  | "suspended"
-  | "cancelled";
+  | "trial" | "starter_trial" | "pending_verification" 
+  | "active" | "past_due" | "suspended" | "cancelled";
 
 export type PaymentMethodType = "mpesa" | "airtel_money" | "card" | "paypal" | "bank";
 
@@ -516,7 +487,7 @@ export interface TenantProfile {
   phone?: string | null;
   email?: string | null;
   website?: string | null;
-  tax_number?: string | null; // KRA PIN
+  tax_number?: string | null;
   logo_url?: string | null;
   contract_prefix: string;
   contract_footer?: string | null;
@@ -534,6 +505,8 @@ export interface Tenant {
   
   is_active: boolean;
   is_archived: boolean;
+  is_trial?: boolean;
+  owner_id?: number | null;
   suspended_at?: string | null;
   suspension_reason?: string | null;
   
@@ -559,7 +532,6 @@ export interface Tenant {
   updated_at: string;
 }
 
-// ✅ FIX 2: Added the missing SubscriptionOut interface required by subscriptionClient.ts
 export interface SubscriptionOut {
   id: number;
   tenant_id: number;
@@ -608,68 +580,18 @@ export interface UpdateTenantPayload {
   payment_metadata?: Record<string, any>;
 }
 
-
-
-// ---------------------------------------------------------------------------
-// Agency Health Dashboard Types (Privacy-First Aggregates)
-// ---------------------------------------------------------------------------
-
+// ─── Agency Health Dashboard Types ───────────────────────────────────────────
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type TrendDirection = 'up' | 'down' | 'stable';
 
-export interface HealthScore {
-  score: number; // 0 to 100
-  riskLevel: RiskLevel;
-  trend: TrendDirection;
-  lastCalculatedAt: string; // ISO date
-}
+export interface HealthScore { score: number; riskLevel: RiskLevel; trend: TrendDirection; lastCalculatedAt: string; }
+export interface ActivityPulse { loginsLast7Days: number; loginsLast30Days: number; activeDaysThisMonth: number; lastActiveAt: string | null; avgSessionDurationMinutes: number; }
+export interface FleetUtilization { totalVehicles: number; activeVehicles: number; utilizationPercentage: number; idleVehiclesCount: number; }
+export interface RevenueVelocity { bookingsThisWeek: number; bookingsLastWeek: number; bookingsThisMonth: number; trend: TrendDirection; weeklyData: number[]; }
+export interface PaymentReliability { currentStreak: number; onTimePaymentRate: number; totalInvoicesPaid: number; overdueInvoicesCount: number; }
+export interface FeatureAdoption { modulesUsed: string[]; totalAvailableModules: number; adoptionPercentage: number; mostUsedModule: string; leastUsedModule: string | null; }
+export interface SupportTicketTrend { openTickets: number; closedThisMonth: number; avgResolutionTimeHours: number; trend: TrendDirection; }
 
-export interface ActivityPulse {
-  loginsLast7Days: number;
-  loginsLast30Days: number;
-  activeDaysThisMonth: number;
-  lastActiveAt: string | null; // ISO date
-  avgSessionDurationMinutes: number;
-}
-
-export interface FleetUtilization {
-  totalVehicles: number;
-  activeVehicles: number; // Vehicles with at least one booking in current month
-  utilizationPercentage: number; // 0 to 100
-  idleVehiclesCount: number;
-}
-
-export interface RevenueVelocity {
-  bookingsThisWeek: number;
-  bookingsLastWeek: number;
-  bookingsThisMonth: number;
-  trend: TrendDirection;
-  weeklyData: number[]; // Last 8 weeks of booking counts for sparkline
-}
-
-export interface PaymentReliability {
-  currentStreak: number; // Consecutive on-time payments
-  onTimePaymentRate: number; // 0 to 100
-  totalInvoicesPaid: number;
-  overdueInvoicesCount: number;
-}
-
-export interface FeatureAdoption {
-  modulesUsed: string[]; // e.g., ['bookings', 'contracts', 'invoices']
-  totalAvailableModules: number;
-  adoptionPercentage: number; // 0 to 100
-  mostUsedModule: string;
-  leastUsedModule: string | null;
-}
-
-export interface SupportTicketTrend {
-  openTickets: number;
-  closedThisMonth: number;
-  avgResolutionTimeHours: number;
-  trend: TrendDirection;
-}
-
-// The master object returned by the useAgencyHealth hook
 export interface AgencyHealthData {
   score: HealthScore;
   activity: ActivityPulse;
@@ -680,25 +602,24 @@ export interface AgencyHealthData {
   supportTickets: SupportTicketTrend;
 }
 
-
-export interface SupportTicketTrend {
-  openTickets: number;
-  closedThisMonth: number;
-  avgResolutionTimeHours: number;
-  trend: TrendDirection; // 'up' | 'down' | 'stable'
+// ─── UI & Misc Types ─────────────────────────────────────────────────────────
+export interface ActivityLog {
+  id: number;
+  user_id?: number | null;
+  action: string;
+  description?: string | null;
+  created_at: string;
 }
 
-// Ensure AgencyHealthData includes it (it should already be there from our earlier draft)
-export interface AgencyHealthData {
-  score: HealthScore;
-  activity: ActivityPulse;
-  utilization: FleetUtilization;
-  revenueVelocity: RevenueVelocity;
-  paymentReliability: PaymentReliability;
-  featureAdoption: FeatureAdoption;
-  supportTickets: SupportTicketTrend; // ✅ Now properly typed
+export interface UserUpdatePayload {
+  full_name?: string;
+  email?: string;
+  phone_number?: string;
+  theme_preference?: string;
+  density_preference?: string;
 }
 
+export type BadgeVariant = "success" | "warning" | "danger" | "accent" | "neutral" | "default";
 
 // ─── Pagination ──────────────────────────────────────────────────────────────
 export interface PaginatedResponse<T> {
@@ -708,77 +629,3 @@ export interface PaginatedResponse<T> {
   page_size: number;
   total_pages: number;
 }
-// ─── Additive patches: fields the backend already returns ───────────────────
-export interface Tenant {
-  is_trial?: boolean;
-  owner_id?: number | null;
-}
-
-export interface Task {
-  start_date?: string | null;
-  department?: string | null;
-}
-
-export interface ActivityLog {
-  description?: string | null;
-}
-
-export interface Contract {
-  start_date?: string | null;
-}
-
-export interface UserUpdatePayload {
-  theme_preference?: string;
-}
-
-export interface Booking {
-  invoices?: Invoice[];
-  contract?: Contract | null;
-  total_price?: string | number | null;
-}
-
-export interface Client {
-  name?: string;
-  first_name?: string;
-  last_name?: string;
-  driver_license_number?: string | null;
-}
-
-// ─── Final type patches ─────────────────────────────────────────────────────
-export interface User {
-  invite_token?: string;
-  is_onboarded?: boolean; // Fixes the strict boolean vs undefined mismatch
-}
-
-export interface BookingCreate {
-  daily_rate?: number; // Make optional since some payloads omit it
-}
-
-// ─── FINAL type patches to reach zero errors ─────────────────────────────────
-export interface ActivityLog {
-  description?: string | null;
-}
-
-export interface UserUpdatePayload {
-  theme_preference?: string;
-}
-
-export interface User {
-  is_onboarded?: boolean; // Relaxes strict boolean requirement
-}
-
-export type BadgeVariant = "success" | "warning" | "danger" | "accent" | "neutral" | "default";
-
-// ─── FINAL type additions ─────────────────────────────────────────────────────
-export interface ActivityLog {
-  description?: string | null;
-}
-
-export interface UserUpdatePayload {
-  theme_preference?: string;
-}
-
-// If BadgeVariant is a type alias, update it to include "default":
-// export type BadgeVariant = "success" | "warning" | "danger" | "accent" | "neutral" | "default";
-
-// If it's in a union inside BadgeProps, just add "default" to the allowed values

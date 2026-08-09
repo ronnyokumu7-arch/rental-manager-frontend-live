@@ -5,6 +5,7 @@ export interface ActivityLog {
   user_id: number;
   action: string;
   target_type: string | null;
+  description?: string | null;
   target_id: number | null;
   details: any | null;
   created_at: string;

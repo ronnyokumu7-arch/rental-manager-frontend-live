@@ -280,7 +280,7 @@ export default function UserPersonalInfoCard({
                 )}
               </select>
               {isSuperAdmin && (
-                <ShieldAlert size={14} className="text-amber-500 shrink-0" title="System role cannot be changed" />
+                <ShieldAlert size={14} className="text-amber-500 shrink-0" />
               )}
             </div>
           ) : (

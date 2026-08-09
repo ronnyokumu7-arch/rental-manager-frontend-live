@@ -53,7 +53,7 @@ export function PaymentGatewaysSection({ tenantId, onUpdated }: PaymentGatewaysS
     setIsConfigModalOpen(true);
   };
 
-  const handleDeleteGateway = async (gatewayType: string, configId: number) => {
+  const handleDeleteGateway = async (_gatewayType: string, configId: number) => {
     if (!confirmAction('Are you sure you want to delete this payment gateway configuration? This action cannot be undone.')) return;
     
     try {

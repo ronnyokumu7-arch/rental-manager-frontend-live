@@ -71,6 +71,7 @@ export function useClientsList() {
       document.addEventListener("click", handleClickOutside);
       return () => document.removeEventListener("click", handleClickOutside);
     }
+    return undefined; // ✅ FIXED: Explicitly return undefined for the null path
   }, [openDropdownId]);
 
   const totalClients = clients.length;

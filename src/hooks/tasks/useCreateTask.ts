@@ -42,7 +42,14 @@ export function useCreateTask() {
     usersApi.list().then(setUsers);
     clientsApi.list().then(setClients);
     vehiclesApi.list().then(setVehicles);
-    bookingsApi.list({ status: "active,confirmed" }).then(setBookings);
+    
+    // ✅ FIXED: Fetch all bookings, then filter client-side
+    bookingsApi.list().then((data) => {
+      const filtered = data.filter(
+        (b) => b.status === "active" || b.status === "confirmed"
+      );
+      setBookings(filtered);
+    });
   }, []);
 
   // Filtering Logic

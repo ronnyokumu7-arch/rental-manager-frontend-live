@@ -7,7 +7,8 @@ export type BadgeVariant =
   | "accent"
   | "neutral"
   | "critical"
-  | "info";
+  | "info"
+  | "default";
 
 export type BadgeSize = "xs" | "sm" | "md";
 
@@ -30,6 +31,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   accent:    "bg-accent-bg text-accent-dark border-accent/20",
   neutral:   "bg-surface-hover text-ink-muted border-surface-border",
   info:      "bg-accent-bg text-accent-dark border-accent/20",
+  default:   "bg-surface text-ink border-surface-border",
 };
 
 const variantStylesOutline: Record<BadgeVariant, string> = {
@@ -40,6 +42,7 @@ const variantStylesOutline: Record<BadgeVariant, string> = {
   accent:    "bg-transparent text-accent-dark border-accent/40",
   neutral:   "bg-transparent text-ink-muted border-surface-border",
   info:      "bg-transparent text-accent-dark border-accent/40",
+  default:   "bg-transparent text-ink border-surface-border", // ✅ ADDED to satisfy Record<BadgeVariant>
 };
 
 const dotColors: Record<BadgeVariant, string> = {
@@ -50,6 +53,7 @@ const dotColors: Record<BadgeVariant, string> = {
   accent:    "bg-accent",
   neutral:   "bg-ink-subtle",
   info:      "bg-accent",
+  default:   "bg-ink-subtle", // ✅ ADDED to satisfy Record<BadgeVariant>
 };
 
 const sizeStyles: Record<BadgeSize, string> = {

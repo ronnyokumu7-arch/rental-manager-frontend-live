@@ -53,8 +53,16 @@ export default function OperationsTab({
             staffMembers={staffMembers}
             selectedTask={selectedTask}
             onSelectTask={setSelectedTask}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
+            activeTab={
+              activeTab === "completed" ? "done" : 
+              activeTab === "unassigned" ? "pool" : "pending"
+            }
+            onTabChange={(tab) => {
+              setActiveTab(
+                tab === "done" ? "completed" : 
+                tab === "pool" ? "unassigned" : "pending"
+              );
+            }}
             loading={loading}
             updatingId={updatingId}
             isAdmin={isAdmin}

@@ -24,7 +24,7 @@ export function useFleetList() {
     try {
       // ✅ FIXED: Strictly typed, no 'any'. Only sends status if it's a valid enum.
       const params: Record<string, string> = {};
-      if (statusFilter && statusFilter !== "") {
+      if (statusFilter) {
         params.status = statusFilter;
       }
       

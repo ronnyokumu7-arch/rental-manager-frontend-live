@@ -72,7 +72,7 @@ export function useBookingFinancials(
       currentEnd.setDate(currentEnd.getDate() + additionalDays);
       const newEndDate = currentEnd.toISOString();
 
-      await bookingsApi.extend(booking.id, newEndDate);
+      await bookingsApi.extend(booking.id, { new_end_date: newEndDate });
       toast.success(`Booking extended by ${additionalDays} day(s)!`);
       if (onRefresh) onRefresh();
     } catch (err: any) {

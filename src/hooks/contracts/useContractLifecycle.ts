@@ -31,27 +31,34 @@ export function useContractLifecycle(bookingId: number) {
 
   // Generate and copy the public share link
   const handleCopyLink = async () => {
-  if (!contract) return toast.error("No contract found");
-  try {
-    let shareToken = contract.share_token;
-    if (!shareToken) {
-      toast.loading("Generating share link...", { duration: 1000 });
-      const res = await contractsApi.generateShareLink(contract.id);
-      shareToken = res.share_token;
-      setContract({ ...contract, share_token: shareToken });
+    if (!contract) {
+      toast.error("No contract found");
+      return; // ✅ FIXED: Explicit return so all paths return undefined
     }
-    // ✅ FIXED: Updated to match actual route /contracts/view/[token]
-    const shareUrl = `${window.location.origin}/contracts/view/${shareToken}`;
-    await navigator.clipboard.writeText(shareUrl);
-    toast.success("Contract link copied!");
-  } catch (error: any) {
-    toast.error(error.response?.data?.detail || "Failed to generate link");
-  }
-};
+    
+    try {
+      let shareToken = contract.share_token;
+      if (!shareToken) {
+        toast.loading("Generating share link...", { duration: 1000 });
+        const res = await contractsApi.generateShareLink(contract.id);
+        shareToken = res.share_token;
+        setContract({ ...contract, share_token: shareToken });
+      }
+      // ✅ FIXED: Updated to match actual route /contracts/view/[token]
+      const shareUrl = `${window.location.origin}/contracts/view/${shareToken}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Contract link copied!");
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || "Failed to generate link");
+    }
+  };
 
   // Open the share drawer
   const handleOpenShareDrawer = () => {
-    if (!contract) return toast.error("No contract found");
+    if (!contract) {
+      toast.error("No contract found");
+      return; // ✅ FIXED: Explicit return so all paths return undefined
+    }
     setShowShareDrawer(true);
   };
 

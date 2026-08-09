@@ -59,19 +59,15 @@ export default function TaskContextBar({ task }: TaskContextBarProps) {
   const priorityStyle = getPriorityStyle(task.priority);
   const statusStyle = getStatusStyle(task.status);
 
-  // Truncate description to 20 words
-  const truncateDescription = (text: string, wordLimit: number = 20) => {
+  // ✅ FIXED: Simplified to return just the string, removing the unused 'needsTruncation' boolean
+  const truncateDescription = (text: string, wordLimit: number = 20): string => {
     const words = text.split(/\s+/);
-    if (words.length <= wordLimit) return { text, needsTruncation: false };
-    return { 
-      text: words.slice(0, wordLimit).join(" ") + "...", 
-      needsTruncation: true 
-    };
+    if (words.length <= wordLimit) return text;
+    return words.slice(0, wordLimit).join(" ") + "...";
   };
 
-  const { text: truncatedDesc } = task.description 
-    ? truncateDescription(task.description, 20)
-    : { text: "", needsTruncation: false };
+  // Clean string assignment with no type inference issues
+  const truncatedDesc = task.description ? truncateDescription(task.description, 20) : "";
 
   return (
     <div className="px-6 py-4 bg-[var(--color-surface-hover)]/30 border-b border-[var(--color-surface-border)]">

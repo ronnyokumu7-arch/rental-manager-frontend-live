@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api-client";
-import type { User, PaginatedResponse } from "@/lib/types"; // ✅ Added PaginatedResponse import
+import type { User, PaginatedResponse } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Recovery & Security Interfaces
@@ -47,6 +47,8 @@ export interface UserUpdatePayload {
   role?: "super_admin" | "tenant_admin" | "tenant_staff";
   is_active?: boolean;
   is_suspended?: boolean;
+  theme_preference?: string;
+  density_preference?: string; // ✅ ADDED: Fixes UserNotificationsCard.tsx:26 error
   suspension_reason?: string | null;
   password?: string;
   phone_number?: string | null;
@@ -104,7 +106,6 @@ export const usersApi = {
   create: (data: UserCreatePayload) =>
     apiClient.post<User>("/users/", data).then((r) => r.data),
 
-  // ✅ FIXED: Unwrap .items from PaginatedResponse, added page/page_size params
   list: (params?: { tenant_id?: number; role?: string; is_active?: boolean; is_suspended?: boolean; page?: number; page_size?: number }) =>
     apiClient.get<PaginatedResponse<User>>("/users/", { params }).then((r) => r.data.items),
 
@@ -149,7 +150,6 @@ export const usersApi = {
   // ✅ TASK SCHEDULER SPECIFIC METHODS 
   // =========================================================================
   getTeamMembers: async (): Promise<TeamMember[]> => {
-    // ✅ FIXED: Unwrap .items, changed 'limit' to 'page_size' to match backend pagination schema
     const res = await apiClient.get<PaginatedResponse<User>>("/users/", {
       params: { is_active: true, is_suspended: false, page_size: 100 },
     });
