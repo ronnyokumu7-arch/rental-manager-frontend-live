@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Activity, BarChart3,
   Car, Users, TrendingUp, Clock, CheckCircle2, Wrench, Plus
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useDashboard } from "@/hooks/useDashboard";
 import ActionCenterWidget from "@/components/dashboard/ActionCenterWidget";
 import FleetCalendar from "@/components/calendar/FleetCalendar";
@@ -16,6 +17,39 @@ const TABS = [
   { id: "activity", label: "Bookings Calendar", icon: Activity },
   { id: "reports", label: "Analytics", icon: BarChart3 },
 ];
+
+/* ────────────────────────────────────────────────────────────
+   ✅ PREMIUM CHROME-LESS STAT TILE
+   No card box, no sub-text — just tinted icon chip + value + label.
+   The icon chip provides structure; whitespace does the rest.
+   ──────────────────────────────────────────────────────────── */
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  iconClass,
+}: {
+  label: string;
+  value: string;
+  icon: LucideIcon;
+  iconClass: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 lg:gap-4">
+      <div className={`w-10 h-10 lg:w-11 lg:h-11 rounded-xl flex items-center justify-center shrink-0 ${iconClass}`}>
+        <Icon size={18} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xl lg:text-2xl font-extrabold tracking-tight text-[var(--color-ink)] tabular-nums truncate">
+          {value}
+        </p>
+        <p className="text-[10px] lg:text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] truncate">
+          {label}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -47,8 +81,8 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Unified Tab Switcher */}
-        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
+        {/* ✅ MOBILE: Tab switcher hidden on phones (Overview is the mobile default) */}
+        <div className="hidden lg:flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -74,65 +108,42 @@ export default function DashboardPage() {
       {activeTab === "overview" && (
         <div className="space-y-6 animate-in fade-in duration-300">
           
-          {/* Premium Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Active Bookings */}
-            <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)]">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Active Bookings</p>
-                <div className="w-8 h-8 rounded-lg bg-[var(--color-primary-muted)] flex items-center justify-center text-[var(--color-primary-text)]">
-                  <LayoutDashboard size={16} />
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-[var(--color-ink)]">{stats.activeBookings}</p>
-              <p className="text-xs text-[var(--color-ink-muted)] mt-1">Currently ongoing</p>
-            </div>
-
-            {/* Fleet Size */}
-            <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)]">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Fleet Size</p>
-                <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-hover)] flex items-center justify-center text-[var(--color-ink-muted)]">
-                  <Car size={16} />
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-[var(--color-ink)]">{stats.fleetSize}</p>
-              <p className="text-xs text-[var(--color-ink-muted)] mt-1">Total vehicles</p>
-            </div>
-
-            {/* Total Clients */}
-            <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)]">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Total Clients</p>
-                <div className="w-8 h-8 rounded-lg bg-[var(--color-success-bg)] flex items-center justify-center text-[var(--color-success-text)]">
-                  <Users size={16} />
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-[var(--color-ink)]">{stats.totalClients}</p>
-              <p className="text-xs text-[var(--color-ink-muted)] mt-1">Registered users</p>
-            </div>
-
-            {/* Revenue (MTD) */}
-            <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)]">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Revenue (MTD)</p>
-                <div className="w-8 h-8 rounded-lg bg-[var(--color-warning-bg)] flex items-center justify-center text-[var(--color-warning-text)]">
-                  <TrendingUp size={16} />
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-[var(--color-ink)]">KES {stats.mtdRevenue.toLocaleString()}</p>
-              <p className="text-xs text-[var(--color-ink-muted)] mt-1">This month</p>
-            </div>
+          {/* ✅ PREMIUM: chrome-less 2×2 stat grid on phones, 4-up strip on desktop */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            <StatCard
+              label="Active Bookings"
+              value={String(stats.activeBookings)}
+              icon={LayoutDashboard}
+              iconClass="bg-[var(--color-primary-muted)] text-[var(--color-primary-text)]"
+            />
+            <StatCard
+              label="Fleet Size"
+              value={String(stats.fleetSize)}
+              icon={Car}
+              iconClass="bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]"
+            />
+            <StatCard
+              label="Total Clients"
+              value={String(stats.totalClients)}
+              icon={Users}
+              iconClass="bg-[var(--color-success-bg)] text-[var(--color-success-text)]"
+            />
+            <StatCard
+              label="Revenue (MTD)"
+              value={`KES ${stats.mtdRevenue.toLocaleString()}`}
+              icon={TrendingUp}
+              iconClass="bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]"
+            />
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Left Column (2/3): Action Center Widget */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 min-w-0">
               <ActionCenterWidget />
             </div>
 
-            {/* Right Column (1/3): Fleet Health & Alerts */}
-            <div className="space-y-6">
+            {/* Right Column: Fleet Health & Alerts (stacked, full-size) */}
+            <div className="space-y-6 min-w-0">
               
               {/* Fleet Health Card */}
               <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-5">
@@ -249,9 +260,9 @@ export default function DashboardPage() {
 
       {/* 🚀 PREMIUM FLOATING ACTION BUTTON */}
       <button
-      onClick={() => router.push("/dashboard/bookings/new")}
-      className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 lg:bottom-8 lg:right-8 z-50 group flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-110 hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 ease-out"
-      title="Create New Booking"
+        onClick={() => router.push("/dashboard/bookings/new")}
+        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 lg:bottom-8 lg:right-8 z-50 group flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-110 hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 ease-out"
+        title="Create New Booking"
       >
         <Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
         <span className="absolute right-full mr-4 px-3 py-1.5 bg-[var(--color-surface)] text-[var(--color-ink)] text-xs font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-[var(--color-surface-border)]">
