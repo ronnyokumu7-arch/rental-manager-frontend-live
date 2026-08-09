@@ -47,26 +47,22 @@ const nextConfig = {
     ];
   },
 
-  // ❌ REMOVED: The rewrites() block that was hijacking traffic to localhost:8000
-
   // ─────────────────────────────────────────────────────────────────────────
-  // 🚀 PRODUCTION DEPLOYMENT OVERRIDES (TEMPORARY)
+  // 🔒 STRICT BUILD ENFORCEMENT
   // ─────────────────────────────────────────────────────────────────────────
-  // These settings allow the build to succeed despite TypeScript/ESLint warnings.
-  // They are safe for temporary "go live now" scenarios but should be reverted
-  // once the codebase is stabilized for long-term maintainability.
+  // These settings ensure that TypeScript and ESLint errors block the build.
+  // This prevents type-unsafe or poorly-linted code from reaching production.
   //
-  // 🔧 TO REVERT LATER (after deploy):
-  // 1. Set both flags back to `false`
-  // 2. Fix TypeScript/ESLint errors locally
-  // 3. Push fixes incrementally without blocking deploys
+  // 📊 Current status (as of August 9, 2026):
+  // - ESLint: 0 errors ✓
+  // - TypeScript: 0 errors ✓
   // ─────────────────────────────────────────────────────────────────────────
   eslint: {
-    ignoreDuringBuilds: true,  // ✅ TEMP: Ignore ESLint errors during build (set to false later)
+    ignoreDuringBuilds: false,  // ✅ Enforce ESLint on every build
   },
   
   typescript: {
-    ignoreBuildErrors: true,   // ✅ TEMP: Ignore TS errors during build (set to false later)
+    ignoreBuildErrors: false,   // ✅ Enforce TypeScript on every build
   },
 };
 

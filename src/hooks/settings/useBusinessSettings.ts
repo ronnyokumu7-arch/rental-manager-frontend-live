@@ -57,13 +57,13 @@ export function useBusinessSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingAdmin, setIsSavingAdmin] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [isLogoDirty, setIsLogoDirty] = useState(false); // ✅ NEW
+  const [isLogoDirty, setIsLogoDirty] = useState(false);
   const [activeTenant, setActiveTenant] = useState<Tenant | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   const businessRef = useRef<BusinessFormValues | null>(null);
   const adminRef = useRef<AdminFormValues | null>(null);
-  const savedLogoRef = useRef<string | null>(null); // ✅ NEW
+  const savedLogoRef = useRef<string | null>(null);
 
   const {
     register,
@@ -135,7 +135,6 @@ export function useBusinessSettings() {
           kra_pin: profile.tax_number || "",
           footer_text: profile.contract_footer || "",
         });
-        // ✅ Sync logo state
         const logo = profile.logo_url || null;
         savedLogoRef.current = logo;
         setLogoPreview(logo);
@@ -164,7 +163,6 @@ export function useBusinessSettings() {
     fetchSettings();
   }, [fetchSettings]);
 
-  // ✅ NEW: compress + track as dirty
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -177,6 +175,7 @@ export function useBusinessSettings() {
       setLogoPreview(dataUrl);
       setIsLogoDirty(true);
     } catch (error) {
+      console.error("Failed to process logo:", error); // ✅ FIXED: Use the error variable
       toast.error("Could not process that image");
     }
   };
@@ -192,7 +191,6 @@ export function useBusinessSettings() {
         business_location: data.business_location,
         kra_pin: data.kra_pin,
         contract_terms: data.footer_text,
-        // ✅ Data-URLs are safe to send now (no more blob stripping)
         ...(logoPreview ? { logo_url: logoPreview } : {}),
       };
 
@@ -208,7 +206,6 @@ export function useBusinessSettings() {
         footer_text: updatedProfile.contract_footer || "",
       });
 
-      // ✅ Logo is now saved — sync state
       savedLogoRef.current = updatedProfile.logo_url || null;
       setLogoPreview(updatedProfile.logo_url || null);
       setIsLogoDirty(false);
@@ -257,7 +254,7 @@ export function useBusinessSettings() {
   const discardChanges = useCallback(() => {
     if (businessRef.current) reset(businessRef.current);
     if (adminRef.current) resetAdmin(adminRef.current);
-    setLogoPreview(savedLogoRef.current); // ✅ Restore logo too
+    setLogoPreview(savedLogoRef.current);
     setIsLogoDirty(false);
   }, [reset, resetAdmin]);
 
@@ -266,7 +263,7 @@ export function useBusinessSettings() {
     isSaving,
     isSavingAdmin,
     logoPreview,
-    isLogoDirty, // ✅ NEW
+    isLogoDirty,
     adminUser: activeTenant,
     businessData,
     adminData,
