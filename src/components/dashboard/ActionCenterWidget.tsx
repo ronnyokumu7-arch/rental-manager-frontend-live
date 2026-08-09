@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   CheckCircle2, UserPlus, Calendar, Clock, ArrowRight,
-  Zap, Plus, Sparkles, Tag, Loader2
+  Zap, Sparkles, Tag, Loader2, MoreVertical
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -18,10 +18,23 @@ export default function ActionCenterWidget() {
   const router = useRouter();
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("tasks");
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  // ✅ NEW: Only one kebab menu open at a time
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   const { tasks, loading: tasksLoading, handleClaim, handleComplete } = useActionCenterTasks();
   const { bookings, loading: bookingsLoading } = useUpcomingBookings();
   const { activities, loading: activityLoading } = useRecentActivity();
+
+  // ✅ NEW: Close kebab menu on outside click
+  useEffect(() => {
+    if (openMenuId === null) return;
+    const handle = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-task-menu]")) setOpenMenuId(null);
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [openMenuId]);
 
   const subTabs = [
     { id: "tasks" as SubTab, label: "Tasks", count: tasks.length },
@@ -91,13 +104,13 @@ export default function ActionCenterWidget() {
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)]">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] max-w-full overflow-x-auto">
               {subTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveSubTab(tab.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                     activeSubTab === tab.id
                       ? "bg-[var(--color-primary)] text-white shadow-sm"
                       : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
@@ -116,14 +129,6 @@ export default function ActionCenterWidget() {
                 </button>
               ))}
             </div>
-
-            <button 
-              onClick={() => router.push('/dashboard/tasks/new')}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all active:scale-95"
-            >
-              <Plus size={14} />
-              New Task
-            </button>
           </div>
         </div>
       </div>
@@ -151,6 +156,7 @@ export default function ActionCenterWidget() {
               tasks.map((task) => {
                 const overdue = task.due_date ? isOverdue(task.due_date) : false;
                 const safeTaskId = (task as any).id ?? (task as any).task_id;
+                const hasActions = task.status === "unassigned" || (task.status !== "unassigned" && task.status !== "completed");
 
                 return (
                   <div 
@@ -188,45 +194,56 @@ export default function ActionCenterWidget() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                        {/* ✅ UPDATED: Claim button only for unassigned tasks */}
-                        {task.status === "unassigned" && (
-                          <button 
+                      {/* ✅ NEW: Kebab (⋮) action menu — replaces Claim/Done buttons */}
+                      {hasActions && (
+                        <div className="relative flex-shrink-0 -mr-1 -mt-1" data-task-menu>
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleClaimTask(safeTaskId);
+                              setOpenMenuId(openMenuId === safeTaskId ? null : safeTaskId);
                             }}
-                            disabled={updatingId === safeTaskId || !safeTaskId}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 transition-all active:scale-95 disabled:opacity-50"
+                            className="p-2 rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all active:scale-95"
+                            aria-label="Task actions"
                           >
                             {updatingId === safeTaskId ? (
-                              <Loader2 size={12} className="animate-spin" />
+                              <Loader2 size={16} className="animate-spin" />
                             ) : (
-                              <UserPlus size={12} />
+                              <MoreVertical size={16} />
                             )}
-                            Claim
                           </button>
-                        )}
-                        
-                        {/* ✅ UPDATED: Done button for ALL active, assigned statuses (pending, in_progress, in_review, blocked) */}
-                        {task.status !== "unassigned" && task.status !== "completed" && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCompleteTask(safeTaskId);
-                            }}
-                            disabled={updatingId === safeTaskId || !safeTaskId}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 transition-all active:scale-95 disabled:opacity-50"
-                          >
-                            {updatingId === safeTaskId ? (
-                              <Loader2 size={12} className="animate-spin" />
-                            ) : (
-                              <CheckCircle2 size={12} />
-                            )}
-                            Done
-                          </button>
-                        )}
-                      </div>
+
+                          {openMenuId === safeTaskId && (
+                            <div className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-dropdown)] z-20 overflow-hidden animate-in fade-in slide-up duration-150">
+                              {task.status === "unassigned" && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuId(null);
+                                    handleClaimTask(safeTaskId);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors"
+                                >
+                                  <UserPlus size={14} />
+                                  Claim Task
+                                </button>
+                              )}
+                              {task.status !== "unassigned" && task.status !== "completed" && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuId(null);
+                                    handleCompleteTask(safeTaskId);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/5 transition-colors"
+                                >
+                                  <CheckCircle2 size={14} />
+                                  Mark Done
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -255,14 +272,14 @@ export default function ActionCenterWidget() {
               bookings.map((booking) => (
                 <div 
                   key={booking.id} 
-                  className="group flex items-center justify-between p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200"
+                  className="group flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-lg bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] shrink-0">
                       <Calendar size={16} />
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--color-ink)]">Booking #{booking.booking_number || booking.id}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[var(--color-ink)] truncate">Booking #{booking.booking_number || booking.id}</p>
                       <p className="text-xs text-[var(--color-ink-muted)] mt-0.5 flex items-center gap-1">
                         <Clock size={10} />
                         {new Date(booking.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
@@ -271,7 +288,7 @@ export default function ActionCenterWidget() {
                   </div>
                   <button 
                     onClick={() => router.push(`/dashboard/bookings/${booking.id}`)}
-                    className="p-2 rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all active:scale-95"
+                    className="p-2 rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all active:scale-95 shrink-0"
                   >
                     <ArrowRight size={14} />
                   </button>
