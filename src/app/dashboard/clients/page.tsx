@@ -18,6 +18,8 @@ import {
   Search,
   Filter,
   ChevronDown,
+  CreditCard,
+  FileText,
 } from "lucide-react";
 import { useClientsList } from "@/hooks/clients/useClientsList";
 
@@ -31,8 +33,8 @@ const TABS = [
 export default function ClientsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ClientSegment>("individual");
-  
-  // ✅ State to hold the fixed position of the active dropdown
+
+  // State to hold the fixed position of the active dropdown
   const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
 
   const {
@@ -58,7 +60,7 @@ export default function ClientsPage() {
     handleArchive,
   } = useClientsList();
 
-  // ✅ Click outside to close dropdown (uses data attribute for robust targeting)
+  // Click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -79,16 +81,14 @@ export default function ClientsPage() {
       setDropdownPos(null);
     } else {
       setOpenDropdownId(clientId);
-      // Calculate position relative to viewport to break free from overflow-hidden parents
       const rect = e.currentTarget.getBoundingClientRect();
       setDropdownPos({
-        top: rect.bottom + 8, // 8px gap below the button
-        right: window.innerWidth - rect.right, // Align right edge with button's right edge
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
       });
     }
   };
 
-  // Dynamic header info matching the fleet page layout paradigm
   const currentTabInfo = useMemo(() => {
     if (activeTab === "individual") {
       return {
@@ -106,22 +106,22 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Premium Header with Tab Switcher */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      {/* Header with Tab Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] flex-shrink-0">
               {currentTabInfo.icon}
             </div>
-            {currentTabInfo.title}
+            <span>{currentTabInfo.title}</span>
           </h1>
-          <p className="text-sm text-[var(--color-ink-muted)] mt-1">
+          <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mt-1">
             {currentTabInfo.description}
           </p>
         </div>
 
-        {/* Corrected Tab Switcher Location */}
-        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm self-start sm:self-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -129,7 +129,7 @@ export default function ClientsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as ClientSegment)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                   isActive
                     ? "bg-[var(--color-primary)] text-white shadow-sm"
                     : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
@@ -143,36 +143,34 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      {/* Conditional Segment View Engine */}
+      {/* Segment View Engine */}
       {activeTab === "individual" ? (
         <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden animate-in fade-in duration-300">
           {/* Toolbar */}
-          <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col lg:flex-row gap-4 items-center justify-between">
-            <div className="flex items-center gap-4 w-full lg:w-auto">
-              {/* Metrics Breakdown Panels */}
-              <div className="flex items-center gap-4 px-4 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm backdrop-blur-sm w-full lg:w-auto overflow-x-auto">
-                <div className="flex items-center gap-2 whitespace-nowrap">
-                  <div className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
-                  <span className="text-xs font-medium text-[var(--color-ink-muted)]">Registered</span>
-                  <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{totalClients}</span>
-                </div>
-                <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
-                <div className="flex items-center gap-2 whitespace-nowrap">
-                  <div className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
-                  <span className="text-xs font-medium text-[var(--color-ink-muted)]">Active Now</span>
-                  <span className="text-xs font-bold text-[var(--color-success-text)] tabular-nums">{activeClients}</span>
-                </div>
-                <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
-                <div className="flex items-center gap-2 whitespace-nowrap">
-                  <div className="w-2 h-2 rounded-full bg-[var(--color-danger)]" />
-                  <span className="text-xs font-medium text-[var(--color-ink-muted)]">Suspended</span>
-                  <span className="text-xs font-bold text-[var(--color-danger-text)] tabular-nums">{suspendedClients}</span>
-                </div>
+          <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
+            {/* Metrics Breakdown Panels */}
+            <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <div className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
+                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Registered</span>
+                <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{totalClients}</span>
+              </div>
+              <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <div className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
+                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Active</span>
+                <span className="text-xs font-bold text-[var(--color-success-text)] tabular-nums">{activeClients}</span>
+              </div>
+              <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <div className="w-2 h-2 rounded-full bg-[var(--color-danger)]" />
+                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Suspended</span>
+                <span className="text-xs font-bold text-[var(--color-danger-text)] tabular-nums">{suspendedClients}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 w-full lg:w-auto ml-auto lg:ml-0">
-              <div className="relative w-full lg:w-64">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="relative flex-1 sm:w-64">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
                 <input
                   type="text"
@@ -182,7 +180,7 @@ export default function ClientsPage() {
                   className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
                 />
               </div>
-              <div className="relative w-full lg:w-48">
+              <div className="relative flex-1 sm:w-44">
                 <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none z-10" />
                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none z-10" />
                 <select
@@ -198,10 +196,9 @@ export default function ClientsPage() {
                 </select>
               </div>
 
-              {/* ✅ UPGRADED: Premium Primary Button */}
               <button
                 onClick={() => router.push("/dashboard/clients/new")}
-                className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm flex-shrink-0"
+                className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm flex-shrink-0"
               >
                 <Plus size={14} strokeWidth={2.5} />
                 New Client
@@ -226,7 +223,94 @@ export default function ClientsPage() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* MOBILE CARD VIEW: Render all filtered clients directly for natural scrolling */}
+              <div className="block md:hidden p-4 space-y-3">
+                {filteredClients.map((client) => {
+                  const statusLabel = client.status === "pending" ? "Pending" : client.status;
+                  const statusColors: Record<string, string> = {
+                    active: "bg-[var(--color-success-bg)] text-[var(--color-success-text)]",
+                    pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                    suspended: "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]",
+                    inactive: "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]",
+                  };
+
+                  return (
+                    <div
+                      key={client.id}
+                      onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                      className="p-4 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all cursor-pointer space-y-3 shadow-sm"
+                    >
+                      {/* Top bar inside mobile card */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
+                            <UserIcon size={18} />
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-sm font-bold text-[var(--color-ink)] truncate">
+                              {client.full_name}
+                            </h4>
+                            {client.email ? (
+                              <p className="text-xs text-[var(--color-ink-muted)] flex items-center gap-1 truncate mt-0.5">
+                                <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                                <span className="truncate">{client.email}</span>
+                              </p>
+                            ) : (
+                              <p className="text-xs text-[var(--color-ink-subtle)] italic mt-0.5">No email</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              statusColors[client.status] || statusColors.inactive
+                            }`}
+                          >
+                            {statusLabel}
+                          </span>
+
+                          <div className="relative" data-dropdown-id={client.id} onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={(e) => handleToggleDropdown(e, client.id)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] transition-all"
+                              title="Actions"
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contact & Driver Details */}
+                      <div className="border-t border-[var(--color-surface-border)]/60 pt-2.5">
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <Phone size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                            <span className="text-[var(--color-ink)] font-medium truncate">{client.phone}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <CreditCard size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                            <span className="font-mono text-[var(--color-ink)] truncate">
+                              {client.id_number || "No ID"}
+                            </span>
+                          </div>
+                          <div className="col-span-2 flex items-center gap-1.5 min-w-0 pt-1">
+                            <FileText size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                            <span className="text-[var(--color-ink-muted)]">License:</span>
+                            <span className="font-mono text-[var(--color-ink)] truncate">
+                              {client.dl_number || "Not provided"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* DESKTOP TABLE VIEW: Paginated */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
                     <tr>
@@ -240,7 +324,7 @@ export default function ClientsPage() {
                   </thead>
                   <tbody className="divide-y divide-[var(--color-surface-border)]">
                     {paginatedClients.map((client) => {
-                      const statusLabel = client.status === 'pending' ? 'Pending' : client.status;
+                      const statusLabel = client.status === "pending" ? "Pending" : client.status;
                       const statusColors: Record<string, string> = {
                         active: "bg-[var(--color-success-bg)] text-[var(--color-success-text)]",
                         pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
@@ -297,11 +381,9 @@ export default function ClientsPage() {
                               {statusLabel}
                             </span>
                           </td>
-                          
-                          {/* ✅ CLEANED UP: Manage Column with Bulletproof Dropdown */}
+
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
-                              {/* ✅ Wrapper with data attribute for click-outside detection */}
                               <div className="relative" data-dropdown-id={client.id}>
                                 <button
                                   onClick={(e) => handleToggleDropdown(e, client.id)}
@@ -310,56 +392,6 @@ export default function ClientsPage() {
                                 >
                                   <MoreVertical size={14} />
                                 </button>
-
-                                {/* ✅ Fixed positioning breaks free from overflow-hidden table containers */}
-                                {openDropdownId === client.id && dropdownPos && (
-                                  <div 
-                                    className="fixed z-[100] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                                    style={{ top: dropdownPos.top, right: dropdownPos.right }}
-                                  >
-                                    <button
-                                      onClick={() => { router.push(`/dashboard/clients/${client.id}`); setOpenDropdownId(null); setDropdownPos(null); }}
-                                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
-                                    >
-                                      <UserIcon size={14} /> View Full Profile
-                                    </button>
-                                    
-                                    {/* Dynamic Status Actions */}
-                                    {client.status === 'pending' && (
-                                      <button
-                                        onClick={() => { handleVerify(client.id); setOpenDropdownId(null); setDropdownPos(null); }}
-                                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                                      >
-                                        <Shield size={14} /> Verify Client
-                                      </button>
-                                    )}
-                                    
-                                    {client.status === 'active' && (
-                                      <button
-                                        onClick={() => { handleSuspend(client.id); setOpenDropdownId(null); setDropdownPos(null); }}
-                                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                                      >
-                                        <ShieldAlert size={14} /> Suspend Client
-                                      </button>
-                                    )}
-                                    
-                                    {client.status === 'suspended' && (
-                                      <button
-                                        onClick={() => { handleReactivate(client.id); setOpenDropdownId(null); setDropdownPos(null); }}
-                                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                                      >
-                                        <Shield size={14} /> Reactivate Client
-                                      </button>
-                                    )}
-
-                                    <button
-                                      onClick={() => { handleArchive(client.id); setOpenDropdownId(null); setDropdownPos(null); }}
-                                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                                    >
-                                      <Archive size={14} /> Archive Client
-                                    </button>
-                                  </div>
-                                )}
                               </div>
                             </div>
                           </td>
@@ -370,9 +402,59 @@ export default function ClientsPage() {
                 </table>
               </div>
 
-              {/* Pagination Controls */}
-              <div className="p-4 border-t border-[var(--color-surface-border)] flex items-center justify-between">
-                <p className="text-xs text-[var(--color-ink-muted)]">
+              {/* SHARED DROPDOWN OVERLAY */}
+              {openDropdownId !== null && dropdownPos && (
+                <div
+                  className="fixed z-[100] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                  style={{ top: dropdownPos.top, right: dropdownPos.right }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => { router.push(`/dashboard/clients/${openDropdownId}`); setOpenDropdownId(null); setDropdownPos(null); }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                  >
+                    <UserIcon size={14} /> View Full Profile
+                  </button>
+
+                  {paginatedClients.find((c) => c.id === openDropdownId)?.status === "pending" && (
+                    <button
+                      onClick={() => { handleVerify(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-500/10 transition-colors border-t border-[var(--color-surface-border)]"
+                    >
+                      <Shield size={14} /> Verify Client
+                    </button>
+                  )}
+
+                  {paginatedClients.find((c) => c.id === openDropdownId)?.status === "active" && (
+                    <button
+                      onClick={() => { handleSuspend(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-500/10 transition-colors border-t border-[var(--color-surface-border)]"
+                    >
+                      <ShieldAlert size={14} /> Suspend Client
+                    </button>
+                  )}
+
+                  {paginatedClients.find((c) => c.id === openDropdownId)?.status === "suspended" && (
+                    <button
+                      onClick={() => { handleReactivate(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10 transition-colors border-t border-[var(--color-surface-border)]"
+                    >
+                      <Shield size={14} /> Reactivate Client
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => { handleArchive(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors border-t border-[var(--color-surface-border)]"
+                  >
+                    <Archive size={14} /> Archive Client
+                  </button>
+                </div>
+              )}
+
+              {/* PAGINATION FOOTER: Hidden on mobile (`hidden md:flex`) */}
+              <div className="hidden md:flex p-4 border-t border-[var(--color-surface-border)] flex-col sm:flex-row items-center justify-between gap-3">
+                <p className="text-xs text-[var(--color-ink-muted)] text-center sm:text-left">
                   Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredClients.length)} of {filteredClients.length} clients
                 </p>
                 <div className="flex items-center gap-1">
@@ -399,7 +481,7 @@ export default function ClientsPage() {
           )}
         </div>
       ) : (
-        /* ✅ Premium Corporate Segment Coming Soon View */
+        /* Corporate Segment View */
         <div className="p-12 text-center bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] animate-in fade-in duration-300">
           <Building2 size={48} className="mx-auto text-[var(--color-ink-subtle)] mb-4" />
           <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Corporate Client Hub</h3>

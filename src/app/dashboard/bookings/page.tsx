@@ -1,4 +1,3 @@
-// src/app/dashboard/bookings/page.tsx
 "use client";
 
 import { LayoutList, CalendarDays } from "lucide-react";
@@ -12,7 +11,7 @@ import { useBookingsPage, TabMode } from "@/hooks/bookings/useBookingsPage";
 
 const TABS = [
   { id: "list", label: "Reservations", icon: LayoutList },
-  { id: "calendar", label: "Bookings Calendar", icon: CalendarDays },
+  { id: "calendar", label: "Calendar", icon: CalendarDays },
 ];
 
 export default function BookingsPage() {
@@ -34,27 +33,30 @@ export default function BookingsPage() {
 
   const currentTabInfo = useMemo(() => {
     return activeTab === "list" 
-      ? { title: "Manage Bookings", description: "Create new reservations, manage bookings, and handle extensions.", icon: <LayoutList size={20} /> }
-      : { title: "Fleet Timeline Calendar", description: "Real-time look at vehicle distribution, active reservations, and scheduling blocks.", icon: <CalendarDays size={20} /> };
+      ? { title: "Manage Bookings", description: "Create new reservations, manage bookings, and handle extensions.", icon: <LayoutList size={18} className="sm:w-5 sm:h-5" /> }
+      : { title: "Fleet Timeline Calendar", description: "Real-time look at vehicle distribution, active reservations, and scheduling blocks.", icon: <CalendarDays size={18} className="sm:w-5 sm:h-5" /> };
   }, [activeTab]);
 
-  // ✅ THE FIX: Extract the actual array from the bookingsData object
   const bookingsArray = bookingsData.bookings || [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
+    <div className="space-y-4 sm:space-y-6 max-w-full overflow-hidden">
+      {/* ── HEADER & TAB SWITCHER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-ink)] flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] shrink-0">
               {currentTabInfo.icon}
             </div>
-            {currentTabInfo.title}
+            <span className="truncate">{currentTabInfo.title}</span>
           </h1>
-          <p className="text-sm text-[var(--color-ink-muted)] mt-1">{currentTabInfo.description}</p>
+          <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mt-1 truncate sm:whitespace-normal">
+            {currentTabInfo.description}
+          </p>
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
+        {/* Segmented Control / Tab Switcher (Full-width 2-column grid on small mobile displays) */}
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm w-full sm:w-auto shrink-0">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -62,19 +64,22 @@ export default function BookingsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabMode)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                  isActive ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-xs font-semibold transition-colors duration-150 touch-manipulation select-none ${
+                  isActive 
+                    ? "bg-[var(--color-primary)] text-white shadow-sm" 
+                    : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] active:bg-[var(--color-surface-hover)]"
                 }`}
               >
-                <Icon size={14} />
-                {tab.label}
+                <Icon size={14} className="shrink-0" />
+                <span className="truncate">{tab.label}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="animate-in fade-in duration-300">
+      {/* ── MAIN CONTENT ── */}
+      <div className="w-full min-w-0 transition-opacity duration-150">
         {activeTab === "list" ? (
           <BookingsList 
             bookingsData={bookingsData}
@@ -85,11 +90,10 @@ export default function BookingsPage() {
           />
         ) : (
           isRefDataLoading ? (
-            <div className="h-64 flex items-center justify-center text-sm text-[var(--color-ink-muted)] bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)]">
+            <div className="h-48 sm:h-64 flex items-center justify-center text-xs sm:text-sm text-[var(--color-ink-muted)] bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)]">
               Loading calendar assets...
             </div>
           ) : (
-            // ✅ THE FIX: Pass the correctly extracted array here
             <FleetTimelineCalendar
               bookings={bookingsArray as Booking[]}
               vehicleMap={vehicleMap}
@@ -101,6 +105,7 @@ export default function BookingsPage() {
         )}
       </div>
 
+      {/* ── MODALS ── */}
       <ExtendBookingModal
         open={isExtendModalOpen}
         onClose={closeExtendModal}

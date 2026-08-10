@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Car, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Car, CheckCircle2, Filter, X } from "lucide-react";
 import { useCalendar } from "@/hooks/bookings/useCalendar";
 import CalendarGrid from "@/components/calendar/CalendarGrid";
 import type { Booking } from "@/lib/types";
@@ -14,6 +14,8 @@ export default function FleetCalendar() {
   } = useCalendar();
 
   const [_selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  // ✅ NEW: Mobile filter drawer state
+  const [showFilter, setShowFilter] = useState(false);
 
   const monthYear = currentDate.toLocaleString("default", { month: "long", year: "numeric" });
 
@@ -26,21 +28,126 @@ export default function FleetCalendar() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-[75vh] min-h-[600px]">
+    <div className="flex flex-col lg:flex-row gap-6 h-[75vh] lg:min-h-[600px]">
       
-      {/* Premium Sidebar: Fleet Filters */}
-      <div className="w-full lg:w-80 flex-shrink-0 bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] flex flex-col shadow-[var(--shadow-card)] overflow-hidden">
+      {/* ─── MOBILE: Filter Trigger Button (shown only on mobile) ─── */}
+      <button
+        onClick={() => setShowFilter(true)}
+        className="lg:hidden flex items-center justify-between gap-3 w-full p-3.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] hover:border-[var(--color-primary)]/40 transition-all"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] shrink-0">
+            <Filter size={16} />
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <p className="text-sm font-bold text-[var(--color-ink)] truncate">
+              {selectedVehicleIds.size} {selectedVehicleIds.size === 1 ? "vehicle" : "vehicles"} selected
+            </p>
+            <p className="text-[11px] text-[var(--color-ink-muted)] truncate">Tap to filter fleet</p>
+          </div>
+        </div>
+        <ChevronRight size={18} className="text-[var(--color-ink-subtle)] shrink-0" />
+      </button>
+
+      {/* ─── MOBILE: Filter Drawer Overlay ─── */}
+      {showFilter && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="lg:hidden fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setShowFilter(false)}
+          />
+          {/* Slide-in Drawer */}
+          <div className="lg:hidden fixed top-0 left-0 bottom-0 z-[9999] w-[85%] max-w-[320px] flex flex-col animate-in slide-in-from-left duration-300">
+            {renderSidebar(true)}
+          </div>
+        </>
+      )}
+
+      {/* ─── DESKTOP: Pinned Sidebar (hidden on mobile unless drawer is open) ─── */}
+      <div className="hidden lg:flex w-full lg:w-80 flex-shrink-0">
+        {renderSidebar(false)}
+      </div>
+
+      {/* ─── MAIN CALENDAR AREA ─── */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header — wraps to 2 lines on mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="text-lg sm:text-xl font-bold text-[var(--color-ink)] capitalize">{monthYear}</h2>
+            <div className="flex items-center gap-1 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl p-1 shadow-sm">
+              <button 
+                onClick={goToPrevMonth} 
+                className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-all duration-200"
+                aria-label="Previous month"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button 
+                onClick={goToToday} 
+                className="px-3 py-1 text-xs font-semibold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] rounded-lg transition-all duration-200"
+              >
+                Today
+              </button>
+              <button 
+                onClick={goToNextMonth} 
+                className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-all duration-200"
+                aria-label="Next month"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)] w-fit">
+            <CalendarIcon size={14} className="text-[var(--color-primary)]" />
+            <span className="text-xs font-semibold text-[var(--color-ink)]">{selectedVehicleIds.size}</span>
+            <span className="text-xs text-[var(--color-ink-muted)]">selected</span>
+          </div>
+        </div>
+
+        {/* Grid — flex-1 lets it fill remaining space */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <CalendarGrid
+            currentDate={currentDate}
+            bookingsByDay={bookingsByDay}
+            vehicles={vehicles}
+            onBookingClick={setSelectedBooking}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ────────────────────────────────────────────────────────────
+     SHARED SIDEBAR RENDERER (used by both mobile drawer + desktop pinned)
+     `isMobileDrawer=true` adds a close button to the header.
+     ──────────────────────────────────────────────────────────── */
+  function renderSidebar(isMobileDrawer: boolean) {
+    return (
+      <div className="w-full flex-shrink-0 bg-[var(--color-surface)] rounded-r-none lg:rounded-2xl lg:border border-[var(--color-surface-border)] flex flex-col shadow-[var(--shadow-card)] overflow-hidden">
         
         {/* Header */}
         <div className="p-5 border-b border-[var(--color-surface-border)] bg-gradient-to-br from-[var(--color-surface)] to-[var(--color-surface-hover)]/30">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] shadow-sm">
-              <Car size={20} />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] shadow-sm shrink-0">
+                <Car size={20} />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-[var(--color-ink)] truncate">Fleet Filter</h2>
+                <p className="text-[10px] text-[var(--color-ink-muted)] mt-0.5 truncate">Select vehicles to display</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-[var(--color-ink)]">Fleet Filter</h2>
-              <p className="text-[10px] text-[var(--color-ink-muted)] mt-0.5">Select vehicles to display</p>
-            </div>
+            {isMobileDrawer && (
+              <button
+                onClick={() => setShowFilter(false)}
+                className="p-2 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors shrink-0"
+                aria-label="Close filter"
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -85,7 +192,7 @@ export default function FleetCalendar() {
           })}
         </div>
 
-        {/* Premium Legend */}
+        {/* Legend */}
         <div className="p-5 border-t border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30">
           <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-4">Booking Status</p>
           <div className="grid grid-cols-2 gap-3">
@@ -116,50 +223,6 @@ export default function FleetCalendar() {
           </div>
         </div>
       </div>
-
-      {/* Main Calendar Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-[var(--color-ink)] capitalize">{monthYear}</h2>
-            <div className="flex items-center gap-1 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl p-1 shadow-sm">
-              <button 
-                onClick={goToPrevMonth} 
-                className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-all duration-200"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button 
-                onClick={goToToday} 
-                className="px-3 py-1 text-xs font-semibold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] rounded-lg transition-all duration-200"
-              >
-                Today
-              </button>
-              <button 
-                onClick={goToNextMonth} 
-                className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-all duration-200"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
-            <CalendarIcon size={14} className="text-[var(--color-primary)]" />
-            <span className="text-xs font-semibold text-[var(--color-ink)]">{selectedVehicleIds.size}</span>
-            <span className="text-xs text-[var(--color-ink-muted)]">vehicles selected</span>
-          </div>
-        </div>
-
-        {/* Grid */}
-        <CalendarGrid
-          currentDate={currentDate}
-          bookingsByDay={bookingsByDay}
-          vehicles={vehicles}
-          onBookingClick={setSelectedBooking}
-        />
-      </div>
-    </div>
-  );
+    );
+  }
 }

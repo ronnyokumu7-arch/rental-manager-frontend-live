@@ -1,4 +1,3 @@
-// src/app/dashboard/users/[id]/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -10,12 +9,10 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import UserPersonalInfoCard from "@/components/profile/UserPersonalInfoCard";
 import UserStatusCard from "@/components/profile/UserStatusCard";
 import OperationsTab from "@/components/profile/OperationsTab";
-// ❌ REMOVED: UserNotificationsCard (no longer needed)
 
 const TABS = [
   { id: "profile", label: "Profile", icon: User },
   { id: "operations", label: "Operations", icon: CheckCircle2 },
-  // ❌ REMOVED: Preferences tab
 ];
 
 export default function UserProfilePage() {
@@ -83,8 +80,8 @@ export default function UserProfilePage() {
     if (activeTab === "profile") {
       return (
         <div className="flex items-center gap-4">
-          {/* ✅ MOBILE FIX: Hide hero avatar on mobile (<768px) to save space and clean up the vibe */}
-          <div className="relative group cursor-pointer shrink-0 hidden md:block">
+          {/* ✅ Avatar visible on both mobile and desktop */}
+          <div className="relative group cursor-pointer shrink-0">
             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-purple-600 flex items-center justify-center text-xl font-bold text-white shadow-lg ring-4 ring-[var(--color-surface)] transition-transform group-hover:scale-105">
               {initials}
             </div>
@@ -112,11 +109,11 @@ export default function UserProfilePage() {
       );
     } else if (activeTab === "operations") {
       return (
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 flex items-center justify-center text-[var(--color-primary)]">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="hidden sm:flex w-12 h-12 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 items-center justify-center text-[var(--color-primary)] shrink-0">
             <Layers size={22} />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-lg font-bold text-[var(--color-ink)]">Operations Center</h1>
             <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">Manage tasks and complete your assignments in real-time.</p>
           </div>
@@ -124,7 +121,6 @@ export default function UserProfilePage() {
       );
     }
     
-    // ❌ REMOVED: Preferences header fallback
     return null;
   };
 
@@ -144,7 +140,6 @@ export default function UserProfilePage() {
       </button>
 
       {/* ─ PAGE HEADER WITH TABS ── */}
-      {/* ✅ MOBILE FIX: Stack vertically on mobile (flex-col) so tabs don't squish the header text */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         
         <div className="flex-1 min-w-0 w-full">
@@ -207,8 +202,6 @@ export default function UserProfilePage() {
             />
           </div>
         )}
-
-        {/* ❌ REMOVED: TAB 3: PREFERENCES */}
 
       </div>
     </div>

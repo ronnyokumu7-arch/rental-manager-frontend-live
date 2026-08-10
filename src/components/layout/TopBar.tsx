@@ -116,10 +116,10 @@ export default function Topbar() {
 
       {/* Right: Controls */}
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto sm:ml-0">
-        {/* ✅ THEME TOGGLE: Mobile only, placed directly in topbar */}
+        {/* ✅ THEME TOGGLE: Visible on both mobile and desktop */}
         <button 
           onClick={toggleTheme} 
-          className="sm:hidden w-9 h-9 rounded-xl flex items-center justify-center text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all duration-150"
+          className="flex w-9 h-9 rounded-xl items-center justify-center text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all duration-150"
           aria-label="Toggle theme"
         >
           {isDark ? <Sun size={17} strokeWidth={1.8} /> : <Moon size={17} strokeWidth={1.8} />}

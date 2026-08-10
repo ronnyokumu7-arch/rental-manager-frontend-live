@@ -18,18 +18,18 @@ type SubTab = "tasks" | "bookings" | "activity";
 // ✅ Dedicated title, description AND square-balanced icon per tab
 const HEADER_COPY: Record<SubTab, { title: string; description: string; icon: LucideIcon; iconClassName?: string }> = {
   tasks: {
-    title: "Action Center",
+    title: "Active Tasks",
     description: "What needs your attention today",
     icon: Zap,
   },
   bookings: {
-    title: "Upcoming Rentals",
+    title: "Upcoming Bookings",
     description: "Track pickups and drop-offs before they happen",
     icon: Calendar,
     iconClassName: "scale-y-90", // Optical correction: Calendar is 18w×20h, squash to 18×18
   },
   activity: {
-    title: "Recent Activities",
+    title: "Activity Logs",
     description: "The live pulse of your fleet's latest moves.",
     icon: Clock,
   },
@@ -68,9 +68,9 @@ export default function ActionCenterWidget() {
 
   const getPriorityDotColor = (priority?: string) => {
     switch (priority?.toLowerCase()) {
-      case 'urgent': return 'bg-rose-500 shadow-[0_0_8px_-2px_rgba(244,63,94,0.6)]';
-      case 'high': return 'bg-amber-500 shadow-[0_0_8px_-2px_rgba(245,158,11,0.6)]';
-      case 'medium': return 'bg-blue-500 shadow-[0_0_8px_-2px_rgba(59,130,246,0.6)]';
+      case 'urgent': return 'bg-rose-500 shadow-sm shadow-rose-500/50';
+      case 'high': return 'bg-amber-500 shadow-sm shadow-amber-500/50';
+      case 'medium': return 'bg-blue-500 shadow-sm shadow-blue-500/50';
       default: return 'bg-[var(--color-ink-subtle)]';
     }
   };
@@ -113,17 +113,16 @@ export default function ActionCenterWidget() {
     <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden h-full flex flex-col">
       
       {/* PREMIUM HEADER — title, description & icon switch per tab */}
-      <div className="p-5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30">
+      <div className="p-5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary)]/70 flex items-center justify-center text-white shadow-lg shadow-[var(--color-primary)]/20">
-              {/* ✅ iconClassName applies optical correction (e.g., scale-y-90 for Calendar) */}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary)]/80 flex items-center justify-center text-white shadow-md shadow-[var(--color-primary)]/20">
               <HeaderIcon size={20} className={headerCopy.iconClassName} />
             </div>
             <div>
               <h3 className="text-sm font-bold text-[var(--color-ink)] tracking-tight flex items-center gap-2">
                 {headerCopy.title}
-                <Sparkles size={12} className="text-[var(--color-primary)] opacity-60" />
+                <Sparkles size={12} className="text-[var(--color-primary)] opacity-70" />
               </h3>
               <p className="text-xs text-[var(--color-ink-muted)] mt-0.5">{headerCopy.description}</p>
             </div>
@@ -171,8 +170,8 @@ export default function ActionCenterWidget() {
               </div>
             ) : tasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center mb-3">
-                  <CheckCircle2 size={20} className="text-emerald-500" />
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+                  <CheckCircle2 size={20} />
                 </div>
                 <p className="text-sm font-bold text-[var(--color-ink)]">All caught up!</p>
                 <p className="text-xs text-[var(--color-ink-muted)] mt-1">No pending tasks right now.</p>
@@ -208,11 +207,11 @@ export default function ActionCenterWidget() {
                             </span>
                           )}
                           {task.due_date && (
-                            <span className={`flex items-center gap-1 ${overdue ? "text-rose-500" : ""}`}>
+                            <span className={`flex items-center gap-1 ${overdue ? "text-rose-600 dark:text-rose-400 font-bold" : ""}`}>
                               <Calendar size={11} />
                               {formatDate(task.due_date)}
                               {overdue && (
-                                <span className="ml-1 px-1.5 py-0.5 rounded bg-rose-500/10 text-[9px] font-extrabold">OVERDUE</span>
+                                <span className="ml-1 px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[9px] font-extrabold">OVERDUE</span>
                               )}
                             </span>
                           )}
@@ -238,7 +237,7 @@ export default function ActionCenterWidget() {
                           </button>
 
                           {openMenuId === safeTaskId && (
-                            <div className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-dropdown)] z-20 overflow-hidden animate-in fade-in slide-up duration-150">
+                            <div className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-lg shadow-black/5 z-20 overflow-hidden animate-in fade-in slide-up duration-150">
                               {task.status === "unassigned" && (
                                 <button
                                   onClick={(e) => {
@@ -246,7 +245,7 @@ export default function ActionCenterWidget() {
                                     setOpenMenuId(null);
                                     handleClaimTask(safeTaskId);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-colors"
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
                                 >
                                   <UserPlus size={14} />
                                   Claim Task
@@ -259,10 +258,10 @@ export default function ActionCenterWidget() {
                                     setOpenMenuId(null);
                                     handleCompleteTask(safeTaskId);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/5 transition-colors"
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
                                 >
                                   <CheckCircle2 size={14} />
-                                  Mark Done
+                                  Mark Complete
                                 </button>
                               )}
                             </div>
@@ -283,47 +282,48 @@ export default function ActionCenterWidget() {
             {bookingsLoading ? (
               <div className="flex flex-col items-center justify-center py-8 text-[var(--color-ink-muted)] text-sm">
                 <Loader2 size={20} className="animate-spin mb-2 text-[var(--color-primary)]" />
-                Loading bookings...
+                Loading rentals...
               </div>
             ) : bookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="w-12 h-12 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center mb-3">
-                  <Calendar size={20} className="text-[var(--color-ink-muted)]" />
+                <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
+                  <Calendar size={20} />
                 </div>
-                <p className="text-sm font-bold text-[var(--color-ink)]">No rentals scheduled</p>
-                <p className="text-xs text-[var(--color-ink-muted)] mt-1">New bookings will show up here.</p>
+                <p className="text-sm font-bold text-[var(--color-ink)]">No upcoming rentals</p>
+                <p className="text-xs text-[var(--color-ink-muted)] mt-1">Scheduled rentals will appear here.</p>
               </div>
             ) : (
-              bookings.map((booking) => (
-                <div 
-                  key={booking.id} 
-                  className="group flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200"
+              bookings.map((booking: any) => (
+                <div
+                  key={booking.id ?? booking.booking_id}
+                  className="p-3 sm:p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200 flex items-center justify-between gap-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] shrink-0">
-                      <Calendar size={16} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--color-ink)] truncate">Booking #{booking.booking_number || booking.id}</p>
-                      <p className="text-xs text-[var(--color-ink-muted)] mt-0.5 flex items-center gap-1">
-                        <Clock size={10} />
-                        {new Date(booking.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-[var(--color-ink)] truncate">
+                      {booking.customer_name || booking.customer || "Customer"}
+                    </p>
+                    <p className="text-xs text-[var(--color-ink-muted)] truncate mt-0.5">
+                      {booking.vehicle_name || booking.vehicle || "Vehicle"}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2 text-[10px] font-bold text-[var(--color-ink-subtle)] uppercase">
+                      <span className="flex items-center gap-1">
+                        <Calendar size={11} />
+                        {formatDate(booking.start_date || booking.pickup_date)}
+                      </span>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => router.push(`/dashboard/bookings/${booking.id}`)}
-                    className="p-2 rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-primary)] hover:text-white transition-all active:scale-95 shrink-0"
-                  >
-                    <ArrowRight size={14} />
-                  </button>
+                  {booking.status && (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                      {booking.status}
+                    </span>
+                  )}
                 </div>
               ))
             )}
           </div>
         )}
 
-        {/* TAB 3: ACTIVITIES */}
+        {/* TAB 3: ACTIVITY */}
         {activeSubTab === "activity" && (
           <div className="space-y-3 animate-in fade-in duration-200">
             {activityLoading ? (
@@ -333,27 +333,47 @@ export default function ActionCenterWidget() {
               </div>
             ) : activities.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="w-12 h-12 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center mb-3">
-                  <Clock size={20} className="text-[var(--color-ink-muted)]" />
+                <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3">
+                  <Clock size={20} />
                 </div>
-                <p className="text-sm font-bold text-[var(--color-ink)]">No activity yet</p>
-                <p className="text-xs text-[var(--color-ink-muted)] mt-1">As your team works, you will see everything here.</p>
+                <p className="text-sm font-bold text-[var(--color-ink)]">No recent activity</p>
+                <p className="text-xs text-[var(--color-ink-muted)] mt-1">Recent fleet moves will be logged here.</p>
               </div>
             ) : (
-              activities.map((item) => (
-                <div key={item.id} className="group flex items-start gap-3 p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/40 transition-all duration-200">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--color-primary)]/5 group-hover:border-[var(--color-primary)]/20 transition-colors">
-                    <Clock size={14} className="text-[var(--color-ink-muted)] group-hover:text-[var(--color-primary)] transition-colors" />
+              activities.map((activity: any) => (
+                <div
+                  key={activity.id}
+                  className="p-3 sm:p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200 flex items-start gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center flex-shrink-0 text-[var(--color-primary)] mt-0.5">
+                    <Clock size={14} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{item.title}</p>
-                    <p className="text-xs text-[var(--color-ink-muted)] mt-0.5">{item.time}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-[var(--color-ink)] leading-snug">
+                      {activity.title || activity.description || activity.action}
+                    </p>
+                    {activity.timestamp && (
+                      <p className="text-[10px] text-[var(--color-ink-muted)] mt-1 font-medium">
+                        {formatDate(activity.timestamp)}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))
             )}
           </div>
         )}
+      </div>
+
+{/* FOOTER */}
+      <div className="p-3.5 border-t border-[var(--color-surface-border)] bg-[var(--color-surface-hover)] text-center mt-auto">
+        <button
+          onClick={() => router.push(`/dashboard/${activeSubTab}`)}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-primary)] hover:opacity-80 transition-opacity"
+        >
+          View all {headerCopy.title}
+          <ArrowRight size={14} />
+        </button>
       </div>
     </div>
   );

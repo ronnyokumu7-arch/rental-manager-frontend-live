@@ -75,7 +75,7 @@
 }
 
 /* ============================================================
-   THEME TOKENS — The "DNA" of the Application
+   THEME TOKENS — Ultra-Premium SaaS Light Mode
    ============================================================ */
 
 @theme {
@@ -83,92 +83,92 @@
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* ── Brand Identity (Electric Indigo & Violet) ──────────── */
-  --color-primary:        #6366F1;
-  --color-primary-hover:  #4F46E5;
-  --color-primary-active: #4338CA;
-  --color-primary-muted:  rgba(99, 102, 241, 0.08);
-  --color-primary-subtle: rgba(99, 102, 241, 0.03);
+  /* ── Brand Identity (Rich Royal Indigo) ─────────────────── */
+  --color-primary:        #4F46E5;
+  --color-primary-hover:  #4338CA;
+  --color-primary-active: #3730A3;
+  --color-primary-muted:  rgba(79, 70, 229, 0.08);
+  --color-primary-subtle: rgba(79, 70, 229, 0.03);
   --color-primary-text:   #4338CA;
-  --color-primary-glow:   rgba(99, 102, 241, 0.16);
+  --color-primary-glow:   rgba(79, 70, 229, 0.15);
 
-  /* ── Grounded Surface & Backgrounds (Rich Tinted Pop) ────── */
-  --color-bg:             #F1F0F5; /* Grounded slate-violet off-white */
-  --color-bg-elevated:    #E7E5EF;
-  --color-surface:        #FAF9FE; /* Luminous indigo-tinted off-white (No pure flat white) */
-  --color-surface-hover:  #F3F0FA;
-  --color-surface-active: #EAE4F7;
-  --color-surface-sunken: #E6E2F0;
+  /* ── Grounded Surface & Backgrounds (Pristine High-Contrast Slate) ─ */
+  --color-bg:             #F8FAFC; /* Crisp, cool slate canvas */
+  --color-bg-elevated:    #F1F5F9;
+  --color-surface:        #FFFFFF; /* Pure pristine white surfaces */
+  --color-surface-hover:  #F8FAFC;
+  --color-surface-active: #F1F5F9;
+  --color-surface-sunken: #E2E8F0;
 
-  --color-surface-border:        rgba(15, 13, 28, 0.08);
-  --color-surface-border-strong: rgba(15, 13, 28, 0.16);
-  --color-surface-border-subtle: rgba(15, 13, 28, 0.04);
+  --color-surface-border:        rgba(15, 23, 42, 0.08);
+  --color-surface-border-strong: rgba(15, 23, 42, 0.16);
+  --color-surface-border-subtle: rgba(15, 23, 42, 0.04);
 
   /* ── Premium Flat & Gradient Accent Surfaces ────────────── */
-  --gradient-surface:        linear-gradient(180deg, #FAF9FE 0%, #F2EFF9 100%);
-  --gradient-surface-hover:  linear-gradient(180deg, #F3F0FA 0%, #E8E2F4 100%);
-  --gradient-surface-card:   linear-gradient(180deg, #FAF9FE 0%, #F3EFFB 100%);
-  --gradient-surface-sunken: linear-gradient(180deg, #EBE8F3 0%, #E2DEEF 100%);
-  --gradient-bg:             linear-gradient(180deg, #EBE8F5 0%, #F1F0F5 100%);
+  --gradient-surface:        linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  --gradient-surface-hover:  linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+  --gradient-surface-card:   linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  --gradient-surface-sunken: linear-gradient(180deg, #F1F5F9 0%, #E2E8F0 100%);
+  --gradient-bg:             linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
 
   /* ── Stats & Data Containers ────────────────────────────── */
-  --gradient-stat-primary:  linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
-  --gradient-stat-success:  linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  --gradient-stat-primary:  linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+  --gradient-stat-success:  linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
   --gradient-stat-warning:  linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
   --gradient-stat-danger:   linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
-  --gradient-stat-neutral:  linear-gradient(135deg, #F8F7FC 0%, #ECEAEF 100%);
+  --gradient-stat-neutral:  linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
 
-  /* ── Ink Hierarchy (Deep Obsidian Violet Typography) ─────── */
-  --color-ink:            #0F0D1C; /* High contrast, non-harsh primary ink */
-  --color-ink-secondary:  #2D283E;
-  --color-ink-muted:      #57516B;
-  --color-ink-subtle:     #88829E;
-  --color-ink-faint:      #BFB9D1;
+  /* ── Ink Hierarchy (Deep Slate Obsidian Typography) ─────── */
+  --color-ink:            #0F172A; /* High contrast Slate-900 primary text */
+  --color-ink-secondary:  #334155; /* Slate-700 secondary */
+  --color-ink-muted:      #64748B; /* Slate-500 muted */
+  --color-ink-subtle:     #94A3B8; /* Slate-400 subtle */
+  --color-ink-faint:      #CBD5E1; /* Slate-300 faint */
   --color-ink-inverse:    #FFFFFF;
 
   /* ── Semantic Colors (Eye-Friendly High Contrast) ───────── */
-  --color-success:        #059669;
-  --color-success-hover:  #047857;
-  --color-success-bg:     rgba(5, 150, 105, 0.08);
-  --color-success-text:   #064E3B;
-  --color-success-border: rgba(5, 150, 105, 0.20);
+  --color-success:        #10B981;
+  --color-success-hover:  #059669;
+  --color-success-bg:     rgba(16, 185, 129, 0.08);
+  --color-success-text:   #047857;
+  --color-success-border: rgba(16, 185, 129, 0.20);
 
-  --color-warning:        #D97706;
-  --color-warning-hover:  #B45309;
-  --color-warning-bg:     rgba(217, 119, 6, 0.08);
-  --color-warning-text:   #78350F;
-  --color-warning-border: rgba(217, 119, 6, 0.20);
+  --color-warning:        #F59E0B;
+  --color-warning-hover:  #D97706;
+  --color-warning-bg:     rgba(245, 158, 11, 0.08);
+  --color-warning-text:   #B45309;
+  --color-warning-border: rgba(245, 158, 11, 0.20);
 
-  --color-danger:         #DC2626;
-  --color-danger-hover:   #B91C1C;
-  --color-danger-bg:      rgba(220, 38, 38, 0.08);
-  --color-danger-text:    #7F1D1D;
-  --color-danger-border:  rgba(220, 38, 38, 0.20);
+  --color-danger:         #EF4444;
+  --color-danger-hover:   #DC2626;
+  --color-danger-bg:      rgba(239, 68, 68, 0.08);
+  --color-danger-text:    #B91C1C;
+  --color-danger-border:  rgba(239, 68, 68, 0.20);
 
-  --color-info:           #2563EB;
-  --color-info-bg:        rgba(37, 99, 235, 0.08);
-  --color-info-text:      #1E3A8A;
+  --color-info:           #3B82F6;
+  --color-info-bg:        rgba(59, 130, 246, 0.08);
+  --color-info-text:      #1D4ED8;
 
   /* ── Timeline & Chart Bars ──────────────────────────────── */
   --color-bar-success:      #10B981;
   --color-bar-success-text: #FFFFFF;
   --color-bar-warning:      #F59E0B;
   --color-bar-warning-text: #FFFFFF;
-  --color-bar-primary:      #6366F1;
+  --color-bar-primary:      #4F46E5;
   --color-bar-primary-text: #FFFFFF;
   --color-bar-danger:       #EF4444;
   --color-bar-danger-text:  #FFFFFF;
 
-  /* ── Ambient Multi-Tier Shadows (Refined Occlusion) ─────── */
-  --shadow-color:        rgba(15, 13, 28, 0.03);
-  --shadow-color-strong: rgba(15, 13, 28, 0.08);
+  /* ── Ambient Multi-Tier Shadows (Micro-Border Elevation) ─── */
+  --shadow-color:        rgba(15, 23, 42, 0.04);
+  --shadow-color-strong: rgba(15, 23, 42, 0.08);
 
   --shadow-xs:  0 1px 2px 0 var(--shadow-color);
   --shadow-sm:  0 1px 3px 0 var(--shadow-color), 0 1px 2px -1px var(--shadow-color);
-  --shadow-md:  0 4px 6px -1px var(--shadow-color), 0 2px 4px -2px rgba(15, 13, 28, 0.02);
+  --shadow-md:  0 4px 6px -1px var(--shadow-color), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
   --shadow-lg:  0 10px 15px -3px var(--shadow-color-strong), 0 4px 6px -4px var(--shadow-color);
   --shadow-xl:  0 20px 25px -5px var(--shadow-color-strong), 0 8px 10px -6px var(--shadow-color);
-  --shadow-2xl: 0 25px 50px -12px rgba(15, 13, 28, 0.14);
+  --shadow-2xl: 0 25px 50px -12px rgba(15, 23, 42, 0.16);
 
   --shadow-card:        0 0 0 1px var(--color-surface-border), var(--shadow-xs);
   --shadow-card-hover:  0 0 0 1px var(--color-surface-border-strong), var(--shadow-md);
@@ -182,7 +182,7 @@
   --shadow-focus-ring:  0 0 0 3px var(--color-primary-muted);
 
   --shadow-glow-primary: 0 0 20px var(--color-primary-glow);
-  --shadow-glow-success: 0 0 20px rgba(5, 150, 105, 0.12);
+  --shadow-glow-success: 0 0 20px rgba(16, 185, 129, 0.12);
 
   /* ── Motion & Springs ───────────────────────────────────── */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
@@ -232,7 +232,7 @@ body {
 }
 
 /* ============================================================
-   DARK MODE OVERRIDES — "Space Black" Aesthetic
+   DARK MODE OVERRIDES — "Space Black" Aesthetic (Unchanged)
    ============================================================ */
 
 .dark {
@@ -306,17 +306,17 @@ body {
   --color-info-border:        rgba(59, 130, 246, 0.30);
 
   /* ── TIMELINE BAR COLORS (Dark Mode - Glassmorphic) ────── */
-  --color-bar-primary:        rgba(99, 102, 241, 0.25);       
+  --color-bar-primary:        rgba(99, 102, 241, 0.25);        
   --color-bar-primary-text:   #FFFFFF;
   --color-bar-primary-border: rgba(99, 102, 241, 0.40);
   --color-bar-primary-glass:  rgba(99, 102, 241, 0.15);
 
-  --color-bar-success:        rgba(16, 185, 129, 0.25);       
+  --color-bar-success:        rgba(16, 185, 129, 0.25);        
   --color-bar-success-text:   #FFFFFF;
   --color-bar-success-border: rgba(16, 185, 129, 0.40);
   --color-bar-success-glass:  rgba(16, 185, 129, 0.15);
   
-  --color-bar-warning:        rgba(245, 158, 11, 0.25);       
+  --color-bar-warning:        rgba(245, 158, 11, 0.25);        
   --color-bar-warning-text:   #FFFFFF;
   --color-bar-warning-border: rgba(245, 158, 11, 0.40);
   --color-bar-warning-glass:  rgba(245, 158, 11, 0.15);

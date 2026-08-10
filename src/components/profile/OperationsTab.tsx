@@ -20,9 +20,9 @@ export default function OperationsTab({
   hideHeader = false
 }: OperationsTabProps) {
   const {
-    tasks, unassignedTasks, staffMembers, selectedTask, setSelectedTask,
-    activeTab, setActiveTab, loading, updatingId, isAdmin,
-    handleToggleComplete, handleAssignTask
+    tasks, selectedTask, setSelectedTask,
+    activeTab, setActiveTab, loading, updatingId,
+    handleToggleComplete
   } = useOperations(userId, currentUserRole, isSelfView);
 
   return (
@@ -30,11 +30,11 @@ export default function OperationsTab({
     <div className="h-full flex flex-col">
       
       {/* ✅ CONDITIONAL HEADER: Only show if not hidden by parent
-          Mobile: slightly tighter spacing (mb-4 vs mb-6), smaller icon tile */}
+          Mobile: icon hidden, tighter spacing (mb-4 vs mb-6) */}
       {!hideHeader && (
         <div className="flex items-center gap-3 sm:gap-4 px-2 mb-4 sm:mb-6">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 flex items-center justify-center shrink-0">
-            <Layers size={20} className="text-[var(--color-primary)]" />
+          <div className="hidden sm:flex w-12 h-12 rounded-2xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 items-center justify-center shrink-0">
+            <Layers size={22} className="text-[var(--color-primary)]" />
           </div>
           <div className="min-w-0">
             <h2 className="text-base sm:text-lg font-bold text-[var(--color-ink)]">Operations Command Center</h2>
@@ -52,25 +52,19 @@ export default function OperationsTab({
         <div className="lg:col-span-7 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden flex flex-col">
           <ActionCenterList
             tasks={tasks}
-            unassignedTasks={unassignedTasks}
-            staffMembers={staffMembers}
             selectedTask={selectedTask}
             onSelectTask={setSelectedTask}
             activeTab={
-              activeTab === "completed" ? "done" : 
-              activeTab === "unassigned" ? "pool" : "pending"
+              activeTab === "completed" ? "done" : "pending"
             }
             onTabChange={(tab) => {
               setActiveTab(
-                tab === "done" ? "completed" : 
-                tab === "pool" ? "unassigned" : "pending"
+                tab === "done" ? "completed" : "pending"
               );
             }}
             loading={loading}
             updatingId={updatingId}
-            isAdmin={isAdmin}
             onToggleComplete={handleToggleComplete}
-            onAssignTask={handleAssignTask}
           />
         </div>
 
