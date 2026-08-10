@@ -53,21 +53,21 @@ export default function VehicleHeader({ vehicle, isEditing, setIsEditing, action
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <div className="bg-[var(--color-bg)]/60 border border-[var(--color-surface-border)] rounded-xl p-2.5 flex flex-col justify-center">
           <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Plate Number</span>
-          <span className="font-mono text-xs font-bold text-[var(--color-ink)] mt-0.5 truncate">{vehicle.plate_number}</span>
+          <span className="font-mono text-xs sm:text-sm font-bold text-[var(--color-ink)] mt-0.5 truncate">{vehicle.plate_number}</span>
         </div>
 
         <div className="bg-[var(--color-bg)]/60 border border-[var(--color-surface-border)] rounded-xl p-2.5 flex flex-col justify-center">
           <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Year</span>
-          <span className="text-xs font-bold text-[var(--color-ink)] mt-0.5 truncate">{vehicle.year}</span>
+          <span className="text-xs sm:text-sm font-bold text-[var(--color-ink)] mt-0.5 truncate">{vehicle.year}</span>
         </div>
 
         <div className="col-span-2 sm:col-span-1 bg-[var(--color-bg)]/60 border border-[var(--color-surface-border)] rounded-xl p-2.5 flex flex-col justify-center">
           <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">VIN</span>
-          <span className="font-mono text-xs font-semibold text-[var(--color-ink)] truncate mt-0.5">{vehicle.vin || "Not Specified"}</span>
+          <span className="font-mono text-xs sm:text-sm font-semibold text-[var(--color-ink)] truncate mt-0.5">{vehicle.vin || "Not Specified"}</span>
         </div>
       </div>
 
-      {/* 3. Single-Line Action Bar */}
+      {/* 3. Action Bar (Full-width on mobile, right-aligned natural width on desktop) */}
       <div className="pt-2 border-t border-[var(--color-surface-border)] flex items-center justify-between gap-2">
         {isEditing ? (
           <div className="flex items-center justify-end gap-2 w-full">
@@ -92,22 +92,22 @@ export default function VehicleHeader({ vehicle, isEditing, setIsEditing, action
             type="button"
             onClick={() => onAction("restore")} 
             disabled={!!actionLoading} 
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 active:scale-95 transition-all disabled:opacity-50"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 active:scale-95 transition-all disabled:opacity-50"
           >
             {actionLoading === "restore" ? <span className="animate-spin">⟳</span> : <RotateCw size={15} />} Restore to Fleet
           </button>
         ) : (
-          <div className="flex items-center justify-between w-full gap-2">
+          <div className="flex items-center justify-between sm:justify-end w-full gap-2">
             {/* Primary Action Button */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 sm:flex-initial min-w-0">
               {vehicle.status === "available" && (
                 <button 
                   type="button"
                   onClick={() => onAction("maintenance")} 
                   disabled={!!actionLoading} 
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 active:scale-95 transition-all disabled:opacity-50 truncate"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 active:scale-95 transition-all disabled:opacity-50 truncate"
                 >
-                  <AlertTriangle size={14} className="flex-shrink-0" /> <span className="truncate">Maintenance</span>
+                  <AlertTriangle size={15} className="flex-shrink-0" /> <span className="truncate">Maintenance</span>
                 </button>
               )}
               {vehicle.status === "pending_activation" && (
@@ -115,9 +115,9 @@ export default function VehicleHeader({ vehicle, isEditing, setIsEditing, action
                   type="button"
                   onClick={() => onAction("activate")} 
                   disabled={!!actionLoading} 
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 active:scale-95 transition-all disabled:opacity-50 truncate"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 active:scale-95 transition-all disabled:opacity-50 truncate"
                 >
-                  {actionLoading === "activate" ? <span className="animate-spin">⟳</span> : <CheckCircle size={14} className="flex-shrink-0" />} <span className="truncate">Activate</span>
+                  {actionLoading === "activate" ? <span className="animate-spin">⟳</span> : <CheckCircle size={15} className="flex-shrink-0" />} <span className="truncate">Activate</span>
                 </button>
               )}
               {vehicle.status === "maintenance" && (
@@ -125,9 +125,9 @@ export default function VehicleHeader({ vehicle, isEditing, setIsEditing, action
                   type="button"
                   onClick={() => onAction("reactivate")} 
                   disabled={!!actionLoading} 
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 active:scale-95 transition-all disabled:opacity-50 truncate"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 active:scale-95 transition-all disabled:opacity-50 truncate"
                 >
-                  {actionLoading === "reactivate" ? <span className="animate-spin">⟳</span> : <RotateCcw size={14} className="flex-shrink-0" />} <span className="truncate">Reactivate</span>
+                  {actionLoading === "reactivate" ? <span className="animate-spin">⟳</span> : <RotateCcw size={15} className="flex-shrink-0" />} <span className="truncate">Reactivate</span>
                 </button>
               )}
             </div>
@@ -137,7 +137,7 @@ export default function VehicleHeader({ vehicle, isEditing, setIsEditing, action
               <button 
                 type="button"
                 onClick={() => setIsEditing(true)} 
-                className="p-1.5 rounded-lg text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)] active:scale-95 transition-all" 
+                className="p-1.5 sm:p-2 rounded-lg text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)] active:scale-95 transition-all" 
                 title="Edit Details"
               >
                 <Pencil size={15} />
@@ -147,7 +147,7 @@ export default function VehicleHeader({ vehicle, isEditing, setIsEditing, action
                   type="button"
                   onClick={() => onAction("retire")} 
                   disabled={!!actionLoading} 
-                  className="p-1.5 rounded-lg text-[var(--color-ink-muted)] hover:text-rose-500 hover:bg-[var(--color-surface)] active:scale-95 transition-all disabled:opacity-50" 
+                  className="p-1.5 sm:p-2 rounded-lg text-[var(--color-ink-muted)] hover:text-rose-500 hover:bg-[var(--color-surface)] active:scale-95 transition-all disabled:opacity-50" 
                   title="Retire Vehicle"
                 >
                   <Flag size={15} />
@@ -157,7 +157,7 @@ export default function VehicleHeader({ vehicle, isEditing, setIsEditing, action
                 type="button"
                 onClick={() => onAction("archive")} 
                 disabled={!!actionLoading} 
-                className="p-1.5 rounded-lg text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)] active:scale-95 transition-all disabled:opacity-50" 
+                className="p-1.5 sm:p-2 rounded-lg text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)] active:scale-95 transition-all disabled:opacity-50" 
                 title="Archive Vehicle"
               >
                 <Archive size={15} />

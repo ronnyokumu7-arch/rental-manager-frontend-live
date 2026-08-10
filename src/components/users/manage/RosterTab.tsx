@@ -1,18 +1,18 @@
+// src/components/users/manage/RosterTab.tsx
 "use client";
-import { confirmAction } from "@/lib/utils/confirmAction";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import toast from "react-hot-toast";
 import { usersApi } from "@/lib/api/users";
 import type { User } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import { useUsersList } from "@/hooks/users/useUsersList";
+import { confirmAction } from "@/lib/utils/confirmAction";
 
 import UsersToolbar from "@/components/users/UsersToolbar";
 import UsersTable from "@/components/users/UsersTable";
 
-// Dynamic loading of modals to preserve optimal chunking
 const QuickInviteModal = dynamic(() => import("@/components/users/QuickInviteModal"), {
   ssr: false,
   loading: () => null,
@@ -23,10 +23,19 @@ const AddMemberChoiceModal = dynamic(() => import("@/components/users/AddMemberC
   loading: () => null,
 });
 
-const getErrorMessage = (error: any, fallback: string) => {
-  const detail = error.response?.data?.detail;
+interface ApiError {
+  response?: {
+    data?: {
+      detail?: string | Array<{ msg: string }>;
+    };
+  };
+}
+
+const getErrorMessage = (error: ApiError | unknown, fallback: string) => {
+  const err = error as ApiError;
+  const detail = err.response?.data?.detail;
   if (Array.isArray(detail)) {
-    return detail.map((e: any) => e.msg).join(", ");
+    return detail.map((e) => e.msg).join(", ");
   }
   return typeof detail === "string" ? detail : fallback;
 };
@@ -34,7 +43,6 @@ const getErrorMessage = (error: any, fallback: string) => {
 export default function RosterTab() {
   const { user } = useAuth();
 
-  // Core Data Hook
   const {
     users, paginatedUsers, filteredUsers, loading,
     totalUsers, activeUsers, inactiveUsers,
@@ -44,6 +52,37 @@ export default function RosterTab() {
     currentPage, setCurrentPage, totalPages,
     updateUserLocally, removeUserLocally,
   } = useUsersList();
+
+  // SSR-safe viewport check
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Display strategy:
+  // - Desktop (≥640px): Paginated list filtered by current Category tab
+  // - Mobile (<640px): Unpaginated FULL combined list (Executive + Staff), respecting search & department filter
+  const displayUsers = useMemo(() => {
+    if (!isMobile) return paginatedUsers;
+
+    return users.filter((u) => {
+      if (search) {
+        const q = search.toLowerCase();
+        const matchName = u.full_name?.toLowerCase().includes(q);
+        const matchEmail = u.email?.toLowerCase().includes(q);
+        const matchJob = u.job_title?.toLowerCase().includes(q);
+        if (!matchName && !matchEmail && !matchJob) return false;
+      }
+      if (departmentFilter) {
+        if (u.department !== departmentFilter) return false;
+      }
+      return true;
+    });
+  }, [isMobile, paginatedUsers, users, search, departmentFilter]);
 
   // Local Interaction State
   const [showAddChoice, setShowAddChoice] = useState(false);
@@ -81,7 +120,7 @@ export default function RosterTab() {
       setInviteLink(link);
       updateUserLocally(newUser);
       toast.success("Invite link generated successfully!");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to create invite"));
     } finally {
       setInviteLoading(false);
@@ -118,7 +157,7 @@ export default function RosterTab() {
         is_suspended: !userToSuspend.is_suspended,
         is_active: userToSuspend.is_suspended
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Action failed"));
     } finally {
       setActionLoadingId(null);
@@ -133,7 +172,7 @@ export default function RosterTab() {
       toast.success("User verified successfully");
       const updatedUser = users.find(u => u.id === userId);
       if (updatedUser) updateUserLocally({ ...updatedUser, is_onboarded: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to verify user"));
     } finally {
       setActionLoadingId(null);
@@ -146,7 +185,7 @@ export default function RosterTab() {
     try {
       await usersApi.sendResetLink(userId, { send_to_email: true, send_to_phone: false });
       toast.success("Reset link sent to user's email");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to send reset link"));
     } finally {
       setActionLoadingId(null);
@@ -164,7 +203,7 @@ export default function RosterTab() {
       } else {
         toast.success(`${channel} verification sent successfully!`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error, `Failed to send ${channel} verification`));
     } finally {
       setActionLoadingId(null);
@@ -181,7 +220,7 @@ export default function RosterTab() {
       await usersApi.delete(userId);
       toast.success("User deleted successfully");
       removeUserLocally(userId);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to delete user"));
     } finally {
       setActionLoadingId(null);
@@ -206,12 +245,12 @@ export default function RosterTab() {
       />
 
       <UsersTable
-        users={paginatedUsers}
+        users={displayUsers}
         loading={loading}
         currentPage={currentPage}
         totalPages={totalPages}
         setCurrentPage={setCurrentPage}
-        totalItems={filteredUsers.length}
+        totalItems={isMobile ? displayUsers.length : filteredUsers.length}
         pageSize={7}
         actionLoadingId={actionLoadingId}
         openDropdownId={openDropdownId}
