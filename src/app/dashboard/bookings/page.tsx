@@ -55,7 +55,7 @@ export default function BookingsPage() {
           </p>
         </div>
 
-        {/* Segmented Control / Tab Switcher (Full-width 2-column grid on small mobile displays) */}
+        {/* Segmented Control / Tab Switcher */}
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm w-full sm:w-auto shrink-0">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -63,6 +63,7 @@ export default function BookingsPage() {
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveTab(tab.id as TabMode)}
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-xs font-semibold transition-colors duration-150 touch-manipulation select-none ${
                   isActive 

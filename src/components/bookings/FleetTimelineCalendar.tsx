@@ -1,7 +1,6 @@
-// src/components/bookings/timeline/FleetTimelineCalendar.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { format, isToday as checkIsToday, startOfDay, endOfDay, isBefore } from "date-fns";
 import {
   Car,
@@ -35,7 +34,7 @@ interface FleetTimelineCalendarProps {
 
 interface TooltipState {
   booking: Booking;
-  client?: Client | BookingClientRelation | null; // ✅ widened to match handleBlockEnter
+  client?: Client | BookingClientRelation | null;
   x: number;
   y: number;
 }
@@ -68,11 +67,28 @@ export default function FleetTimelineCalendar({
     jumpToToday,
   } = useTimelineCalendar({ bookings, vehicleMap, clientMap, onCreateBooking });
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(
     normalizedVehicles[0]?.id || null
   );
-const [vehicleSearch, setVehicleSearch] = useState("");
-const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [vehicleSearch, setVehicleSearch] = useState("");
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+
+  // Enable smooth mouse wheel horizontal scrolling
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        container.scrollLeft += e.deltaY;
+      }
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
+  }, []);
 
   const filteredVehicles = useMemo(() => {
     if (!vehicleSearch.trim()) return normalizedVehicles;
@@ -148,14 +164,25 @@ const [tooltip, setTooltip] = useState<TooltipState | null>(null);
     }
   };
 
-const handleBlockEnter = (
-  e: React.MouseEvent,
-  booking: Booking,
-  client?: Client | BookingClientRelation | null,  // ✅ accepts both shapes
-) => {
-  const rect = e.currentTarget.getBoundingClientRect();
-  setTooltip({ booking, client, x: rect.right + 12, y: rect.top });
-};
+  const handleBlockEnter = (
+    e: React.MouseEvent,
+    booking: Booking,
+    client?: Client | BookingClientRelation | null,
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const tooltipWidth = 256;
+    const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1000;
+
+    let x = rect.right + 12;
+    if (x + tooltipWidth > viewportWidth - 12) {
+      x = Math.max(12, rect.left - tooltipWidth - 12);
+    }
+    if (x + tooltipWidth > viewportWidth - 12) {
+      x = Math.max(12, (viewportWidth - tooltipWidth) / 2);
+    }
+
+    setTooltip({ booking, client, x, y: Math.max(12, rect.top) });
+  };
 
   const handleBlockLeave = () => setTooltip(null);
   const todayStart = startOfDay(new Date());
@@ -164,6 +191,7 @@ const handleBlockEnter = (
     <div className="space-y-4 antialiased relative">
       <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm rounded-2xl overflow-hidden flex flex-col">
         
+        {/* Navigation Toolbar */}
         <TimelineHeader
           viewStartDate={viewStartDate}
           viewEndDate={viewEndDate}
@@ -178,6 +206,7 @@ const handleBlockEnter = (
           onToggleCreateMode={handleToggleCreateMode}
         />
 
+        {/* Client Association Banner */}
         {schedulingStep === "link-client" && (
           <div className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)] p-3.5 px-5 flex flex-row flex-nowrap items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-xs whitespace-nowrap">
@@ -213,13 +242,13 @@ const handleBlockEnter = (
           </div>
         )}
 
-        {/* ✅ STANDARD SCROLL CONTAINER (No drag hooks) */}
-        <div className="overflow-x-auto custom-scrollbar">
-          <div className="min-w-[1100px] flex flex-col relative">
+        {/* Master Scroll Container */}
+        <div ref={scrollContainerRef} className="overflow-x-auto custom-scrollbar">
+          <div className="w-full min-w-max flex flex-col relative">
             
-            {/* Timeline Header Row */}
+            {/* Timeline Date Header Row */}
             <div className="flex border-b border-[var(--color-surface-border)] bg-[var(--color-surface)] sticky top-0 z-30">
-              <div className="w-72 flex-shrink-0 p-3 px-4 border-r border-[var(--color-surface-border)] bg-[var(--color-surface)] flex items-center sticky left-0 z-40 gap-2">
+              <div className="w-36 sm:w-48 md:w-72 flex-shrink-0 p-3 px-4 border-r border-[var(--color-surface-border)] bg-[var(--color-surface)] flex items-center sticky left-0 z-40 gap-2">
                 <div className="relative flex-1">
                   <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)]" />
                   <input
@@ -232,18 +261,27 @@ const handleBlockEnter = (
                 </div>
               </div>
               
-              {/* ✅ CLEAN DATE HEADER (No drag bindings) */}
-              <div className="flex flex-1 relative">
+              {/* Responsive Calendar Days Header (7 on Mobile, 14 on Desktop) */}
+              <div className="flex flex-1 relative min-w-0">
                 {timelineDays.map((day, i) => {
                   const isToday = checkIsToday(day);
                   return (
                     <div
                       key={i}
-                      style={{ width: `${100 / daysToShow}%` }}
-                      className={`p-2.5 text-center border-r border-[var(--color-surface-border)] flex flex-col justify-center items-center ${isToday ? "bg-[var(--color-primary)]/[0.03]" : ""}`}
+                      className={`w-[calc(100%/7)] md:w-[calc(100%/14)] flex-shrink-0 p-2.5 text-center border-r border-[var(--color-surface-border)] flex flex-col justify-center items-center ${
+                        isToday ? "bg-[var(--color-primary)]/[0.03]" : ""
+                      }`}
                     >
-                      <span className={`text-[10px] font-bold uppercase tracking-wider ${isToday ? "text-[var(--color-primary)]" : "text-[var(--color-ink-subtle)]"}`}>{format(day, "EEE")}</span>
-                      <span className={`text-xs font-extrabold mt-1 w-7 h-7 flex items-center justify-center rounded-xl ${isToday ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-ink)]"}`}>{format(day, "d")}</span>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                        isToday ? "text-[var(--color-primary)]" : "text-[var(--color-ink-subtle)]"
+                      }`}>
+                        {format(day, "EEE")}
+                      </span>
+                      <span className={`text-xs font-extrabold mt-1 w-7 h-7 flex items-center justify-center rounded-xl ${
+                        isToday ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-ink)]"
+                      }`}>
+                        {format(day, "d")}
+                      </span>
                     </div>
                   );
                 })}
@@ -261,19 +299,22 @@ const handleBlockEnter = (
                   <div 
                     key={vehicle.id} 
                     onClick={() => setSelectedVehicleId(vehicle.id)} 
-                    className={`flex h-16 relative group/row transition-colors ${isSelected ? "bg-[var(--color-primary)]/[0.025] border-l-4 border-l-[var(--color-primary)]" : ""} ${isLocked ? "bg-[var(--color-surface-hover)]/30" : "hover:bg-[var(--color-surface-hover)]/50"}`}
+                    className={`flex h-16 relative group/row transition-colors ${
+                      isSelected ? "bg-[var(--color-primary)]/[0.025] border-l-4 border-l-[var(--color-primary)]" : ""
+                    } ${isLocked ? "bg-[var(--color-surface-hover)]/30" : "hover:bg-[var(--color-surface-hover)]/50"}`}
                   >
-                    <div className="w-72 flex-shrink-0 p-3 border-r border-[var(--color-surface-border)] bg-[var(--color-surface)] z-20 flex items-center justify-between sticky left-0 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_12px_-4px_rgba(0,0,0,0.3)]">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-muted)] shrink-0">
-                          <Car size={16} />
+                    {/* Sticky Vehicle Information Card */}
+                    <div className="w-36 sm:w-48 md:w-72 flex-shrink-0 p-2 sm:p-3 border-r border-[var(--color-surface-border)] bg-[var(--color-surface)] z-20 flex items-center justify-between sticky left-0 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_12px_-4px_rgba(0,0,0,0.3)]">
+                      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                        <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-muted)] shrink-0">
+                          <Car size={15} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-xs font-bold text-[var(--color-ink)] truncate">{vehicle.make} {vehicle.model}</h4>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] font-mono font-bold text-[var(--color-ink-muted)] uppercase">{vehicle.plate_number || "No Plate"}</span>
-                            <span className="text-[var(--color-surface-border)]">•</span>
-                            <div className="flex items-center gap-1 text-[10px] text-[var(--color-ink-subtle)]">
+                          <h4 className="text-[11px] sm:text-xs font-bold text-[var(--color-ink)] truncate">{vehicle.make} {vehicle.model}</h4>
+                          <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5">
+                            <span className="text-[9px] sm:text-[10px] font-mono font-bold text-[var(--color-ink-muted)] uppercase truncate">{vehicle.plate_number || "No Plate"}</span>
+                            <span className="hidden sm:inline text-[var(--color-surface-border)]">•</span>
+                            <div className="hidden sm:flex items-center gap-1 text-[10px] text-[var(--color-ink-subtle)]">
                               <Gauge size={10} className="text-[var(--color-primary)]" />
                               <span className="font-mono">{vehicle.current_mileage?.toLocaleString() || 0} km</span>
                             </div>
@@ -282,15 +323,21 @@ const handleBlockEnter = (
                       </div>
                     </div>
 
-                    <div className="flex-1 relative min-h-full flex items-center">
-                      {/* Background Grid */}
+                    {/* Timeline Grid Cells (7 on Mobile, 14 on Desktop) */}
+                    <div className="flex-1 relative min-h-full flex items-center min-w-0">
+                      {/* Background Grid Cells */}
                       <div className="absolute inset-0 flex pointer-events-none">
                         {timelineDays.map((day, idx) => (
                           <div 
                             key={idx} 
-                            style={{ width: `${100 / daysToShow}%` }} 
                             onClick={() => !isLocked && handleCellClick(vehicle.id, format(day, "yyyy-MM-dd"))} 
-                            className={`border-r border-[var(--color-surface-border)]/40 h-full pointer-events-auto ${getCellHighlightClass(vehicle.id, format(day, "yyyy-MM-dd"))} ${isLocked ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,var(--color-surface-border)_6px,var(--color-surface-border)_12px)] opacity-30" : "hover:bg-[var(--color-primary)]/[0.05] cursor-pointer"}`} 
+                            className={`w-[calc(100%/7)] md:w-[calc(100%/14)] flex-shrink-0 border-r border-[var(--color-surface-border)]/40 h-full pointer-events-auto ${
+                              getCellHighlightClass(vehicle.id, format(day, "yyyy-MM-dd"))
+                            } ${
+                              isLocked 
+                                ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,var(--color-surface-border)_6px,var(--color-surface-border)_12px)] opacity-30" 
+                                : "hover:bg-[var(--color-primary)]/[0.05] cursor-pointer"
+                            }`} 
                           />
                         ))}
                       </div>
@@ -300,7 +347,7 @@ const handleBlockEnter = (
                         const dayStart = startOfDay(day);
                         const dayEnd = endOfDay(day);
 
-                        const activeBooking = vehicleBookings.find(b => {
+                        const activeBooking = vehicleBookings.find((b) => {
                           const bStart = startOfDay(new Date(b.start_date));
                           const bEnd = endOfDay(new Date(b.end_date));
                           return dayStart <= bEnd && dayEnd >= bStart;
@@ -311,14 +358,24 @@ const handleBlockEnter = (
                         const isPastBlock = isBefore(dayStart, todayStart);
 
                         return (
-                          <div key={dayIndex} style={{ width: `${100 / daysToShow}%` }} className="relative h-full flex items-center justify-center p-0.5">
+                          <div 
+                            key={dayIndex} 
+                            className="w-[calc(100%/7)] md:w-[calc(100%/14)] flex-shrink-0 relative h-full flex items-center justify-center p-0.5 z-10"
+                          >
                             <div 
                               className={getBookingBlockStyle(activeBooking.status, isPastBlock)}
                               onMouseEnter={(e) => handleBlockEnter(e, activeBooking, client)}
                               onMouseLeave={handleBlockLeave}
-                              onClick={(e) => { e.stopPropagation(); onExtendBooking(activeBooking); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onExtendBooking(activeBooking);
+                              }}
                             >
-                              {isPastBlock ? <Check size={10} className="opacity-80" /> : <User size={10} className="opacity-80" />}
+                              {isPastBlock ? (
+                                <Check size={10} className="opacity-80" />
+                              ) : (
+                                <User size={10} className="opacity-80" />
+                              )}
                             </div>
                           </div>
                         );
@@ -331,10 +388,10 @@ const handleBlockEnter = (
           </div>
         </div>
 
-        {/* Footer Stats */}
+        {/* Footer Vehicle Stats */}
         {selectedVehicle && (
           <div className="border-t border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 p-3 px-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4">
               <div className="flex items-center gap-2.5 min-w-[200px]">
                 <Car size={16} className="text-[var(--color-primary)] shrink-0" />
                 <div className="flex flex-col">
@@ -347,7 +404,7 @@ const handleBlockEnter = (
                 </div>
               </div>
 
-              <div className="flex items-center gap-6 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 items-center gap-4 text-xs">
                 <div className="flex items-center gap-2">
                   <Gauge size={14} className="text-[var(--color-ink-muted)] shrink-0" />
                   <div className="flex flex-col">
@@ -382,7 +439,7 @@ const handleBlockEnter = (
         )}
       </div>
 
-      {/* Tooltip */}
+      {/* Popover Tooltip */}
       {tooltip && (
         <div className="fixed z-[9999] pointer-events-none" style={{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }}>
           <div className="w-64 bg-[var(--color-bg-elevated)]/95 backdrop-blur-xl border border-[var(--color-surface-border-strong)] rounded-xl shadow-[var(--shadow-2xl)] p-4">

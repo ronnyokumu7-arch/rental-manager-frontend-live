@@ -16,12 +16,17 @@ export function useContracts() {
   const fetchContracts = useCallback(async () => {
     setLoading(true);
     try {
-      const params = statusFilter !== "all" ? { contract_status: statusFilter } : undefined;
+      // ✅ FIXED: Fetch a large batch so client-side filtering/pagination works
+      // for tenants with more than 50 contracts (the backend default).
+      const params = {
+        page_size: 200, 
+        ...(statusFilter !== "all" && { contract_status: statusFilter })
+      };
+      
       const data = await contractsApi.list(params);
       
       // ✅ DATA NORMALIZATION: Heal historical data inconsistencies
-      // If a contract has a signed date, force its status to "signed"
-      const normalizedData = (data || []).map((c: any) => { // ✅ FIXED: Added safe fallback || []
+      const normalizedData = (data || []).map((c: any) => { 
         if (c.client_signed_at || c.signed_at) {
           return { ...c, status: "signed" as ContractStatus };
         }

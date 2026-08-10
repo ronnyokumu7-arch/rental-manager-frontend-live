@@ -6,8 +6,11 @@ export const contractsApi = {
   list: (params?: { booking_id?: number; contract_status?: string; page?: number; page_size?: number }) =>
     apiClient.get<PaginatedResponse<Contract>>("/contracts/", { params }).then((r) => r.data.items),
 
+    // ✅ FIXED: Was POST /contracts/generate-for-booking/ (nonexistent → 405).
+  // Backend source of truth is POST /contracts/bookings/{id}/regenerate,
+  // which creates the contract if none exists (and regenerates if one does).
   generateForBooking: (bookingId: number) =>
-    apiClient.post<Contract>("/contracts/generate-for-booking/", { booking_id: bookingId }).then((r) => r.data),
+    apiClient.post<Contract>(`/contracts/bookings/${bookingId}/regenerate`).then((r) => r.data),
     
   getById: (id: number) =>
     apiClient.get<Contract>(`/contracts/${id}`).then((r) => r.data),
