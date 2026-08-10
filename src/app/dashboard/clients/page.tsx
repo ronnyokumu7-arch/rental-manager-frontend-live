@@ -17,9 +17,7 @@ import {
   Loader2,
   Search,
   Filter,
-  ChevronDown,
   CreditCard,
-  FileText,
 } from "lucide-react";
 import { useClientsList } from "@/hooks/clients/useClientsList";
 
@@ -152,7 +150,7 @@ export default function ClientsPage() {
             <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
               <div className="flex items-center gap-2 whitespace-nowrap">
                 <div className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
-                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Registered</span>
+                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Total</span>
                 <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{totalClients}</span>
               </div>
               <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
@@ -164,36 +162,51 @@ export default function ClientsPage() {
               <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
               <div className="flex items-center gap-2 whitespace-nowrap">
                 <div className="w-2 h-2 rounded-full bg-[var(--color-danger)]" />
-                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Suspended</span>
+                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Banned</span>
                 <span className="text-xs font-bold text-[var(--color-danger-text)] tabular-nums">{suspendedClients}</span>
               </div>
             </div>
 
+            {/* Controls */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <div className="relative flex-1 sm:w-64">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search clients..."
-                  className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
-                />
-              </div>
-              <div className="relative flex-1 sm:w-44">
-                <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none z-10" />
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none z-10" />
-                <select
-                  value={statusFilter || ""}
-                  onChange={(e) => setStatusFilter(e.target.value || null)}
-                  className="w-full pl-9 pr-9 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm appearance-none cursor-pointer"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="active">Active</option>
-                  <option value="pending">Pending</option>
-                  <option value="suspended">Suspended</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+              {/* Search & Icon-Only Filter Side by Side */}
+              <div className="flex items-center gap-2 flex-1 sm:w-80">
+                <div className="relative flex-1">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search clients..."
+                    className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
+                  />
+                </div>
+
+                {/* Compact Icon-Only Filter Trigger */}
+                <div className="relative flex-shrink-0">
+                  <button
+                    type="button"
+                    className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
+                      statusFilter 
+                        ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" 
+                        : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+                    }`}
+                    title="Filter by status"
+                  >
+                    <Filter size={15} />
+                  </button>
+                  <select
+                    value={statusFilter || ""}
+                    onChange={(e) => setStatusFilter(e.target.value || null)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
               </div>
 
               <button
@@ -296,8 +309,8 @@ export default function ClientsPage() {
                             </span>
                           </div>
                           <div className="col-span-2 flex items-center gap-1.5 min-w-0 pt-1">
-                            <FileText size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                            <span className="text-[var(--color-ink-muted)]">License:</span>
+                            <CreditCard size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                            <span className="text-[var(--color-ink-muted)]"></span>
                             <span className="font-mono text-[var(--color-ink)] truncate">
                               {client.dl_number || "Not provided"}
                             </span>

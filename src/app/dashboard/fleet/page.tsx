@@ -10,9 +10,16 @@ import QuickGarageModal from "@/components/ui/QuickGarageModal";
 
 type TabMode = "fleet" | "performance" | "garage";
 
-const TABS = [
+interface TabItem {
+  id: TabMode;
+  label: string;
+  icon: React.ElementType;
+  hiddenOnMobile?: boolean;
+}
+
+const TABS: TabItem[] = [
   { id: "fleet", label: "Vehicles", icon: Car },
-  { id: "performance", label: "Performance", icon: BarChart3 },
+  { id: "performance", label: "Performance", icon: BarChart3, hiddenOnMobile: true },
   { id: "garage", label: "Garage", icon: Wrench },
 ];
 
@@ -22,7 +29,7 @@ export default function FleetPage() {
 
   const fleetData = useFleetList();
 
-  // ✅ DYNAMIC HEADER INFO: Synchronized to adapt immediately on tab change
+  // Dynamic Header Info
   const currentTabInfo = useMemo(() => {
     if (activeTab === "fleet") {
       return {
@@ -47,31 +54,32 @@ export default function FleetPage() {
 
   return (
     <div className="space-y-6">
-      
-      {/* Premium Header with Dynamic Tab Switcher */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      {/* Header with Tab Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] flex-shrink-0">
               {currentTabInfo.icon}
             </div>
-            {currentTabInfo.title}
+            <span>{currentTabInfo.title}</span>
           </h1>
-          <p className="text-sm text-[var(--color-ink-muted)] mt-1">
+          <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mt-1">
             {currentTabInfo.description}
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-xs overflow-x-auto custom-scrollbar">
+        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-xs self-start sm:self-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabMode)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                onClick={() => setActiveTab(tab.id)}
+                className={`${
+                  tab.hiddenOnMobile ? "hidden md:flex" : "flex"
+                } items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                   isActive
                     ? "bg-[var(--color-primary)] text-white shadow-sm"
                     : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
@@ -85,85 +93,106 @@ export default function FleetPage() {
         </div>
       </div>
 
-      {/* Conditional Segment View Engine */}
+      {/* Segment View Engine */}
       {activeTab === "fleet" ? (
         <div className="animate-in fade-in duration-300">
           <FleetList {...fleetData} />
         </div>
       ) : activeTab === "performance" ? (
-        <div className="card p-12 text-center animate-in fade-in duration-300">
-          <BarChart3 size={48} className="mx-auto text-[var(--color-ink-subtle)] mb-4" />
+        <div className="card p-8 sm:p-12 text-center animate-in fade-in duration-300">
+          <BarChart3 size={40} className="mx-auto text-[var(--color-ink-subtle)] mb-4 sm:w-12 sm:h-12" />
           <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Performance Analytics</h3>
-          <p className="text-sm text-[var(--color-ink-muted)] max-w-md mx-auto">
+          <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] max-w-md mx-auto">
             Advanced fleet performance metrics, real-time vehicle utilization analysis, and customized profitability timelines coming soon.
           </p>
         </div>
       ) : (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Garage Hub Content */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {/* Quick Garage Card */}
-            <div 
-              className="card p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all"
+            <div
+              className="card p-4 sm:p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all flex flex-row sm:flex-col items-start gap-3.5 sm:gap-0"
               onClick={() => {
-                // Optional: Add logic to open Quick Garage modal or navigate
+                const awaitingVehicle = fleetData.filteredVehicles.find(
+                  (v) => v.status === "awaiting_mileage"
+                );
+                if (awaitingVehicle) {
+                  fleetData.setGarageVehicle(awaitingVehicle);
+                  fleetData.setGarageModalOpen(true);
+                }
               }}
             >
-              <div className="w-12 h-12 rounded-xl bg-[var(--color-warning-bg)] flex items-center justify-center text-[var(--color-warning-text)] mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Wrench size={24} />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--color-warning-bg)] flex items-center justify-center text-[var(--color-warning-text)] sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                <Wrench size={20} className="sm:w-6 sm:h-6" />
               </div>
-              <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Quick Garage</h3>
-              <p className="text-sm text-[var(--color-ink-muted)] mb-4">
-                Update mileage and service status for vehicles awaiting inspection.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary)]">
-                <span>{fleetData.filteredVehicles.filter(v => v.status === "awaiting_mileage").length} vehicles pending</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm sm:text-base font-bold text-[var(--color-ink)] mb-1 sm:mb-2">
+                  Quick Garage
+                </h3>
+                <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mb-2 sm:mb-4">
+                  Update mileage and service status for vehicles awaiting inspection.
+                </p>
+                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary)]">
+                  <span>
+                    {fleetData.filteredVehicles.filter((v) => v.status === "awaiting_mileage").length} vehicles pending
+                  </span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </div>
               </div>
             </div>
 
             {/* Maintenance Queue Card */}
-            <div className="card p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-[var(--color-danger-bg)] flex items-center justify-center text-[var(--color-danger-text)] mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Car size={24} />
+            <div className="card p-4 sm:p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all flex flex-row sm:flex-col items-start gap-3.5 sm:gap-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--color-danger-bg)] flex items-center justify-center text-[var(--color-danger-text)] sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                <Car size={20} className="sm:w-6 sm:h-6" />
               </div>
-              <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Maintenance Queue</h3>
-              <p className="text-sm text-[var(--color-ink-muted)] mb-4">
-                Track vehicles currently in service and their repair status.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary)]">
-                <span>{fleetData.filteredVehicles.filter(v => v.status === "maintenance").length} in maintenance</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm sm:text-base font-bold text-[var(--color-ink)] mb-1 sm:mb-2">
+                  Maintenance Queue
+                </h3>
+                <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mb-2 sm:mb-4">
+                  Track vehicles currently in service and their repair status.
+                </p>
+                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary)]">
+                  <span>
+                    {fleetData.filteredVehicles.filter((v) => v.status === "maintenance").length} in maintenance
+                  </span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </div>
               </div>
             </div>
 
             {/* Service Due Card */}
-            <div className="card p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all">
-              <div className="w-12 h-12 rounded-xl bg-[var(--color-primary-muted)] flex items-center justify-center text-[var(--color-primary-text)] mb-4 group-hover:scale-110 transition-transform duration-300">
-                <BarChart3 size={24} />
+            <div className="card p-4 sm:p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all flex flex-row sm:flex-col items-start gap-3.5 sm:gap-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--color-primary-muted)] flex items-center justify-center text-[var(--color-primary-text)] sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                <BarChart3 size={20} className="sm:w-6 sm:h-6" />
               </div>
-              <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Service Due Soon</h3>
-              <p className="text-sm text-[var(--color-ink-muted)] mb-4">
-                Vehicles approaching their next scheduled service interval.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary)]">
-                <span>View schedule</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm sm:text-base font-bold text-[var(--color-ink)] mb-1 sm:mb-2">
+                  Service Due Soon
+                </h3>
+                <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mb-2 sm:mb-4">
+                  Vehicles approaching their next scheduled service interval.
+                </p>
+                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-primary)]">
+                  <span>View schedule</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Coming Soon Message */}
-          <div className="card p-10 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 rounded-2xl bg-[var(--color-warning-bg)] flex items-center justify-center mb-4">
-              <Wrench size={32} className="text-[var(--color-warning-text)]" />
+          {/* Info Card */}
+          <div className="card p-6 sm:p-10 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-[var(--color-warning-bg)] flex items-center justify-center mb-3 sm:mb-4">
+              <Wrench size={24} className="text-[var(--color-warning-text)] sm:w-8 sm:h-8" />
             </div>
-            <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">
-              Multi-Billion-Dollar Garage Hub
+            <h3 className="text-base sm:text-lg font-bold text-[var(--color-ink)] mb-1 sm:mb-2">
+              Garage Hub
             </h3>
-            <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
-              Comprehensive maintenance scheduling, parts inventory, mechanic assignments, and automated service reminders. Building the future of fleet management.
+            <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] max-w-md">
+              Comprehensive maintenance scheduling, parts inventory, mechanic assignments, and automated service reminders coming soon.
             </p>
           </div>
         </div>
@@ -180,15 +209,15 @@ export default function FleetPage() {
         onSave={fleetData.handleGarageSave}
       />
 
-      {/* ✅ PREMIUM FLOATING ACTION BUTTON - Bottom Right (Garage Tab Only) */}
+      {/* FLOATING ACTION BUTTON */}
       {activeTab === "garage" && (
         <button
           onClick={() => router.push("/dashboard/fleet/new")}
-          className="fixed bottom-8 right-8 z-50 group flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-full shadow-[var(--shadow-xl)] hover:scale-105 active:scale-95 transition-all duration-300 ease-out"
+          className="fixed bottom-20 right-6 md:bottom-8 md:right-8 z-50 group flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-full shadow-[var(--shadow-xl)] hover:scale-105 active:scale-95 transition-all duration-300 ease-out"
           title="Add New Vehicle"
         >
-          <Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
-          <span className="absolute right-full mr-4 px-3 py-1.5 bg-[var(--color-surface)] text-[var(--color-ink)] text-xs font-bold rounded-lg shadow-[var(--shadow-dropdown)] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-[var(--color-surface-border)]">
+          <Plus size={24} className="sm:w-7 sm:h-7 group-hover:rotate-90 transition-transform duration-300" />
+          <span className="hidden md:block absolute right-full mr-4 px-3 py-1.5 bg-[var(--color-surface)] text-[var(--color-ink)] text-xs font-bold rounded-lg shadow-[var(--shadow-dropdown)] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-[var(--color-surface-border)]">
             Add Vehicle
           </span>
         </button>
