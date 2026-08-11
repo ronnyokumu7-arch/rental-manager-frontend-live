@@ -49,7 +49,6 @@ export default function FleetTimelineCalendar({
   const {
     viewStartDate,
     viewEndDate,
-    daysToShow,
     timelineDays,
     normalizedVehicles,
     normalizedClients,

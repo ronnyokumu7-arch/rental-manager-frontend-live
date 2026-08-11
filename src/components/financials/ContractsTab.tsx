@@ -192,11 +192,11 @@ export default function ContractsTab() {
           <>
             <div className="p-3 sm:p-4">
               <ContractsTable 
-                data={paginatedContracts}
-                allData={displayedContracts}
-                onDownload={handleDownload}
-                onCopyLink={handleCopyLink}
-                onSend={handleSend}
+                data={paginatedContracts as any}
+                allData={displayedContracts as any}
+                onDownload={(contract) => handleDownload(contract.id)}
+                onCopyLink={(contract) => handleCopyLink(contract.id)}
+                onSend={(contract) => handleSend(contract.id)}
                 onVoid={(contract) => handleVoid(contract.id)}
                 onGenerate={(id) => {
                   setGenerateForId(id);

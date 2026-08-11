@@ -3,7 +3,7 @@
 
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { BookingForm } from '@/components/bookings';
+import BookingForm from '@/components/bookings/BookingForm';
 
 export default function NewBookingPage() {
   const router = useRouter();
