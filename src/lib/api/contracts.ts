@@ -2,14 +2,14 @@ import apiClient from "@/lib/api-client";
 import type { Contract, PublicContractView, PaginatedResponse } from "@/lib/types";
 
 export const contractsApi = {
-  // ✅ FIXED: Unwrap .items from PaginatedResponse, added page/page_size params
+  // ✅ Unwrap .items from PaginatedResponse, added page/page_size params
   list: (params?: { booking_id?: number; contract_status?: string; page?: number; page_size?: number }) =>
     apiClient.get<PaginatedResponse<Contract>>("/contracts/", { params }).then((r) => r.data.items),
 
-  // ✅ FIXED: Mapped to the correct backend route /contracts/bookings/{id}/regenerate
+  // ✅ Correct backend route /contracts/bookings/{id}/regenerate
   generateForBooking: (bookingId: number) =>
     apiClient.post<Contract>(`/contracts/bookings/${bookingId}/regenerate`).then((r) => r.data),
-    
+
   getById: (id: number) =>
     apiClient.get<Contract>(`/contracts/${id}`).then((r) => r.data),
 
@@ -19,10 +19,11 @@ export const contractsApi = {
   regenerate: (bookingId: number) =>
     apiClient.post<Contract>(`/contracts/bookings/${bookingId}/regenerate`).then((r) => r.data),
 
+  // ✅ 60s timeout so slow PDF regeneration isn't killed at 15s
   downloadPdf: (id: number) =>
-    apiClient.get(`/contracts/${id}/pdf`, { responseType: "blob" }),
+    apiClient.get(`/contracts/${id}/pdf`, { responseType: "blob", timeout: 60000 }),
 
-  // ✅ FIXED: Added share_url to the return type so the hook can copy the full link
+  // ✅ share_url typed so the hook can build the full link
   generateShareLink: (id: number) =>
     apiClient.post<{ share_token: string; share_url: string; expires_at: string }>(
       `/contracts/${id}/share-link`
@@ -30,13 +31,14 @@ export const contractsApi = {
 
   sendToClient: (id: number) =>
     apiClient.post<Contract>(`/contracts/${id}/send-to-client`).then((r) => r.data),
-  
+
   publicView: (token: string) =>
     apiClient.get<PublicContractView>(`/contracts/public/${token}`).then((r) => r.data),
 
   publicSign: (token: string, signature?: string) =>
     apiClient.post<{ message: string }>(`/contracts/public/${token}/sign`, { signature }).then((r) => r.data),
 
+  // ✅ 60s timeout for the public PDF as well
   publicDownloadPdf: (token: string) =>
-    apiClient.get(`/contracts/public/${token}/pdf`, { responseType: "blob" }),
+    apiClient.get(`/contracts/public/${token}/pdf`, { responseType: "blob", timeout: 60000 }),
 };

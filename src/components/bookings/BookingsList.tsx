@@ -315,7 +315,7 @@ export default function BookingsList({
                       </div>
 
                       <div className="col-span-2 border-t border-[var(--color-surface-border)]/40 pt-2 mt-1 flex items-center justify-between text-xs">
-                        <span className="text-[var(--color-ink-muted)] font-medium">Total Amount</span>
+                        <span className="text-[var(--color-ink-muted)] font-medium">Rental Cost</span>
                         <span className="text-sm font-bold text-[var(--color-primary-text)]">
                           {b.currency_code} {Number(b.total_amount).toLocaleString()}
                         </span>
@@ -418,13 +418,15 @@ export default function BookingsList({
             </table>
           </div>
 
-          {/* ── SHARED DROPDOWN OVERLAY ── */}
-          {openDropdownId !== null && dropdownPos && activeBooking && (
-            <div
-              className="fixed z-[100] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-              style={{ top: dropdownPos.top, right: dropdownPos.right }}
-              onClick={(e) => e.stopPropagation()}
-            >
+{/* ── SHARED DROPDOWN OVERLAY ── */}
+{openDropdownId !== null && dropdownPos && activeBooking && (
+  <div
+    data-dropdown-id={openDropdownId}
+    onMouseDown={(e) => e.stopPropagation()}
+    className="fixed z-[100] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+    style={{ top: dropdownPos.top, right: dropdownPos.right }}
+    onClick={(e) => e.stopPropagation()}
+  >
               <button 
                 onClick={() => { router.push(`/dashboard/bookings/${activeBooking.id}`); setOpenDropdownId(null); setDropdownPos(null); }} 
                 className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"

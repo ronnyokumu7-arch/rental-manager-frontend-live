@@ -37,8 +37,9 @@ export const invoicesApi = {
   downloadPdf: (id: number) =>
     apiClient.get(`/invoices/${id}/pdf`, { responseType: "blob" }),
 
+  // ✅ FIXED: Added share_url to the return type to match the backend response
   generateShareLink: (id: number) =>
-    apiClient.post<{ share_token: string; expires_at: string }>(
+    apiClient.post<{ share_token: string; share_url: string; expires_at: string }>(
       `/invoices/${id}/share-link`
     ).then((r) => r.data),
 

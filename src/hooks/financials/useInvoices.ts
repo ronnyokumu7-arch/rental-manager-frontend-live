@@ -94,7 +94,12 @@ export function useInvoices() {
   const handleCopyLink = async (id: number) => {
     try {
       const res = await invoicesApi.generateShareLink(id);
-      await navigator.clipboard.writeText(res.share_token);
+      
+      // ✅ BULLETPROOF URL CONSTRUCTION (ENVIRONMENT AGNOSTIC):
+      // Uses current browser origin to guarantee it works on localhost AND Vercel.
+      const fullUrl = `${window.location.origin}/invoice/${res.share_token}`;
+
+      await navigator.clipboard.writeText(fullUrl); 
       
       setInvoices(prev => prev.map(i => 
         i.id === id ? { ...i, share_token: res.share_token } : i

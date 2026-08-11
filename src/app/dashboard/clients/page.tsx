@@ -17,7 +17,7 @@ import {
   Loader2,
   Search,
   Filter,
-  CreditCard,
+  BadgeCheck,
 } from "lucide-react";
 import { useClientsList } from "@/hooks/clients/useClientsList";
 
@@ -31,9 +31,8 @@ const TABS = [
 export default function ClientsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ClientSegment>("individual");
-
-  // State to hold the fixed position of the active dropdown
   const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
   const {
     loading,
@@ -47,9 +46,6 @@ export default function ClientsPage() {
     filteredClients,
     paginatedClients,
     totalPages,
-    totalClients,
-    activeClients,
-    suspendedClients,
     openDropdownId,
     setOpenDropdownId,
     handleVerify,
@@ -58,7 +54,6 @@ export default function ClientsPage() {
     handleArchive,
   } = useClientsList();
 
-  // Click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -67,7 +62,6 @@ export default function ClientsPage() {
         setDropdownPos(null);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openDropdownId, setOpenDropdownId]);
@@ -87,6 +81,17 @@ export default function ClientsPage() {
     }
   };
 
+  const clientMetrics = useMemo(() => {
+    const total = filteredClients.length;
+    const active = filteredClients.filter((client) => 
+      client.status !== 'suspended' && (client as any).bookingsCount > 0
+    ).length;
+    const inactive = filteredClients.filter((client) => 
+      client.status === 'suspended' || (client as any).bookingsCount === 0
+    ).length;
+    return { total, active, inactive };
+  }, [filteredClients]);
+
   const currentTabInfo = useMemo(() => {
     if (activeTab === "individual") {
       return {
@@ -104,11 +109,10 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Tab Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] flex-shrink-0">
+            <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] flex-shrink-0">
               {currentTabInfo.icon}
             </div>
             <span>{currentTabInfo.title}</span>
@@ -117,8 +121,6 @@ export default function ClientsPage() {
             {currentTabInfo.description}
           </p>
         </div>
-
-        {/* Tab Switcher */}
         <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm self-start sm:self-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -141,35 +143,27 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      {/* Segment View Engine */}
       {activeTab === "individual" ? (
         <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden animate-in fade-in duration-300">
-          {/* Toolbar */}
           <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
-            {/* Metrics Breakdown Panels */}
             <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
               <div className="flex items-center gap-2 whitespace-nowrap">
-                <div className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
-                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Total</span>
-                <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{totalClients}</span>
+                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Clients</span>
+                <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{clientMetrics.total}</span>
               </div>
               <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
               <div className="flex items-center gap-2 whitespace-nowrap">
-                <div className="w-2 h-2 rounded-full bg-[var(--color-success)]" />
                 <span className="text-xs font-medium text-[var(--color-ink-muted)]">Active</span>
-                <span className="text-xs font-bold text-[var(--color-success-text)] tabular-nums">{activeClients}</span>
+                <span className="text-xs font-bold text-[var(--color-success-text)] tabular-nums">{clientMetrics.active}</span>
               </div>
               <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
               <div className="flex items-center gap-2 whitespace-nowrap">
-                <div className="w-2 h-2 rounded-full bg-[var(--color-danger)]" />
-                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Banned</span>
-                <span className="text-xs font-bold text-[var(--color-danger-text)] tabular-nums">{suspendedClients}</span>
+                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Inactive</span>
+                <span className="text-xs font-bold text-[var(--color-danger-text)] tabular-nums">{clientMetrics.inactive}</span>
               </div>
             </div>
 
-            {/* Controls */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              {/* Search & Icon-Only Filter Side by Side */}
               <div className="flex items-center gap-2 flex-1 sm:w-80">
                 <div className="relative flex-1">
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
@@ -181,11 +175,10 @@ export default function ClientsPage() {
                     className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
                   />
                 </div>
-
-                {/* Compact Icon-Only Filter Trigger */}
                 <div className="relative flex-shrink-0">
                   <button
                     type="button"
+                    onClick={() => setShowFilterDropdown(!showFilterDropdown)}
                     className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
                       statusFilter 
                         ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" 
@@ -195,31 +188,30 @@ export default function ClientsPage() {
                   >
                     <Filter size={15} />
                   </button>
-                  <select
-                    value={statusFilter || ""}
-                    onChange={(e) => setStatusFilter(e.target.value || null)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                  >
-                    <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="pending">Pending</option>
-                    <option value="suspended">Suspended</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                  {showFilterDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowFilterDropdown(false)} />
+                      <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                        <div className="py-1">
+                          <button onClick={() => { setStatusFilter(null); setShowFilterDropdown(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${statusFilter === null ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>All Statuses</button>
+                          <div className="h-px bg-[var(--color-surface-border)]" />
+                          <button onClick={() => { setStatusFilter("active"); setShowFilterDropdown(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${statusFilter === "active" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>Active</button>
+                          <button onClick={() => { setStatusFilter("pending"); setShowFilterDropdown(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${statusFilter === "pending" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>Pending</button>
+                          <button onClick={() => { setStatusFilter("suspended"); setShowFilterDropdown(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${statusFilter === "suspended" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>Suspended</button>
+                          <button onClick={() => { setStatusFilter("inactive"); setShowFilterDropdown(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${statusFilter === "inactive" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>Inactive</button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
-
-              <button
-                onClick={() => router.push("/dashboard/clients/new")}
-                className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm flex-shrink-0"
-              >
+              <button onClick={() => router.push("/dashboard/clients/new")} className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm flex-shrink-0">
                 <Plus size={14} strokeWidth={2.5} />
                 New Client
               </button>
             </div>
           </div>
 
-          {/* Content Area */}
           {loading ? (
             <div className="p-12 text-center text-[var(--color-ink-muted)] flex items-center justify-center gap-2">
               <Loader2 className="w-5 h-5 animate-spin" /> Loading clients...
@@ -230,90 +222,70 @@ export default function ClientsPage() {
                 <Users size={24} className="text-[var(--color-ink-subtle)]" />
               </div>
               <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">No clients found</h3>
-              <p className="text-sm text-[var(--color-ink-muted)] mb-4">
-                Try adjusting your search query or filters.
-              </p>
+              <p className="text-sm text-[var(--color-ink-muted)] mb-4">Try adjusting your search query or filters.</p>
             </div>
           ) : (
             <>
-              {/* MOBILE CARD VIEW: Render all filtered clients directly for natural scrolling */}
               <div className="block md:hidden p-4 space-y-3">
                 {filteredClients.map((client) => {
                   const statusLabel = client.status === "pending" ? "Pending" : client.status;
                   const statusColors: Record<string, string> = {
-                    active: "bg-[var(--color-success-bg)] text-[var(--color-success-text)]",
-                    pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-                    suspended: "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]",
-                    inactive: "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]",
+                    active: "bg-[var(--color-success-bg)]",
+                    pending: "bg-amber-500",
+                    suspended: "bg-[var(--color-danger)]",
+                    inactive: "bg-gray-400 dark:bg-gray-600",
                   };
-
                   return (
-                    <div
-                      key={client.id}
-                      onClick={() => router.push(`/dashboard/clients/${client.id}`)}
-                      className="p-4 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all cursor-pointer space-y-3 shadow-sm"
-                    >
-                      {/* Top bar inside mobile card */}
+                    <div key={client.id} onClick={() => router.push(`/dashboard/clients/${client.id}`)} className="p-4 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all cursor-pointer shadow-sm">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
                             <UserIcon size={18} />
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-[var(--color-ink)] truncate">
-                              {client.full_name}
-                            </h4>
-                            {client.email ? (
-                              <p className="text-xs text-[var(--color-ink-muted)] flex items-center gap-1 truncate mt-0.5">
-                                <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                                <span className="truncate">{client.email}</span>
-                              </p>
-                            ) : (
-                              <p className="text-xs text-[var(--color-ink-subtle)] italic mt-0.5">No email</p>
-                            )}
+                            <h4 className="text-sm font-bold text-[var(--color-ink)] truncate">{client.full_name}</h4>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <Phone size={11} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                              <span className="text-xs font-medium text-[var(--color-ink)] truncate">{client.phone}</span>
+                            </div>
                           </div>
                         </div>
-
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              statusColors[client.status] || statusColors.inactive
-                            }`}
-                          >
-                            {statusLabel}
-                          </span>
-
+                          {/* ✅ FIXED: Wrapped BadgeCheck in span to support title prop */}
+                          {client.status === "active" ? (
+                            <span title="Verified" className="inline-flex">
+                              <BadgeCheck size={18} className="text-[var(--color-success)]" />
+                            </span>
+                          ) : (
+                            <div className={`w-2.5 h-2.5 rounded-full ${statusColors[client.status] || statusColors.inactive}`} title={statusLabel} />
+                          )}
                           <div className="relative" data-dropdown-id={client.id} onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={(e) => handleToggleDropdown(e, client.id)}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] transition-all"
-                              title="Actions"
-                            >
+                            <button onClick={(e) => handleToggleDropdown(e, client.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] transition-all" title="Actions">
                               <MoreVertical size={16} />
                             </button>
                           </div>
                         </div>
                       </div>
-
-                      {/* Contact & Driver Details */}
-                      <div className="border-t border-[var(--color-surface-border)]/60 pt-2.5">
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <Phone size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                            <span className="text-[var(--color-ink)] font-medium truncate">{client.phone}</span>
+                      <div className="border-t border-[var(--color-surface-border)]/60 pt-3 mt-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {client.email ? (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
+                              <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                              <span className="text-xs text-[var(--color-ink)] truncate max-w-[180px]">{client.email}</span>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)] border-dashed">
+                              <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                              <span className="text-xs text-[var(--color-ink-subtle)] italic">No email</span>
+                            </div>
+                          )}
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
+                            <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">ID</span>
+                            <span className="text-xs font-mono text-[var(--color-ink)]">{client.id_number || "N/A"}</span>
                           </div>
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <CreditCard size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                            <span className="font-mono text-[var(--color-ink)] truncate">
-                              {client.id_number || "No ID"}
-                            </span>
-                          </div>
-                          <div className="col-span-2 flex items-center gap-1.5 min-w-0 pt-1">
-                            <CreditCard size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                            <span className="text-[var(--color-ink-muted)]"></span>
-                            <span className="font-mono text-[var(--color-ink)] truncate">
-                              {client.dl_number || "Not provided"}
-                            </span>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
+                            <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">DL</span>
+                            <span className="text-xs font-mono text-[var(--color-ink)]">{client.dl_number ? client.dl_number.replace(/^DL[-\s]?/i, '') : "N/A"}</span>
                           </div>
                         </div>
                       </div>
@@ -322,7 +294,6 @@ export default function ClientsPage() {
                 })}
               </div>
 
-              {/* DESKTOP TABLE VIEW: Paginated */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
@@ -344,27 +315,30 @@ export default function ClientsPage() {
                         suspended: "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]",
                         inactive: "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]",
                       };
-
                       return (
-                        <tr
-                          key={client.id}
-                          onClick={() => router.push(`/dashboard/clients/${client.id}`)}
-                          className="hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors group"
-                        >
+                        <tr key={client.id} onClick={() => router.push(`/dashboard/clients/${client.id}`)} className="hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors group">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
+                              <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] shrink-0">
                                 <UserIcon size={16} />
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{client.full_name}</p>
+                              <div className="min-w-0 flex flex-col">
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{client.full_name}</p>
+                                  {/* ✅ FIXED: Wrapped BadgeCheck in span to support title prop */}
+                                  {client.status === "active" && (
+                                    <span title="Verified Account" className="inline-flex flex-shrink-0">
+                                      <BadgeCheck size={14} className="text-[var(--color-success)]" />
+                                    </span>
+                                  )}
+                                </div>
                                 {client.email ? (
-                                  <a href={`mailto:${client.email}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors truncate">
+                                  <a href={`mailto:${client.email}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors truncate mt-0.5">
                                     <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
                                     <span className="truncate">{client.email}</span>
                                   </a>
                                 ) : (
-                                  <p className="text-xs text-[var(--color-ink-muted)] truncate">No email</p>
+                                  <p className="text-xs text-[var(--color-ink-muted)] truncate mt-0.5">No email</p>
                                 )}
                               </div>
                             </div>
@@ -394,15 +368,10 @@ export default function ClientsPage() {
                               {statusLabel}
                             </span>
                           </td>
-
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
                               <div className="relative" data-dropdown-id={client.id}>
-                                <button
-                                  onClick={(e) => handleToggleDropdown(e, client.id)}
-                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-all"
-                                  title="More Actions"
-                                >
+                                <button onClick={(e) => handleToggleDropdown(e, client.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-all" title="More Actions">
                                   <MoreVertical size={14} />
                                 </button>
                               </div>
@@ -415,77 +384,44 @@ export default function ClientsPage() {
                 </table>
               </div>
 
-              {/* SHARED DROPDOWN OVERLAY */}
               {openDropdownId !== null && dropdownPos && (
-                <div
-                  className="fixed z-[100] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                  style={{ top: dropdownPos.top, right: dropdownPos.right }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    onClick={() => { router.push(`/dashboard/clients/${openDropdownId}`); setOpenDropdownId(null); setDropdownPos(null); }}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
-                  >
+                <div data-dropdown-id={openDropdownId} onMouseDown={(e) => e.stopPropagation()} className="fixed z-[100] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden animate-in fade-in zoom-in-95 duration-100" style={{ top: dropdownPos.top, right: dropdownPos.right }} onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => { router.push(`/dashboard/clients/${openDropdownId}`); setOpenDropdownId(null); setDropdownPos(null); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors">
                     <UserIcon size={14} /> View Full Profile
                   </button>
-
-                  {paginatedClients.find((c) => c.id === openDropdownId)?.status === "pending" && (
-                    <button
-                      onClick={() => { handleVerify(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                    >
+                  {filteredClients.find((c) => c.id === openDropdownId)?.status === "pending" && (
+                    <button onClick={() => { handleVerify(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-500/10 transition-colors border-t border-[var(--color-surface-border)]">
                       <Shield size={14} /> Verify Client
                     </button>
                   )}
-
-                  {paginatedClients.find((c) => c.id === openDropdownId)?.status === "active" && (
-                    <button
-                      onClick={() => { handleSuspend(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                    >
+                  {filteredClients.find((c) => c.id === openDropdownId)?.status === "active" && (
+                    <button onClick={() => { handleSuspend(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-500/10 transition-colors border-t border-[var(--color-surface-border)]">
                       <ShieldAlert size={14} /> Suspend Client
                     </button>
                   )}
-
-                  {paginatedClients.find((c) => c.id === openDropdownId)?.status === "suspended" && (
-                    <button
-                      onClick={() => { handleReactivate(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                    >
+                  {filteredClients.find((c) => c.id === openDropdownId)?.status === "suspended" && (
+                    <button onClick={() => { handleReactivate(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10 transition-colors border-t border-[var(--color-surface-border)]">
                       <Shield size={14} /> Reactivate Client
                     </button>
                   )}
-
-                  <button
-                    onClick={() => { handleArchive(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                  >
+                  <button onClick={() => { handleArchive(openDropdownId); setOpenDropdownId(null); setDropdownPos(null); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors border-t border-[var(--color-surface-border)]">
                     <Archive size={14} /> Archive Client
                   </button>
                 </div>
               )}
 
-              {/* PAGINATION FOOTER: Hidden on mobile (`hidden md:flex`) */}
               <div className="hidden md:flex p-4 border-t border-[var(--color-surface-border)] flex-col sm:flex-row items-center justify-between gap-3">
                 <p className="text-xs text-[var(--color-ink-muted)] text-center sm:text-left">
                   Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredClients.length)} of {filteredClients.length} clients
                 </p>
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95"
-                  >
+                  <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95">
                     Previous
                   </button>
                   <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-primary)] text-white">
                     {currentPage} / {totalPages || 1}
                   </span>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95"
-                  >
+                  <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95">
                     Next
                   </button>
                 </div>
@@ -494,7 +430,6 @@ export default function ClientsPage() {
           )}
         </div>
       ) : (
-        /* Corporate Segment View */
         <div className="p-12 text-center bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] animate-in fade-in duration-300">
           <Building2 size={48} className="mx-auto text-[var(--color-ink-subtle)] mb-4" />
           <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Corporate Client Hub</h3>

@@ -31,10 +31,10 @@ export interface ContractItem {
 interface ContractsTableProps {
   data: ContractItem[];
   allData?: ContractItem[];
-  onDownload: (contract: ContractItem) => void;
-  onCopyLink: (contract: ContractItem) => void;
-  onSend: (contract: ContractItem) => void;
-  onVoid: (contract: ContractItem) => void;
+  onDownload: (id: number) => void;
+  onCopyLink: (id: number) => void;
+  onSend: (id: number) => void;
+  onVoid: (id: number) => void;
   onGenerate?: (bookingId: number) => void;
 }
 
@@ -43,13 +43,6 @@ const statusStyles: Record<ContractStatus, { bg: string; text: string }> = {
   sent: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400" },
   signed: { bg: "bg-[var(--color-success-bg)]", text: "text-[var(--color-success-text)]" },
   void: { bg: "bg-[var(--color-danger-bg)]", text: "text-[var(--color-danger-text)]" },
-};
-
-const statusDotColors: Record<ContractStatus, string> = {
-  draft: "bg-amber-500",
-  sent: "bg-blue-500",
-  signed: "bg-emerald-500",
-  void: "bg-red-500",
 };
 
 const statusLabels: Record<ContractStatus, string> = {
@@ -80,7 +73,6 @@ export default function ContractsTable({
 
   const mobileItems = allData || data;
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -112,11 +104,9 @@ export default function ContractsTable({
 
   return (
     <div className="w-full">
-      {/* ── MOBILE CARD VIEW (Scrolls through all items) ── */}
+      {/* ── MOBILE CARD VIEW ── */}
       <div className="block md:hidden space-y-3">
         {mobileItems.map((c) => {
-          const isLiveState = c.status === "draft" || c.status === "sent";
-
           return (
             <div
               key={c.id}
@@ -125,13 +115,13 @@ export default function ContractsTable({
                   router.push(`/dashboard/bookings/${c.booking_ref}`);
                 }
               }}
-              className="p-3.5 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all cursor-pointer space-y-3 shadow-xs"
+              className="p-4 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all cursor-pointer shadow-sm"
             >
               {/* Card Header */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] shrink-0">
-                    <FileText size={16} />
+                  <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
+                    <FileText size={18} />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-sm font-bold text-[var(--color-ink)] truncate leading-tight">
@@ -143,26 +133,7 @@ export default function ContractsTable({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 shrink-0">
-                  {/* Status Radar Dot */}
-                  <span
-                    className="relative flex h-2.5 w-2.5 items-center justify-center"
-                    title={statusLabels[c.status] || c.status}
-                  >
-                    {isLiveState && (
-                      <span
-                        className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                          statusDotColors[c.status] || "bg-slate-400"
-                        }`}
-                      />
-                    )}
-                    <span
-                      className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
-                        statusDotColors[c.status] || "bg-slate-400"
-                      }`}
-                    />
-                  </span>
-
+                <div className="flex items-center gap-2 shrink-0">
                   {/* Options Menu Button */}
                   <div
                     className="relative"
@@ -182,7 +153,7 @@ export default function ContractsTable({
               </div>
 
               {/* Details Grid */}
-              <div className="border-t border-[var(--color-surface-border)]/60 pt-2.5">
+              <div className="border-t border-[var(--color-surface-border)]/60 pt-3 mt-3">
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {/* Booking Ref */}
                   <div className="min-w-0">
@@ -204,26 +175,42 @@ export default function ContractsTable({
                     </p>
                   </div>
 
-                  {/* Status & Quick Action Bottom Bar */}
-                  <div className="col-span-2 border-t border-[var(--color-surface-border)]/40 pt-2 mt-1 flex items-center justify-between text-xs">
+                  {/* Status + Icon-Only Action Buttons */}
+                  <div className="col-span-2 border-t border-[var(--color-surface-border)]/60 pt-3 mt-3 flex items-center justify-between">
+                    {/* Status Badge - Consistent padding with other tables */}
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
                         statusStyles[c.status]?.bg || "bg-slate-500/10"
                       } ${statusStyles[c.status]?.text || "text-slate-500"}`}
                     >
                       {statusLabels[c.status] || c.status}
                     </span>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDownload(c);
-                      }}
-                      className="flex items-center gap-1 text-xs font-bold text-[var(--color-primary-text)] hover:underline cursor-pointer"
-                    >
-                      <Download size={13} /> Download PDF
-                    </button>
+                    {/* Plain Icon-Only Action Buttons: Copy (Left) + Download (Right) */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCopyLink(c.id);
+                        }}
+                        className="p-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-lg transition-all cursor-pointer"
+                        title="Copy Share Link"
+                      >
+                        <Copy size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDownload(c.id);
+                        }}
+                        className="p-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-lg transition-all cursor-pointer"
+                        title="Download PDF"
+                      >
+                        <Download size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -334,14 +321,16 @@ export default function ContractsTable({
       {/* ── SHARED DROPDOWN OVERLAY ── */}
       {openDropdownId !== null && dropdownPos && activeContract && (
         <div
-          className="fixed z-[100] w-52 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+          data-dropdown-id={openDropdownId}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="fixed z-[100] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
           style={{ top: dropdownPos.top, right: dropdownPos.right }}
           onClick={(e) => e.stopPropagation()}
         >
           <button
             type="button"
             onClick={() => {
-              onDownload(activeContract);
+              onDownload(activeContract.id);
               setOpenDropdownId(null);
               setDropdownPos(null);
             }}
@@ -353,7 +342,7 @@ export default function ContractsTable({
           <button
             type="button"
             onClick={() => {
-              onCopyLink(activeContract);
+              onCopyLink(activeContract.id);
               setOpenDropdownId(null);
               setDropdownPos(null);
             }}
@@ -366,7 +355,7 @@ export default function ContractsTable({
             <button
               type="button"
               onClick={() => {
-                onSend(activeContract);
+                onSend(activeContract.id);
                 setOpenDropdownId(null);
                 setDropdownPos(null);
               }}
@@ -380,7 +369,7 @@ export default function ContractsTable({
             <button
               type="button"
               onClick={() => {
-                onVoid(activeContract);
+                onVoid(activeContract.id);
                 setOpenDropdownId(null);
                 setDropdownPos(null);
               }}

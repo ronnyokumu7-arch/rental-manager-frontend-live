@@ -79,6 +79,15 @@ export function useContracts() {
     try {
       toast.loading("Generating PDF...");
       const res = await contractsApi.downloadPdf(id);
+      
+      // ✅ CRITICAL: Axios wraps backend errors (like 500s) in Blobs when responseType is "blob".
+      // If the backend crashed, res.data is a JSON error, not a PDF.
+      if (res.data.type === "application/json") {
+        const text = await res.data.text();
+        const errorData = JSON.parse(text);
+        throw new Error(errorData.detail || "Backend failed to generate PDF");
+      }
+
       const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -90,9 +99,24 @@ export function useContracts() {
       window.URL.revokeObjectURL(url);
       toast.dismiss();
       toast.success("PDF downloaded");
-    } catch {
+    } catch (error: any) {
       toast.dismiss();
-      toast.error("Failed to download PDF");
+      
+      // ✅ Decode the backend's real error message from the Blob (if present)
+      let message = "Failed to download PDF";
+      const blob = error?.response?.data;
+      if (blob instanceof Blob) {
+        try {
+          const parsed = JSON.parse(await blob.text());
+          message = parsed.detail || message;
+        } catch {
+          /* keep default message */
+        }
+      } else if (error?.message) {
+        message = error.message;
+      }
+      
+      toast.error(message);
     }
   };
 
@@ -100,13 +124,13 @@ export function useContracts() {
     try {
       const res = await contractsApi.generateShareLink(id);
       
-      // ✅ BULLETPROOF URL CONSTRUCTION:
-      // If the backend's FRONTEND_URL env var is missing or the backend is stale,
-      // res.share_url might be undefined or just a relative path.
-      // We construct it locally to guarantee a fully qualified URL.
-      const fullUrl = res.share_url && res.share_url.startsWith("http")
-        ? res.share_url
-        : `${window.location.origin}/contracts/view/${res.share_token}`;
+      // ✅ BULLETPROOF URL CONSTRUCTION (ENVIRONMENT AGNOSTIC):
+      // We completely ignore the backend's `share_url` for the clipboard.
+      // Why? Because the backend's FRONTEND_URL is set to localhost for your 
+      // local testing, which breaks the link when copied from the live Vercel site.
+      // `window.location.origin` is the absolute truth: it dynamically resolves 
+      // to localhost locally, and your Vercel domain in production.
+      const fullUrl = `${window.location.origin}/contracts/view/${res.share_token}`;
 
       await navigator.clipboard.writeText(fullUrl); 
       

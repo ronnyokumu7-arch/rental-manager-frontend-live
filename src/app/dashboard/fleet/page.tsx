@@ -1,4 +1,3 @@
-// src/app/dashboard/fleet/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -58,7 +57,7 @@ export default function FleetPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] flex-shrink-0">
+            <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] flex-shrink-0">
               {currentTabInfo.icon}
             </div>
             <span>{currentTabInfo.title}</span>
@@ -69,7 +68,7 @@ export default function FleetPage() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-xs self-start sm:self-auto">
+        <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm self-start sm:self-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -95,24 +94,27 @@ export default function FleetPage() {
 
       {/* Segment View Engine */}
       {activeTab === "fleet" ? (
-        <div className="animate-in fade-in duration-300">
+        // ✅ WRAPPED FleetList in same card container as Clients page
+        <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden animate-in fade-in duration-300">
           <FleetList {...fleetData} />
         </div>
       ) : activeTab === "performance" ? (
-        <div className="card p-8 sm:p-12 text-center animate-in fade-in duration-300">
-          <BarChart3 size={40} className="mx-auto text-[var(--color-ink-subtle)] mb-4 sm:w-12 sm:h-12" />
+        // ✅ MATCHED empty state pattern from Clients page exactly
+        <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] p-12 text-center animate-in fade-in duration-300">
+          <BarChart3 size={48} className="mx-auto text-[var(--color-ink-subtle)] mb-4" />
           <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">Performance Analytics</h3>
-          <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] max-w-md mx-auto">
+          <p className="text-sm text-[var(--color-ink-muted)] max-w-md mx-auto">
             Advanced fleet performance metrics, real-time vehicle utilization analysis, and customized profitability timelines coming soon.
           </p>
         </div>
       ) : (
+        // ✅ MATCHED garage hub card patterns from Clients page
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Garage Hub Content */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {/* Quick Garage Card */}
             <div
-              className="card p-4 sm:p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all flex flex-row sm:flex-col items-start gap-3.5 sm:gap-0"
+              className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] p-4 sm:p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all flex flex-row sm:flex-col items-start gap-3.5 sm:gap-0"
               onClick={() => {
                 const awaitingVehicle = fleetData.filteredVehicles.find(
                   (v) => v.status === "awaiting_mileage"
@@ -143,7 +145,7 @@ export default function FleetPage() {
             </div>
 
             {/* Maintenance Queue Card */}
-            <div className="card p-4 sm:p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all flex flex-row sm:flex-col items-start gap-3.5 sm:gap-0">
+            <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] p-4 sm:p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all flex flex-row sm:flex-col items-start gap-3.5 sm:gap-0">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--color-danger-bg)] flex items-center justify-center text-[var(--color-danger-text)] sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
                 <Car size={20} className="sm:w-6 sm:h-6" />
               </div>
@@ -164,7 +166,7 @@ export default function FleetPage() {
             </div>
 
             {/* Service Due Card */}
-            <div className="card p-4 sm:p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all flex flex-row sm:flex-col items-start gap-3.5 sm:gap-0">
+            <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] p-4 sm:p-6 group cursor-pointer hover:border-[var(--color-primary)]/30 transition-all flex flex-row sm:flex-col items-start gap-3.5 sm:gap-0">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--color-primary-muted)] flex items-center justify-center text-[var(--color-primary-text)] sm:mb-4 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
                 <BarChart3 size={20} className="sm:w-6 sm:h-6" />
               </div>
@@ -183,15 +185,15 @@ export default function FleetPage() {
             </div>
           </div>
 
-          {/* Info Card */}
-          <div className="card p-6 sm:p-10 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-[var(--color-warning-bg)] flex items-center justify-center mb-3 sm:mb-4">
-              <Wrench size={24} className="text-[var(--color-warning-text)] sm:w-8 sm:h-8" />
+          {/* Info Card - MATCHED Clients page empty state pattern */}
+          <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] p-12 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[var(--color-warning-bg)] flex items-center justify-center mb-4">
+              <Wrench size={24} className="text-[var(--color-warning-text)]" />
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-[var(--color-ink)] mb-1 sm:mb-2">
+            <h3 className="text-base font-bold text-[var(--color-ink)] mb-2">
               Garage Hub
             </h3>
-            <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] max-w-md">
+            <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
               Comprehensive maintenance scheduling, parts inventory, mechanic assignments, and automated service reminders coming soon.
             </p>
           </div>
@@ -209,7 +211,7 @@ export default function FleetPage() {
         onSave={fleetData.handleGarageSave}
       />
 
-      {/* FLOATING ACTION BUTTON */}
+      {/* FLOATING ACTION BUTTON - Kept as-is, matches system patterns */}
       {activeTab === "garage" && (
         <button
           onClick={() => router.push("/dashboard/fleet/new")}

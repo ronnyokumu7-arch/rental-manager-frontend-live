@@ -65,24 +65,16 @@ export function useClientsList() {
     setCurrentPage(1);
   }, [search, statusFilter, view]);
 
-  useEffect(() => {
-    const handleClickOutside = () => setOpenDropdownId(null);
-    if (openDropdownId !== null) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-    return undefined; // ✅ FIXED: Explicitly return undefined for the null path
-  }, [openDropdownId]);
-
   const totalClients = clients.length;
   const activeClients = clients.filter((c) => c.status === "active").length;
   const suspendedClients = clients.filter((c) => c.status === "suspended").length;
 
-  // ✅ UPDATED: Block verification if compliance docs are missing or DL is expired
+  // ✅ FIXED: Call the dedicated activate endpoint, not the generic update
+  // (ClientUpdate schema silently ignores 'status' field by design)
   const handleVerify = async (clientId: number) => {
     const client = clients.find((c) => c.id === clientId);
     if (client) {
-      const isDlExpired = client.dl_expiry ? new Date(client.dl_expiry) < new Date() : true;
+      const isDlExpired = client.dl_expiry ? new Date(client.dl_expiry) < new Date() : false;
       if (isDlExpired || !client.id_image_front || !client.dl_image_front) {
         toast.error("Action blocked: Expired or missing compliance documents. Please renew DL and upload documents first.");
         return;
@@ -90,7 +82,7 @@ export function useClientsList() {
     }
     setActionLoadingId(clientId);
     try {
-      await clientsApi.update(clientId, { status: "active" });
+      await clientsApi.activate(clientId);
       toast.success("Client verified successfully");
       await fetchClients();
     } catch (error: any) {
@@ -101,10 +93,11 @@ export function useClientsList() {
     }
   };
 
+  // ✅ FIXED: Call the dedicated suspend endpoint
   const handleSuspend = async (clientId: number) => {
     setActionLoadingId(clientId);
     try {
-      await clientsApi.update(clientId, { status: "suspended" });
+      await clientsApi.suspend(clientId);
       toast.success("Client suspended successfully");
       await fetchClients();
     } catch (error: any) {
@@ -115,11 +108,11 @@ export function useClientsList() {
     }
   };
 
-  // ✅ UPDATED: Block reactivation if compliance docs are missing or DL is expired
+  // ✅ FIXED: Call the dedicated reactivate endpoint
   const handleReactivate = async (clientId: number) => {
     const client = clients.find((c) => c.id === clientId);
     if (client) {
-      const isDlExpired = client.dl_expiry ? new Date(client.dl_expiry) < new Date() : true;
+      const isDlExpired = client.dl_expiry ? new Date(client.dl_expiry) < new Date() : false;
       if (isDlExpired || !client.id_image_front || !client.dl_image_front) {
         toast.error("Action blocked: Expired or missing compliance documents. Please renew DL and upload documents first.");
         return;
@@ -127,7 +120,7 @@ export function useClientsList() {
     }
     setActionLoadingId(clientId);
     try {
-      await clientsApi.update(clientId, { status: "active" });
+      await clientsApi.reactivate(clientId);
       toast.success("Client reactivated successfully");
       await fetchClients();
     } catch (error: any) {
