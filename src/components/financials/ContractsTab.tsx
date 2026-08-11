@@ -1,19 +1,26 @@
-// src/components/financials/ContractsTab.tsx
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, FileText, Filter, ChevronDown, FileSignature, Send, CheckCircle2, XCircle } from "lucide-react";
+import { Search, FileText, Filter, ChevronDown, FileSignature } from "lucide-react";
 import { useContracts } from "@/hooks/financials/useContracts";
 import ContractsTable from "./contracts/ContractsTable";
 import GenerateContractModal from "./contracts/GenerateContractModal";
 
 export default function ContractsTab() {
   const {
-    contracts, loading, search, setSearch,
-    statusFilter, setStatusFilter,
-    currentPage, setCurrentPage,
-    handleDownload, handleCopyLink, handleSend, handleVoid,
-    refetch
+    contracts,
+    loading,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    currentPage,
+    setCurrentPage,
+    handleDownload,
+    handleCopyLink,
+    handleSend,
+    handleVoid,
+    refetch,
   } = useContracts();
 
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -21,97 +28,105 @@ export default function ContractsTab() {
 
   const pageSize = 7;
 
-  // 1. Apply Search and Status Filter directly to ALL contracts
-  const displayedContracts = useMemo(() => {
-    return contracts.filter(contract => {
-      const searchLower = search.toLowerCase();
-      const matchesSearch = 
-        contract.contract_number.toLowerCase().includes(searchLower) ||
-        ('booking_ref' in contract && String((contract as any).booking_ref).toLowerCase().includes(searchLower)) ||
-        ('client_name' in contract && String((contract as any).client_name).toLowerCase().includes(searchLower));
-      
-      const matchesStatus = statusFilter === "all" || contract.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    });
-  }, [contracts, search, statusFilter]);
+  // 1. Filter contracts by search query
+  const searchFilteredContracts = useMemo(() => {
+    const searchLower = search.trim().toLowerCase();
+    if (!searchLower) return contracts;
 
-  // 2. Pagination Logic (7 per page)
+    return contracts.filter((contract) => {
+      const contractNum = contract.contract_number?.toLowerCase() || "";
+      const bookingRef = "booking_ref" in contract ? String((contract as any).booking_ref).toLowerCase() : "";
+      const clientName = "client_name" in contract ? String((contract as any).client_name).toLowerCase() : "";
+
+      return contractNum.includes(searchLower) || bookingRef.includes(searchLower) || clientName.includes(searchLower);
+    });
+  }, [contracts, search]);
+
+  // 2. Filter search-filtered contracts by selected status
+  const displayedContracts = useMemo(() => {
+    if (statusFilter === "all") return searchFilteredContracts;
+    return searchFilteredContracts.filter((contract) => contract.status === statusFilter);
+  }, [searchFilteredContracts, statusFilter]);
+
+  // 3. Status Badge Counters
+  const draftCount = useMemo(() => searchFilteredContracts.filter((c) => c.status === "draft").length, [searchFilteredContracts]);
+  const sentCount = useMemo(() => searchFilteredContracts.filter((c) => c.status === "sent").length, [searchFilteredContracts]);
+  const signedCount = useMemo(() => searchFilteredContracts.filter((c) => c.status === "signed").length, [searchFilteredContracts]);
+  const voidCount = useMemo(() => searchFilteredContracts.filter((c) => c.status === "void").length, [searchFilteredContracts]);
+
+  // 4. Pagination (Used for Desktop Table View)
+  const totalPages = Math.max(1, Math.ceil(displayedContracts.length / pageSize));
+
   const paginatedContracts = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return displayedContracts.slice(start, start + pageSize);
   }, [displayedContracts, currentPage]);
 
-  const totalPages = Math.ceil(displayedContracts.length / pageSize);
-
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [search, statusFilter, setCurrentPage]);
 
-  // 3. Counters (Reflects ALL contracts, filtered by search/status)
-  const draftCount = useMemo(() => displayedContracts.filter(c => c.status === "draft").length, [displayedContracts]);
-  const sentCount = useMemo(() => displayedContracts.filter(c => c.status === "sent").length, [displayedContracts]);
-  const signedCount = useMemo(() => displayedContracts.filter(c => c.status === "signed").length, [displayedContracts]);
-  const voidCount = useMemo(() => displayedContracts.filter(c => c.status === "void").length, [displayedContracts]);
-
   return (
     <>
-      {/* Premium Card Container */}
-      <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden">
+      <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-xs overflow-hidden">
         
-        {/* Toolbar */}
-        <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col lg:flex-row gap-4 items-center justify-between">
+        {/* Toolbar Header */}
+        <div className="p-3 sm:p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30 space-y-2.5 sm:space-y-3">
           
-          {/* Left Side: Counters Only */}
-          <div className="flex items-center gap-4 w-full lg:w-auto">
-            <div className="hidden xl:flex items-center gap-4 px-4 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <FileSignature size={14} className="text-[var(--color-ink-muted)]" />
-                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Draft</span>
-                <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{draftCount}</span>
-              </div>
-              <div className="w-px h-3 bg-[var(--color-surface-border)]" />
-              <div className="flex items-center gap-2">
-                <Send size={14} className="text-[var(--color-primary-text)]" />
-                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Sent</span>
-                <span className="text-xs font-bold text-[var(--color-primary-text)] tabular-nums">{sentCount}</span>
-              </div>
-              <div className="w-px h-3 bg-[var(--color-surface-border)]" />
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-[var(--color-success-text)]" />
-                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Signed</span>
-                <span className="text-xs font-bold text-[var(--color-success-text)] tabular-nums">{signedCount}</span>
-              </div>
-              <div className="w-px h-3 bg-[var(--color-surface-border)]" />
-              <div className="flex items-center gap-2">
-                <XCircle size={14} className="text-[var(--color-danger-text)]" />
-                <span className="text-xs font-medium text-[var(--color-ink-muted)]">Void</span>
-                <span className="text-xs font-bold text-[var(--color-danger-text)] tabular-nums">{voidCount}</span>
-              </div>
+          {/* Status Bar Pill (Void hidden on mobile) */}
+          <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-5 py-2 px-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] overflow-x-auto custom-scrollbar">
+            <div className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+              <span className="text-[var(--color-ink-muted)]">Draft</span>
+              <span className="text-[var(--color-ink)] font-bold tabular-nums">{draftCount}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+              <span className="text-[var(--color-ink-muted)]">Sent</span>
+              <span className="text-[var(--color-primary-text)] font-bold tabular-nums">{sentCount}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="text-[var(--color-ink-muted)]">Signed</span>
+              <span className="text-[var(--color-success-text)] font-bold tabular-nums">{signedCount}</span>
+            </div>
+
+            {/* Hidden on mobile, visible on sm and up */}
+            <div className="hidden sm:flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+              <span className="text-[var(--color-ink-muted)]">Void</span>
+              <span className="text-[var(--color-danger-text)] font-bold tabular-nums">{voidCount}</span>
             </div>
           </div>
 
-          {/* Right Side: Search, Filter & Generate Button */}
-          <div className="flex items-center gap-2 w-full lg:w-auto">
-            <div className="relative w-full lg:w-64">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
+          {/* Controls: Search + Responsive Filter */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search contract or booking ID..."
-                className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
+                placeholder="Search contract or booking..."
+                className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-xs sm:text-sm"
               />
             </div>
-            
-            <div className="relative w-full lg:w-48">
-              <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none z-10" />
-              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none z-10" />
+
+            {/* Mobile Icon-Only Filter */}
+            <div className="relative shrink-0 sm:hidden">
+              <div className="w-10 h-10 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] flex items-center justify-center text-[var(--color-ink-muted)] relative">
+                <Filter size={15} />
+                {statusFilter !== "all" && (
+                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[var(--color-primary)]" />
+                )}
+              </div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="w-full pl-9 pr-9 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm appearance-none cursor-pointer"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
+                title="Filter by status"
               >
                 <option value="all">All Statuses</option>
                 <option value="draft">Draft</option>
@@ -121,69 +136,98 @@ export default function ContractsTab() {
               </select>
             </div>
 
-            {/* ✅ NEW: Generate Contract Button */}
-            <button
-              onClick={() => setShowGenerateModal(true)}
-              className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm flex-shrink-0"
-            >
-              <FileSignature size={14} strokeWidth={2.5} />
-              Generate Contract
-            </button>
+            {/* Desktop Full Select Filter */}
+            <div className="hidden sm:block relative shrink-0">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="h-10 pl-8 pr-8 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-xs sm:text-sm font-medium text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all appearance-none cursor-pointer"
+                title="Filter by status"
+              >
+                <option value="all">All</option>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="signed">Signed</option>
+                <option value="void">Void</option>
+              </select>
+              <Filter size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
+              <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
+            </div>
           </div>
+
+          {/* Action Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setGenerateForId(null);
+              setShowGenerateModal(true);
+            }}
+            className="w-full h-10 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-xs shrink-0 cursor-pointer touch-manipulation active:scale-[0.98]"
+          >
+            <FileSignature size={15} />
+            <span>Generate Contract</span>
+          </button>
         </div>
 
         {/* Content Area */}
         {loading ? (
           <div className="flex items-center justify-center p-12">
-            <div className="w-10 h-10 rounded-full border-4 border-[var(--color-primary)] border-t-transparent animate-spin" />
+            <div className="w-8 h-8 rounded-full border-3 border-[var(--color-primary)] border-t-transparent animate-spin" />
           </div>
         ) : displayedContracts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <div className="w-16 h-16 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center mb-4">
-              <FileText size={32} className="text-[var(--color-ink-subtle)]" />
+          <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
+            <div className="w-12 h-12 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center mb-3">
+              <FileText size={24} className="text-[var(--color-ink-subtle)]" />
             </div>
-            <h4 className="text-base font-bold text-[var(--color-ink)] mb-1">
+            <h4 className="text-sm font-bold text-[var(--color-ink)] mb-1">
               No contracts found
             </h4>
-            <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
+            <p className="text-xs text-[var(--color-ink-muted)] max-w-xs">
               {search || statusFilter !== "all" 
-                ? "Try adjusting your filters." 
+                ? "Try adjusting your search query or status filter." 
                 : "Click 'Generate Contract' above to create contracts for pending or confirmed bookings."}
             </p>
           </div>
         ) : (
           <>
-            <ContractsTable 
-              data={paginatedContracts}
-              onDownload={handleDownload}
-              onCopyLink={handleCopyLink}
-              onSend={handleSend}
-              onVoid={handleVoid}
-              onGenerate={(id) => {
-                setGenerateForId(id);
-                setShowGenerateModal(true);
-              }}
-            />
-            <div className="p-4 border-t border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-[var(--color-ink-muted)]">
+            <div className="p-3 sm:p-4">
+              <ContractsTable 
+                data={paginatedContracts}
+                allData={displayedContracts}
+                onDownload={handleDownload}
+                onCopyLink={handleCopyLink}
+                onSend={handleSend}
+                onVoid={handleVoid}
+                onGenerate={(id) => {
+                  setGenerateForId(id);
+                  setShowGenerateModal(true);
+                }}
+              />
+            </div>
+
+            {/* Desktop-Only Pagination Footer */}
+            <div className="hidden sm:block p-3 sm:p-3.5 border-t border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-left">
+                <p className="text-[11px] text-[var(--color-ink-muted)]">
                   Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, displayedContracts.length)} of {displayedContracts.length} contracts
                 </p>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center justify-center gap-1.5 w-full sm:w-auto">
                   <button
+                    type="button"
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95"
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all cursor-pointer"
                   >
                     Previous
                   </button>
-                  <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-primary)] text-white">
-                    {currentPage} / {totalPages || 1}
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--color-primary)] text-white">
+                    {currentPage} / {totalPages}
                   </span>
                   <button
+                    type="button"
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95"
+                    disabled={currentPage >= totalPages}
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all cursor-pointer"
                   >
                     Next
                   </button>

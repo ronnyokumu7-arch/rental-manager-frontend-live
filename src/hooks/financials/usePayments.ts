@@ -16,16 +16,26 @@ export function usePayments() {
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await paymentsApi.list();
+      // ✅ FIXED: Backend enforces page_size <= 200 (le=200).
+      // 200 covers client-side search/filter/pagination for current tenant volumes.
+      // We also pass the filters to the server to reduce payload size.
+      const params = {
+        page_size: 200,
+        ...(statusFilter !== "all" && { status: statusFilter }),
+        ...(methodFilter !== "all" && { method: methodFilter })
+      };
+      
+      const data = await paymentsApi.list(params);
       
       // ✅ FIXED: Added safe fallback to guarantee 'payments' state is always an array
       setPayments(data || []);
-    } catch {
+    } catch (error) {
+      console.error("Failed to load payments", error);
       toast.error("Failed to load payments");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter, methodFilter]); // ✅ FIXED: Added missing dependencies so it re-fetches when filters change
 
   useEffect(() => {
     fetchPayments();
@@ -34,6 +44,7 @@ export function usePayments() {
   const filteredPayments = useMemo(() => {
     let result = payments;
     
+    // Client-side filtering acts as a safety net, though the server handles the bulk of it now
     if (methodFilter !== "all") {
       result = result.filter(p => p.method === methodFilter);
     }

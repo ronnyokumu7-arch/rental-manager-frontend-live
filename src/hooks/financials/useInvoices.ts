@@ -16,12 +16,19 @@ export function useInvoices() {
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {
-      const params = statusFilter !== "all" ? { status: statusFilter } : undefined;
+      // ✅ FIXED: Backend enforces page_size <= 200 (le=200).
+      // 200 covers client-side search/filter/pagination for current tenant volumes.
+      const params = {
+        page_size: 200,
+        ...(statusFilter !== "all" && { status: statusFilter })
+      };
+      
       const data = await invoicesApi.list(params);
       
       // ✅ FIXED: Added safe fallback to guarantee 'invoices' state is always an array
       setInvoices(data || []);
-    } catch {
+    } catch (error) {
+      console.error("Failed to load invoices", error);
       toast.error("Failed to load invoices");
     } finally {
       setLoading(false);
@@ -112,9 +119,6 @@ export function useInvoices() {
     }
   };
 
-  // ✅ REMOVED: handleRecordPayment is no longer needed here
-  // The RecordPaymentModal calls invoicesApi.recordPayment directly and triggers refetch
-  
   return {
     invoices: paginatedInvoices,
     loading,
@@ -129,7 +133,6 @@ export function useInvoices() {
     handleDownload,
     handleCopyLink,
     handleVoid,
-    // ✅ REMOVED: handleRecordPayment
     refetch: fetchInvoices,
   };
 }

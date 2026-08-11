@@ -1,9 +1,9 @@
-import { confirmAction } from "@/lib/utils/confirmAction";
 // src/hooks/financials/useContracts.ts
 import { useState, useEffect, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
 import { contractsApi } from "@/lib/api/contracts";
 import type { Contract, ContractStatus } from "@/lib/types";
+import { confirmAction } from "@/lib/utils/confirmAction";
 
 export function useContracts() {
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -16,10 +16,10 @@ export function useContracts() {
   const fetchContracts = useCallback(async () => {
     setLoading(true);
     try {
-      // ✅ FIXED: Fetch a large batch so client-side filtering/pagination works
-      // for tenants with more than 50 contracts (the backend default).
+      // ✅ FIXED: Backend enforces page_size <= 200 (le=200).
+      // 200 covers client-side search/filter/pagination for current tenant volumes.
       const params = {
-        page_size: 200, 
+        page_size: 200,
         ...(statusFilter !== "all" && { contract_status: statusFilter })
       };
       
@@ -58,7 +58,7 @@ export function useContracts() {
       result = result.filter(
         (c) =>
           c.contract_number.toLowerCase().includes(q) ||
-          (c.booking_number && c.booking_number.toLowerCase().includes(q)) || // ✅ ADDED: Search by formatted booking number
+          (c.booking_number && c.booking_number.toLowerCase().includes(q)) ||
           c.booking_id?.toString().includes(q) ||
           ('booking_ref' in c && String((c as any).booking_ref).toLowerCase().includes(q))
       );
@@ -99,9 +99,17 @@ export function useContracts() {
   const handleCopyLink = async (id: number) => {
     try {
       const res = await contractsApi.generateShareLink(id);
-      await navigator.clipboard.writeText(res.share_token);
       
-      // ✅ FIX: Preserve existing status unless it's a draft
+      // ✅ BULLETPROOF URL CONSTRUCTION:
+      // If the backend's FRONTEND_URL env var is missing or the backend is stale,
+      // res.share_url might be undefined or just a relative path.
+      // We construct it locally to guarantee a fully qualified URL.
+      const fullUrl = res.share_url && res.share_url.startsWith("http")
+        ? res.share_url
+        : `${window.location.origin}/contracts/view/${res.share_token}`;
+
+      await navigator.clipboard.writeText(fullUrl); 
+      
       setContracts(prev => prev.map(c => {
         if (c.id === id) {
           const newStatus = c.status === "draft" ? "sent" : c.status;

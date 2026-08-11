@@ -6,9 +6,7 @@ export const contractsApi = {
   list: (params?: { booking_id?: number; contract_status?: string; page?: number; page_size?: number }) =>
     apiClient.get<PaginatedResponse<Contract>>("/contracts/", { params }).then((r) => r.data.items),
 
-    // ✅ FIXED: Was POST /contracts/generate-for-booking/ (nonexistent → 405).
-  // Backend source of truth is POST /contracts/bookings/{id}/regenerate,
-  // which creates the contract if none exists (and regenerates if one does).
+  // ✅ FIXED: Mapped to the correct backend route /contracts/bookings/{id}/regenerate
   generateForBooking: (bookingId: number) =>
     apiClient.post<Contract>(`/contracts/bookings/${bookingId}/regenerate`).then((r) => r.data),
     
@@ -18,15 +16,15 @@ export const contractsApi = {
   void: (id: number) =>
     apiClient.post<Contract>(`/contracts/${id}/void`).then((r) => r.data),
 
-  // ✅ FIXED: Mapped to the correct backend route and return type (ContractOut)
   regenerate: (bookingId: number) =>
     apiClient.post<Contract>(`/contracts/bookings/${bookingId}/regenerate`).then((r) => r.data),
 
   downloadPdf: (id: number) =>
     apiClient.get(`/contracts/${id}/pdf`, { responseType: "blob" }),
 
+  // ✅ FIXED: Added share_url to the return type so the hook can copy the full link
   generateShareLink: (id: number) =>
-    apiClient.post<{ share_token: string; expires_at: string }>(
+    apiClient.post<{ share_token: string; share_url: string; expires_at: string }>(
       `/contracts/${id}/share-link`
     ).then((r) => r.data),
 
