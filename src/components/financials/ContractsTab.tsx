@@ -197,7 +197,7 @@ export default function ContractsTab() {
                 onDownload={handleDownload}
                 onCopyLink={handleCopyLink}
                 onSend={handleSend}
-                onVoid={handleVoid}
+                onVoid={(contract) => handleVoid(contract.id)}
                 onGenerate={(id) => {
                   setGenerateForId(id);
                   setShowGenerateModal(true);
