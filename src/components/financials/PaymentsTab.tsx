@@ -147,17 +147,8 @@ export default function PaymentsTab() {
     window.URL.revokeObjectURL(url);
   };
 
-  const dateFilterLabels: Record<DateRange, string> = {
-    all: "All Time",
-    today: "Today",
-    yesterday: "Yesterday",
-    this_week: "This Week",
-    this_month: "This Month",
-    last_month: "Last Month",
-    last_3_months: "Last 3 Months",
-    last_6_months: "Last 6 Months",
-    last_year: "Last Year",
-  };
+  // ✅ REMOVED: Unused `dateFilterLabels` object (dead code flagged by noUnusedLocals).
+  // The date dropdown uses an inline `{ value, label }` array instead.
 
   return (
     <>
@@ -289,7 +280,8 @@ export default function PaymentsTab() {
                           All Statuses
                         </button>
                         <div className="h-px bg-[var(--color-surface-border)]" />
-                        {["completed", "pending", "failed"].map((value) => (
+                        {/* ✅ FIXED: Added `as const` to narrow array to exact literal union types */}
+                        {(["completed", "pending", "failed"] as const).map((value) => (
                           <button
                             key={value}
                             onClick={() => { setStatusFilter(value); setShowStatusDropdown(false); }}

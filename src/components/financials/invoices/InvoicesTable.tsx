@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { FileText, Download, Copy, DollarSign, XCircle, MoreVertical, ExternalLink, Calendar, Hash } from "lucide-react";
+import { FileText, Download, Copy, DollarSign, XCircle, MoreVertical, ExternalLink, Hash } from "lucide-react";
 import type { Invoice } from "@/lib/types";
 
 interface InvoicesTableProps {

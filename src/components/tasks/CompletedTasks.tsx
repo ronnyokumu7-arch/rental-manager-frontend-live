@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Calendar, Tag, CheckCircle2, MoreVertical, RotateCcw, Eye,
-  Search, Clock, Users, UserX, Wrench, Building2, Briefcase, DollarSign, Shield, Car, User as UserIcon
+  Search, Clock, Users, UserX, Wrench, Building2, Briefcase, DollarSign, Shield, Car
 } from "lucide-react";
 import type { Task, User } from "@/lib/types";
 import type { TimeFilter } from "@/hooks/tasks/useTasksList";
@@ -58,7 +58,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export default function CompletedTasksTab({
-  tasks, users, loading, metrics,
+  tasks, users, metrics,
   search, setSearch, timeFilter, setTimeFilter,
   selectedUserId, setSelectedUserId,
   currentPage, setCurrentPage, pageSize, totalPages, filteredTasks,

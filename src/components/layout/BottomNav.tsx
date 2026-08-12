@@ -34,7 +34,8 @@ export default function BottomNav({ navItems }: BottomNavProps) {
 
   // ✅ Reorder items: Dashboard | Bookings | Fleet | Financials | Clients → More
   const reorderedItems = [...navItems].sort((a, b) => {
-    const priority = {
+    // ✅ FIXED: Added `Record<string, number>` type so TypeScript allows dynamic string lookups
+    const priority: Record<string, number> = {
       "dashboard": 0,
       "bookings": 1,
       "fleet": 2,

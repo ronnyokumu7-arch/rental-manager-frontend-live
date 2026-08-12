@@ -153,8 +153,7 @@ export default function UsersTable({
       {/* MOBILE CONTINUOUS SCROLL CARD VIEW (< md) */}
       <div className="block md:hidden p-4 space-y-3">
         {mobileList.map((u) => {
-          const displayRole = getRoleDisplay(u.role, u.department, u.job_title);
-          const { color, Icon } = getRoleStyle(u.role, u.job_title);
+          // ✅ REMOVED: Unused displayRole, color, and Icon variables (only used in desktop view)
           
           const emailVerified = u.email_verified === true;
           const phoneVerified = u.phone_verified === true;
@@ -494,7 +493,8 @@ export default function UsersTable({
             </button>
           )}
         </div>,
-        typeof document !== "undefined" ? document.body : document.createElement("div")
+        // ✅ FIXED: Removed unnecessary check. `mounted` guarantees we are in the browser, so `document.body` is always safe.
+        document.body
       )}
 
       {/* FOOTER & PAGINATION (Desktop Only) */}

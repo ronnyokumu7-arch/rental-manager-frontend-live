@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Calendar, Tag, Clock, Ban, CheckCircle2, MoreVertical,
   Users, UserX, Wrench, Building2, Briefcase, DollarSign, Shield, Car, Archive,
-  Search, Flag, Phone, Mail, User as UserIcon
+  Search, Flag
 } from "lucide-react";
 import UserFilterSelector from "@/components/ui/UserFilterSelector";
 import type { Task, User } from "@/lib/types";
@@ -60,15 +60,30 @@ const PRIORITY_COLORS: Record<string, string> = {
 const PRIORITIES = ["urgent", "high", "medium", "low"];
 
 export default function AssignedToTab({
-  tasks:_tasks, users, loading, metrics,
-  search, setSearch, priorityFilter, setPriorityFilter,
-  selectedUserId, setSelectedUserId,
-  currentPage, setCurrentPage, pageSize, totalPages:_totalPages, filteredTasks,
-  openDropdownId, dropdownPos, onToggleDropdown, onStatusChange, onArchive
+  tasks: _tasks, // Prefixed with _ to indicate intentionally unused
+  users,
+  loading,
+  metrics,
+  search,
+  setSearch,
+  priorityFilter,
+  setPriorityFilter,
+  selectedUserId,
+  setSelectedUserId,
+  currentPage,
+  setCurrentPage,
+  pageSize,
+  totalPages: _totalPages, // Prefixed with _ to indicate intentionally unused
+  filteredTasks,
+  openDropdownId,
+  dropdownPos,
+  onToggleDropdown,
+  onStatusChange,
+  onArchive
 }: AssignedToTabProps) {
   const router = useRouter();
   const [isPriorityOpen, setIsPriorityOpen] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [showCompleted, _setShowCompleted] = useState(false);
   const priorityRef = useRef<HTMLDivElement>(null);
 
   const displayTasks = useMemo(() => {
@@ -108,7 +123,7 @@ export default function AssignedToTab({
     return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
   };
 
-  const selectedUser = users.find(u => u.id.toString() === selectedUserId);
+  // ✅ REMOVED: Unused selectedUser variable
 
   if (loading) {
     return (
@@ -201,7 +216,7 @@ export default function AssignedToTab({
           const dateInfo = formatDate(task.due_date);
           const CategoryIcon = CATEGORY_ICONS[task.category] || Tag;
           const assigneeName = getAssigneeName(task.user_id);
-          const isUnassigned = task.status === "unassigned" || task.user_id === null;
+          // ✅ REMOVED: Unused isUnassigned variable in mobile view
           const statusStyle = STATUS_STYLES[task.status] || STATUS_STYLES.pending;
 
           return (
@@ -317,6 +332,7 @@ export default function AssignedToTab({
               const dateInfo = formatDate(task.due_date);
               const CategoryIcon = CATEGORY_ICONS[task.category] || Tag;
               const assigneeName = getAssigneeName(task.user_id);
+              // ✅ KEPT: isUnassigned IS used in desktop view for status badge styling
               const isUnassigned = task.status === "unassigned" || task.user_id === null;
 
               return (

@@ -118,12 +118,9 @@ export default function PaymentsTable({
         ) : (
           data.map((p) => {
             const date = p.paid_at ? new Date(p.paid_at) : new Date(p.created_at);
-            const methodStyle = getMethodStyle(p.method);
             const statusStyle = getStatusStyle(p.status);
             const clientName = (p as any).client?.full_name || (p as any).client_name || "Unknown Client";
-            const clientId = (p as any).client?.id || (p as any).client_id;
             const invoiceRef = (p as any).invoice?.invoice_number || (p as any).invoice_number || `Invoice #${p.invoice_id || "N/A"}`;
-            const bookingId = p.booking_id || (p as any).invoice?.booking_id;
 
             return (
               <div

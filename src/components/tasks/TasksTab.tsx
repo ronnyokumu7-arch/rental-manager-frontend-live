@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Calendar, Tag, Clock, Ban, CheckCircle2, MoreVertical,
   User as UserIcon, Users, UserX, Wrench, Building2, Briefcase, DollarSign, Shield, Car, Archive,
-  Search, Flag, Plus, Pencil, Mail, Phone
+  Search, Flag, Plus, Pencil
 } from "lucide-react";
 import type { Task, User } from "@/lib/types";
 

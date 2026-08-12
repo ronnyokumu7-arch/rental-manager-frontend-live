@@ -1,4 +1,4 @@
-// src/app/dashboard/financials/InvoicesTab.tsx
+// src/components/financials/InvoicesTab.tsx
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -143,8 +143,8 @@ export default function InvoicesTab() {
                         </button>
                         <div className="h-px bg-[var(--color-surface-border)]" />
                         
-                        {/* Filter options */}
-                        {["draft", "sent", "partially_paid", "paid", "overdue", "void"].map((value) => (
+                        {/* ✅ FIXED: Added `as const` to narrow the array to exact literal types */}
+                        {(["draft", "sent", "partially_paid", "paid", "overdue", "void"] as const).map((value) => (
                           <button
                             key={value}
                             onClick={() => { setStatusFilter(value); setShowFilterDropdown(false); }}

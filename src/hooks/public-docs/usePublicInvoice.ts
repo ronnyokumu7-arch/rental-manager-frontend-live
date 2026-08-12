@@ -3,8 +3,21 @@ import { useState, useEffect, useCallback } from 'react';
 import { invoicesApi } from '@/lib/api/invoices';
 import toast from 'react-hot-toast';
 
+// ✅ CLEAN CONTRACT: Mirrors app/schemas/invoice.py PublicPaymentDetails exactly.
+export interface PublicPaymentDetails {
+  mpesa_paybill: string | null;
+  mpesa_paybill_account: string | null;
+  mpesa_till: string | null;
+  mpesa_pochi: string | null;
+  mpesa_number: string | null;
+  airtel_number: string | null;
+  bank_name: string | null;
+  bank_account: string | null;
+  bank_account_name: string | null;
+}
+
 // ✅ CLEAN CONTRACT: Mirrors app/schemas/invoice.py PublicInvoiceView exactly.
-// No nested booking_details — the backend sends flat fields.
+// Flat fields only — no nested booking_details object.
 export interface PublicInvoiceView {
   id: number;
   invoice_number: string;
@@ -23,9 +36,19 @@ export interface PublicInvoiceView {
   client_phone: string | null;
   tenant_name: string;
   vehicle_description: string | null;
+  vehicle_name: string | null;
+  vehicle_plate: string | null;
   booking_number: string | null;
   booking_start_date: string | null;
   booking_end_date: string | null;
+  
+  // ✅ NEW: Header Identity (from TenantProfile)
+  tenant_logo_url: string | null;
+  tenant_email: string | null;
+  tenant_phone: string | null;
+  
+  // ✅ NEW: Dynamic Payment Channels (from TenantProfile)
+  payment_details: PublicPaymentDetails | null;
 }
 
 export function usePublicInvoice(token: string) {
