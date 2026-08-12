@@ -24,6 +24,7 @@ interface NewClientFormProps {
   setDlFrontFile: (f: File | null) => void;
   updateField: (field: string, value: string) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
+  mode?: "create" | "edit"; // ✅ NEW: Controls button text and behavior
 }
 
 // ✅ BULLETPROOF LOCAL DATE FORMATTER (Fixes timezone offset bug)
@@ -44,7 +45,8 @@ export default function NewClientForm({
   idFrontFile, setIdFrontFile,
   idBackFile, setIdBackFile,
   dlFrontFile, setDlFrontFile,
-  updateField, handleSubmit
+  updateField, handleSubmit,
+  mode = "create" // ✅ Default to create mode
 }: NewClientFormProps) {
   
   const docCount = [idFrontFile, idBackFile, dlFrontFile].filter(Boolean).length;
@@ -282,7 +284,7 @@ export default function NewClientForm({
           </div>
         </div>
 
-        {/* CTA Card */}
+        {/* CTA Card - Dynamic text based on mode */}
         <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] p-4">
           <button 
             type="submit" 
@@ -292,17 +294,19 @@ export default function NewClientForm({
             {loading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Creating Profile...
+                {mode === "edit" ? "Updating..." : "Creating..."}
               </>
             ) : (
               <>
                 <CheckCircle size={16} />
-                Add Client
+                {mode === "edit" ? "Update Client" : "Add Client"}
               </>
             )}
           </button>
           <p className="text-[10px] text-center text-[var(--color-ink-muted)] mt-2">
-            Client will be created and ready for bookings
+            {mode === "edit" 
+              ? "Changes will be saved instantly" 
+              : "Client will be created and ready for bookings"}
           </p>
         </div>
 

@@ -103,114 +103,116 @@ export default function CompletedTasksTab({
 
   return (
     <div className="flex flex-col h-full">
-      {/* ✅ RESPONSIVE TOOLBAR - Fixed dropdowns and mobile spacing */}
-      <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col gap-4">
+      {/* ✅ RESPONSIVE TOOLBAR - Match Clients page layout */}
+      <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
         
-        {/* Metrics - All | Today | This Week (with more space for This Week on mobile) */}
-        <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
-          <div className="flex items-center gap-2 whitespace-nowrap flex-[0.5] min-w-0">
+        {/* Metrics - Compact on left, same as Clients page */}
+        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar w-full xl:w-auto">
+          <div className="flex items-center gap-2 whitespace-nowrap">
             <span className="text-xs font-medium text-[var(--color-ink-muted)]">All</span>
             <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{totalCompleted}</span>
           </div>
           <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
-          <div className="flex items-center gap-2 whitespace-nowrap flex-[0.5] min-w-0">
+          <div className="flex items-center gap-2 whitespace-nowrap">
             <span className="text-xs font-medium text-[var(--color-ink-muted)]">Today</span>
             <span className="text-xs font-bold text-emerald-500 tabular-nums">{metrics.completedToday}</span>
           </div>
           <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
-          <div className="flex items-center gap-2 whitespace-nowrap flex-1 min-w-0">
+          <div className="flex items-center gap-2 whitespace-nowrap">
             <span className="text-xs font-medium text-[var(--color-ink-muted)]">This Week</span>
             <span className="text-xs font-bold text-blue-500 tabular-nums">{metrics.completedThisWeek}</span>
           </div>
         </div>
 
-        {/* Controls: Search + Icon-Only Time Filter + Icon-Only User Filter */}
-        <div className="flex items-center gap-2">
-          {/* Search Input - Takes remaining space */}
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search completed..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
-            />
-          </div>
+        {/* Controls - On right, same as Clients page */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
+          <div className="flex items-center gap-2 flex-1 sm:w-80">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search completed..."
+                className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
+              />
+            </div>
 
-          {/* ✅ Icon-Only Time Filter with Fixed Dropdown */}
-          <div className="relative flex-shrink-0" ref={timeRef}>
-            <button
-              onClick={() => setIsTimeOpen(!isTimeOpen)}
-              className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
-                timeFilter ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-              }`}
-              title={timeFilter ? `Time: ${TIME_OPTIONS.find(t => t.id === timeFilter)?.label || 'All Time'}` : "Filter by time"}
-            >
-              <Clock size={15} />
-            </button>
-            {isTimeOpen && (
-              <>
-                <div className="fixed inset-0 z-[100]" onClick={() => setIsTimeOpen(false)} />
-                {/* Fixed dropdown positioning - renders above button on mobile */}
-                <div 
-                  className="absolute bottom-full mb-2 right-0 w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-[101] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                >
-                  <div className="py-1">
-                    {TIME_OPTIONS.map(opt => (
-                      <button 
-                        key={opt.id} 
-                        onClick={() => { setTimeFilter(opt.id); setIsTimeOpen(false); }} 
-                        className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${timeFilter === opt.id ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+            {/* ✅ Icon-Only Time Filter with Fixed Dropdown */}
+            <div className="relative flex-shrink-0" ref={timeRef}>
+              <button
+                onClick={() => setIsTimeOpen(!isTimeOpen)}
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
+                  timeFilter ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+                }`}
+                title={timeFilter ? `Time: ${TIME_OPTIONS.find(t => t.id === timeFilter)?.label || 'All Time'}` : "Filter by time"}
+              >
+                <Clock size={15} />
+              </button>
+              {isTimeOpen && (
+                <>
+                  <div className="fixed inset-0 z-[100]" onClick={() => setIsTimeOpen(false)} />
+                  {/* Fixed dropdown positioning - renders above button on mobile */}
+                  <div 
+                    className="absolute bottom-full mb-2 right-0 w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-[101] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                  >
+                    <div className="py-1">
+                      {TIME_OPTIONS.map(opt => (
+                        <button 
+                          key={opt.id} 
+                          onClick={() => { setTimeFilter(opt.id); setIsTimeOpen(false); }} 
+                          className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${timeFilter === opt.id ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-          </div>
+                </>
+              )}
+            </div>
 
-          {/* ✅ Icon-Only User Filter with Fixed Dropdown */}
-          <div className="relative flex-shrink-0" ref={userRef}>
-            <button
-              onClick={() => setIsUserOpen(!isUserOpen)}
-              className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
-                selectedUserId ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-              }`}
-              title={selectedUserId ? `User: ${selectedUser?.full_name || 'All Users'}` : "Filter by user"}
-            >
-              <Users size={15} />
-            </button>
-            {isUserOpen && (
-              <>
-                <div className="fixed inset-0 z-[100]" onClick={() => setIsUserOpen(false)} />
-                {/* Fixed dropdown positioning - renders above button on mobile */}
-                <div 
-                  className="absolute bottom-full mb-2 right-0 w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-[101] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                >
-                  <div className="py-1">
-                    <button 
-                      onClick={() => { setSelectedUserId(""); setIsUserOpen(false); }} 
-                      className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${!selectedUserId ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}
-                    >
-                      All Users
-                    </button>
-                    <div className="h-px bg-[var(--color-surface-border)]" />
-                    {users.map(user => (
+            {/* ✅ Icon-Only User Filter with Fixed Dropdown */}
+            <div className="relative flex-shrink-0" ref={userRef}>
+              <button
+                onClick={() => setIsUserOpen(!isUserOpen)}
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
+                  selectedUserId ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+                }`}
+                title={selectedUserId ? `User: ${selectedUser?.full_name || 'All Users'}` : "Filter by user"}
+              >
+                <Users size={15} />
+              </button>
+              {isUserOpen && (
+                <>
+                  <div className="fixed inset-0 z-[100]" onClick={() => setIsUserOpen(false)} />
+                  {/* Fixed dropdown positioning - renders above button on mobile */}
+                  <div 
+                    className="absolute bottom-full mb-2 right-0 w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-[101] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                  >
+                    <div className="py-1">
                       <button 
-                        key={user.id} 
-                        onClick={() => { setSelectedUserId(user.id.toString()); setIsUserOpen(false); }} 
-                        className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${selectedUserId === user.id.toString() ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}
+                        onClick={() => { setSelectedUserId(""); setIsUserOpen(false); }} 
+                        className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${!selectedUserId ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}
                       >
-                        {user.full_name}
+                        All Users
                       </button>
-                    ))}
+                      <div className="h-px bg-[var(--color-surface-border)]" />
+                      {users.map(user => (
+                        <button 
+                          key={user.id} 
+                          onClick={() => { setSelectedUserId(user.id.toString()); setIsUserOpen(false); }} 
+                          className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${selectedUserId === user.id.toString() ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}
+                        >
+                          {user.full_name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

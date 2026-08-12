@@ -1,142 +1,166 @@
+// src/app/dashboard/clients/[id]/page.tsx
 "use client";
 
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Users, AlertCircle, } from "lucide-react";
-
-import PageHeader from "@/components/ui/PageHeader";
-import { useClientProfile } from "@/hooks/useClientProfile";
-
-// Modular Profile Components
-import PersonalInfoCard from "@/components/profile/PersonalInfoCard";
-import AddressCard from "@/components/profile/AddressCard";
-import DocumentUploadCard from "@/components/profile/DocumentUploadCard";
-import ClientStatusCard from "@/components/profile/ClientStatusCard";
-import ClientStatsCard from "@/components/profile/ClientStatsCard";
-import FinancialOverviewCard from "@/components/profile/FinancialOverviewCard";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
+import { clientsApi } from "@/lib/api/clients";
+import type { Client } from "@/lib/types";
+import NewClientForm from "@/components/client/NewClientForm";
 
 export default function ClientProfilePage() {
   const router = useRouter();
+  const params = useParams();
+  const clientId = parseInt(params.id as string);
   
-  const {
-    client,
-    invoices,
-    contracts,
-    stats,
-    loading,
-    handleUpdateClient,
-    handleUploadDocument,
-    handleStatusAction,
-    handleFinancialAction,
-  } = useClientProfile();
+  const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [_clientData, setClientData] = useState<Client | null>(null);
+  
+  // File states for uploads
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [idFrontFile, setIdFrontFile] = useState<File | null>(null);
+  const [idBackFile, setIdBackFile] = useState<File | null>(null);
+  const [dlFrontFile, setDlFrontFile] = useState<File | null>(null);
 
-  if (loading) {
-    return (
-      <div className="space-y-4 max-w-7xl mx-auto pb-12 animate-pulse">
-        <div className="h-16 bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-surface-border)]" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-8 space-y-4">
-            <div className="h-48 bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-surface-border)]" />
-            <div className="h-64 bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-surface-border)]" />
-          </div>
-          <div className="lg:col-span-4 space-y-4">
-            <div className="h-32 bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-surface-border)]" />
-            <div className="h-32 bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-surface-border)]" />
-          </div>
-        </div>
-      </div>
-    );
+  const [formData, setFormData] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+    id_number: "",
+    dl_number: "",
+    dl_expiry: "",
+    residential_address: "",
+    work_address: "",
+    next_of_kin_name: "",
+    next_of_kin_phone: "",
+  });
+
+// Load existing client data
+useEffect(() => {
+  const loadClient = async () => {
+    try {
+      setIsFetching(true);
+      // ✅ FIXED: Use .get() not .getById()
+      const data = await clientsApi.get(clientId);
+      
+      setClientData(data);
+      setFormData({
+        full_name: data.full_name || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        id_number: data.id_number || "",
+        dl_number: data.dl_number || "",
+        // ✅ Handle both possible field names from backend
+        dl_expiry: data.dl_expiry || data.dl_expiry || "",
+        residential_address: data.residential_address || "",
+        work_address: data.work_address || "",
+        next_of_kin_name: data.next_of_kin_name || "",
+        next_of_kin_phone: data.next_of_kin_phone || "",
+      });
+    } catch (error) {
+      console.error("Failed to load client:", error);
+      toast.error("Failed to load client data");
+      router.push("/dashboard/clients");
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  if (clientId && !isNaN(clientId)) {
+    loadClient();
+  }
+}, [clientId, router]);
+
+  const updateField = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!formData.full_name || !formData.phone) {
+    toast.error("Full Name and Phone are required");
+    return;
   }
 
-  if (!client) {
+  setLoading(true);
+  try {
+    const payload = {
+      full_name: formData.full_name,
+      email: formData.email || null,
+      phone: formData.phone,
+      id_number: formData.id_number || null,
+      dl_number: formData.dl_number || null,
+      dl_expiry: formData.dl_expiry || null,
+      residential_address: formData.residential_address || null,
+      work_address: formData.work_address || null,
+      next_of_kin_name: formData.next_of_kin_name || null,
+      next_of_kin_phone: formData.next_of_kin_phone || null,
+    };
+
+    // ✅ FIXED: Use .update() with correct signature
+    await clientsApi.update(clientId, payload);
+    toast.success("Client updated successfully!");
+
+    // Handle file uploads if new files are selected
+    const uploadPromises = [];
+    if (avatarFile) uploadPromises.push(clientsApi.uploadAvatar(clientId, avatarFile));
+    if (idFrontFile) uploadPromises.push(clientsApi.uploadIdFront(clientId, idFrontFile));
+    if (idBackFile) uploadPromises.push(clientsApi.uploadIdBack(clientId, idBackFile));
+    if (dlFrontFile) uploadPromises.push(clientsApi.uploadDlFront(clientId, dlFrontFile));
+
+    if (uploadPromises.length > 0) {
+      await Promise.all(uploadPromises);
+      toast.success("Documents uploaded successfully!");
+    }
+
+    router.refresh();
+  } catch (error: any) {
+    toast.error(error.response?.data?.detail || "Failed to update client");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  if (isFetching) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center p-6 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] shadow-2xs">
-          <div className="w-10 h-10 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto mb-3">
-            <AlertCircle size={20} />
-          </div>
-          <h2 className="text-sm font-bold text-[var(--color-ink)] uppercase tracking-wider mb-1">
-            Client Not Found
-          </h2>
-          <p className="text-xs text-[var(--color-ink-muted)] font-mono mb-4">
-            The profile record could not be located or may have been deleted.
-          </p>
-          <button
-            onClick={() => router.push("/dashboard/clients")}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 hover:bg-[var(--color-primary)]/20 transition-colors"
-          >
-            <ArrowLeft size={12} />
-            <span>Return to Client Directory</span>
-          </button>
-        </div>
+      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 pb-16 max-w-7xl mx-auto">
-      {/* Executive Header */}
-      <PageHeader
-        title={client.full_name}
-        subtitle="Manage client details, track perfomance, and update compliance documents."
-        icon={Users}
-        breadcrumb={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Clients", href: "/dashboard/clients" },
-          { label: client.full_name },
-        ]}
-        actions={[
-          {
-            label: "Back to Directory",
-            icon: ArrowLeft,
-            variant: "secondary",
-            onClick: () => router.push("/dashboard/clients"),
-          },
-        ]}
-      />
-
-      {/* Asymmetric Executive Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        
-        {/* Main Workspace Column (8 Cols) */}
-        <div className="lg:col-span-8 space-y-4">
-          <PersonalInfoCard 
-            client={client} 
-            onSave={handleUpdateClient} 
-          />
-          
-          <FinancialOverviewCard
-            invoices={invoices}
-            contracts={contracts}
-            onAction={handleFinancialAction}
-          />
-          
-          <DocumentUploadCard 
-            client={client} 
-            onUpload={handleUploadDocument} 
-          />
+    <div className="h-[calc(100vh-4rem)] bg-[var(--color-bg)] overflow-y-auto">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-surface-border)] px-4 sm:px-6 py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <button onClick={() => router.push("/dashboard/clients")} className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors">
+            <ArrowLeft size={16} /> Back to Clients
+          </button>
+          <h1 className="text-base font-bold text-[var(--color-ink)]">Manage Client</h1>
+          <div className="w-24" />
         </div>
-
-        {/* Sticky Utility Sidebar (4 Cols) */}
-        <div className="lg:col-span-4 space-y-3.5 sticky top-4">
-          {/* Status & Compliance */}
-          <ClientStatusCard
-            client={client}
-            onStatusAction={handleStatusAction}
-          />
-
-          {/* Performance Overview */}
-          <ClientStatsCard 
-            stats={stats} 
-          />
-
-          {/* Address & Location Context */}
-          <AddressCard 
-            client={client} 
-            onSave={handleUpdateClient} 
-          />
-        </div>
-
       </div>
+
+      {/* Form */}
+      <NewClientForm 
+        mode="edit"
+        loading={loading}
+        formData={formData}
+        avatarFile={avatarFile}
+        setAvatarFile={setAvatarFile}
+        idFrontFile={idFrontFile}
+        setIdFrontFile={setIdFrontFile}
+        idBackFile={idBackFile}
+        setIdBackFile={setIdBackFile}
+        dlFrontFile={dlFrontFile}
+        setDlFrontFile={setDlFrontFile}
+        updateField={updateField}
+        handleSubmit={handleSubmit}
+      />
     </div>
   );
 }

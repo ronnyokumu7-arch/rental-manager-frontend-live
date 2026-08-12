@@ -1,3 +1,4 @@
+// src/components/financials/contracts/ContractsTable.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -18,7 +19,8 @@ export type ContractStatus = "draft" | "sent" | "signed" | "void";
 export interface ContractItem {
   id: number;
   contract_number: string;
-  booking_ref?: string | number;
+  booking_id?: number;           // ✅ For routing: /dashboard/bookings/123
+  booking_number?: string;       // ✅ For display: #BK-123
   client_name?: string;
   client_phone?: string;
   status: ContractStatus;
@@ -111,8 +113,8 @@ export default function ContractsTable({
             <div
               key={c.id}
               onClick={() => {
-                if (c.booking_ref) {
-                  router.push(`/dashboard/bookings/${c.booking_ref}`);
+                if (c.booking_id) {
+                  router.push(`/dashboard/bookings/${c.booking_id}`);
                 }
               }}
               className="p-4 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all cursor-pointer shadow-sm"
@@ -161,7 +163,7 @@ export default function ContractsTable({
                       <Hash size={10} /> Booking Ref
                     </p>
                     <p className="font-bold text-[var(--color-ink)] truncate mt-0.5">
-                      {c.booking_ref ? `#${c.booking_ref}` : "—"}
+                      {c.booking_number ? `#${c.booking_number}` : "—"}
                     </p>
                   </div>
 
@@ -252,8 +254,8 @@ export default function ContractsTable({
                 <tr
                   key={c.id}
                   onClick={() => {
-                    if (c.booking_ref) {
-                      router.push(`/dashboard/bookings/${c.booking_ref}`);
+                    if (c.booking_id) {
+                      router.push(`/dashboard/bookings/${c.booking_id}`);
                     }
                   }}
                   className="hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors group"
@@ -272,7 +274,7 @@ export default function ContractsTable({
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm font-medium text-[var(--color-ink)] font-mono">
-                      {c.booking_ref ? `#${c.booking_ref}` : "—"}
+                      {c.booking_number ? `#${c.booking_number}` : "—"}
                     </span>
                   </td>
                   <td className="px-6 py-4">

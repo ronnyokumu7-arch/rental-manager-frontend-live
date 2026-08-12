@@ -96,6 +96,7 @@ export default function NewClientPage() {
 
       {/* Form */}
       <NewClientForm 
+        mode="create"
         loading={loading}
         formData={formData}
         avatarFile={avatarFile}
