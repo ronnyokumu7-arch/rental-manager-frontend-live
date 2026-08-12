@@ -3,23 +3,29 @@ import { useState, useEffect, useCallback } from 'react';
 import { invoicesApi } from '@/lib/api/invoices';
 import toast from 'react-hot-toast';
 
+// ✅ CLEAN CONTRACT: Mirrors app/schemas/invoice.py PublicInvoiceView exactly.
+// No nested booking_details — the backend sends flat fields.
 export interface PublicInvoiceView {
   id: number;
   invoice_number: string;
   status: string;
   amount_due: number;
   amount_paid: number;
+  remaining_balance: number;
   currency_code: string;
   due_date: string;
   paid_at: string | null;
   created_at: string;
+  discount_amount: number;
+  discount_reason: string | null;
+  notes: string | null;
   client_name: string;
+  client_phone: string | null;
   tenant_name: string;
-  booking_details: {
-    vehicle: string;
-    start_date: string;
-    end_date: string;
-  } | null;
+  vehicle_description: string | null;
+  booking_number: string | null;
+  booking_start_date: string | null;
+  booking_end_date: string | null;
 }
 
 export function usePublicInvoice(token: string) {
@@ -33,7 +39,7 @@ export function usePublicInvoice(token: string) {
       setLoading(true);
       setError(null);
       const data = await invoicesApi.getByToken(token);
-      setInvoice(data as any);
+      setInvoice(data as PublicInvoiceView);
     } catch (err: any) {
       const msg = err.response?.data?.detail || 'This invoice link is invalid or has expired.';
       setError(msg);

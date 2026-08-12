@@ -105,7 +105,7 @@ export default function ContractsTable({
   return (
     <div className="w-full">
       {/* ── MOBILE CARD VIEW ── */}
-      <div className="block md:hidden space-y-3">
+      <div className="block md:hidden p-4 space-y-3">
         {mobileItems.map((c) => {
           return (
             <div
@@ -177,7 +177,7 @@ export default function ContractsTable({
 
                   {/* Status + Icon-Only Action Buttons */}
                   <div className="col-span-2 border-t border-[var(--color-surface-border)]/60 pt-3 mt-3 flex items-center justify-between">
-                    {/* Status Badge - Consistent padding with other tables */}
+                    {/* Status Badge */}
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
                         statusStyles[c.status]?.bg || "bg-slate-500/10"
@@ -221,7 +221,7 @@ export default function ContractsTable({
 
       {/* ── DESKTOP TABLE VIEW ── */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm border-collapse">
           <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
             <tr>
               <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">

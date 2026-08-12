@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { 
   Users, User as UserIcon, Mail, Phone, Building2, Shield, ShieldAlert, 
   Briefcase, MoreVertical, KeyRound, Loader2, CheckCircle, Trash2, Send, Star
@@ -28,8 +29,8 @@ const getRoleStyle = (role: string, jobTitle?: string | null) => {
 };
 
 interface UsersTableProps {
-  users: User[]; // Paginated array for Desktop table view
-  allUsers?: User[]; // Full unpaginated array for Mobile continuous scroll
+  users: User[];
+  allUsers?: User[];
   loading: boolean;
   currentPage: number;
   totalPages: number;
@@ -55,8 +56,12 @@ export default function UsersTable({
 }: UsersTableProps) {
   const router = useRouter();
   const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
 
-  // Fallback to paginated `users` if `allUsers` isn't explicitly provided
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const mobileList = allUsers && allUsers.length > 0 ? allUsers : users;
 
   useEffect(() => {
@@ -84,26 +89,32 @@ export default function UsersTable({
       const dropdownWidth = 240;
       const estimatedDropdownHeight = 220;
       const edgePadding = 12;
+      const scrollY = window.scrollY;
 
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
+      // Calculate right position (align to right edge of button)
       let rightPos = viewportWidth - rect.right;
       if (viewportWidth - rightPos < dropdownWidth + edgePadding) {
         rightPos = Math.max(edgePadding, viewportWidth - rect.left - dropdownWidth);
       }
 
+      // Calculate top position with scroll offset
       const spaceBelow = viewportHeight - rect.bottom;
       const spaceAbove = rect.top;
 
       let topPos: number;
       if (spaceBelow < estimatedDropdownHeight + edgePadding && spaceAbove > spaceBelow) {
-        topPos = Math.max(edgePadding, rect.top - estimatedDropdownHeight - 8);
+        // Position above the button
+        topPos = scrollY + rect.top - estimatedDropdownHeight - 8;
       } else {
-        topPos = Math.min(rect.bottom + 8, viewportHeight - estimatedDropdownHeight - edgePadding);
+        // Position below the button
+        topPos = scrollY + rect.bottom + 8;
       }
 
-      topPos = Math.max(edgePadding, topPos);
+      // Ensure dropdown stays within viewport bounds
+      topPos = Math.max(scrollY + edgePadding, Math.min(topPos, scrollY + viewportHeight - estimatedDropdownHeight - edgePadding));
 
       setDropdownPos({
         top: topPos,
@@ -148,12 +159,15 @@ export default function UsersTable({
           const emailVerified = u.email_verified === true;
           const phoneVerified = u.phone_verified === true;
           const isAgencyOwner = u.is_tenant_owner === true;
+          const bothVerified = emailVerified && phoneVerified;
+          const partiallyVerified = emailVerified || phoneVerified;
 
-          let statusBg = "bg-[var(--color-success-bg)]";
-          let statusText = "text-[var(--color-success-text)]";
-          let statusLabel = "Active";
-          let StatusIcon = CheckCircle;
-          
+          const shieldColor = isAgencyOwner || bothVerified 
+            ? "hidden" 
+            : partiallyVerified 
+              ? "text-amber-500" 
+              : "text-[var(--color-ink-muted)]";
+
           let ActionIcon = ShieldAlert;
           let actionColor = "text-amber-600 bg-amber-500/10 hover:bg-amber-500/20";
           let actionTitle = "Suspend";
@@ -161,33 +175,13 @@ export default function UsersTable({
           let showMainAction = true;
 
           if (isAgencyOwner) {
-            statusBg = "bg-amber-500/10 border border-amber-500/20";
-            statusText = "text-amber-600 dark:text-amber-400";
-            statusLabel = "Agency Owner";
-            StatusIcon = Star;
             showMainAction = false;
-          } else if (emailVerified && phoneVerified) {
-            if (u.is_suspended) {
-              statusBg = "bg-[var(--color-danger-bg)] border border-[var(--color-danger-border)]";
-              statusText = "text-[var(--color-danger-text)]";
-              statusLabel = "Suspended";
-              StatusIcon = ShieldAlert;
-              ActionIcon = Shield;
-              actionColor = "text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20";
-              actionTitle = "Reactivate";
-              actionHandler = () => onSuspend(u);
-            }
-          } else if (emailVerified || phoneVerified) {
-            statusBg = "bg-amber-500/10 border border-amber-500/20";
-            statusText = "text-amber-600 dark:text-amber-400";
-            statusLabel = "Verify";
-            StatusIcon = Shield;
-            showMainAction = false;
-          } else {
-            statusBg = "bg-gray-500/10 border border-gray-500/20";
-            statusText = "text-gray-600 dark:text-gray-400";
-            statusLabel = "Pending";
-            StatusIcon = Mail;
+          } else if (bothVerified && u.is_suspended) {
+            ActionIcon = Shield;
+            actionColor = "text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20";
+            actionTitle = "Reactivate";
+            actionHandler = () => onSuspend(u);
+          } else if (!bothVerified && !partiallyVerified) {
             showMainAction = false;
           }
 
@@ -198,45 +192,54 @@ export default function UsersTable({
             >
               {/* Header Bar */}
               <div className="flex items-start justify-between gap-2.5">
-                <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
                     <UserIcon size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-sm font-bold text-[var(--color-ink)] leading-snug break-words">
-                      {u.full_name}
-                    </h4>
-                    <div className={`flex items-center gap-1.5 text-xs font-medium ${color} mt-0.5`}>
-                      <Icon size={13} strokeWidth={2} className="flex-shrink-0" />
-                      <span className="break-words">{displayRole}</span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <h4 className="text-sm font-bold text-[var(--color-ink)] leading-snug break-words truncate">
+                        {u.full_name}
+                      </h4>
+                      {isAgencyOwner && (
+                        <span title="Agency Owner" className="flex-shrink-0">
+                          <Star size={14} className="text-amber-500 fill-amber-500/20" />
+                        </span>
+                      )}
+                      {!isAgencyOwner && !bothVerified && (
+                        <div className={`relative flex-shrink-0 ${shieldColor}`}>
+                          <Shield size={14} />
+                          <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold leading-none -mt-0.5">!</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-primary-text)] mt-0.5">
+                      <Building2 size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                      <span className="break-words">{u.department || "Unassigned"}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <span 
-                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs ${statusBg} ${statusText} shadow-xs`}
-                    title={statusLabel}
-                    aria-label={statusLabel}
+                {/* 3-Dots Menu Button */}
+                <div className="relative flex-shrink-0" data-dropdown-id={u.id}>
+                  <button
+                    type="button"
+                    onClick={(e) => handleToggleDropdown(e, u.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] transition-all"
+                    title="More Actions"
                   >
-                    <StatusIcon size={14} className={isAgencyOwner ? "fill-amber-500/20" : ""} />
-                  </span>
-
-                  <div className="relative" data-dropdown-id={u.id}>
-                    <button
-                      type="button"
-                      onClick={(e) => handleToggleDropdown(e, u.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] transition-all"
-                      title="More Actions"
-                    >
-                      <MoreVertical size={16} />
-                    </button>
-                  </div>
+                    <MoreVertical size={16} />
+                  </button>
                 </div>
               </div>
 
               {/* Body Details */}
-              <div className="border-t border-[var(--color-surface-border)]/60 pt-2.5 space-y-2 text-xs">
+              <div className="border-t border-[var(--color-surface-border)]/60 pt-3 mt-3 space-y-2.5 text-xs">
+                <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
+                  <Briefcase size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                  <span className="break-words font-medium">{u.job_title || "No title"}</span>
+                </div>
+
                 <a 
                   href={`mailto:${u.email}`} 
                   onClick={(e) => e.stopPropagation()} 
@@ -249,23 +252,19 @@ export default function UsersTable({
                   )}
                 </a>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
-                  <div className="flex items-center gap-2 text-[var(--color-ink-muted)]">
-                    <Building2 size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                    <span className="break-words font-medium">{u.department || "Unassigned"}</span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
-                    <Phone size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                    <span className="break-words font-medium">{u.phone_number || "No phone"}</span>
-                    {phoneVerified && (
-                      <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0 ml-0.5" />
-                    )}
-                  </div>
-                </div>
+                <a 
+                  href={`tel:${u.phone_number}`} 
+                  onClick={(e) => e.stopPropagation()} 
+                  className="flex items-center gap-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors min-w-0"
+                >
+                  <Phone size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                  <span className="break-words font-medium">{u.phone_number || "No phone"}</span>
+                  {phoneVerified && (
+                    <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0 ml-0.5" />
+                  )}
+                </a>
               </div>
 
-              {/* Action Button */}
               {showMainAction && (
                 <div className="flex items-center justify-end pt-1 border-t border-[var(--color-surface-border)]/40">
                   <button
@@ -284,7 +283,7 @@ export default function UsersTable({
         })}
       </div>
 
-      {/* DESKTOP TABLE VIEW (md and up) */}
+      {/* DESKTOP TABLE VIEW */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
@@ -437,8 +436,8 @@ export default function UsersTable({
         </table>
       </div>
 
-      {/* SHARED FLOATING DROPDOWN PORTAL */}
-      {openDropdownId !== null && dropdownPos && activeUserForDropdown && (
+      {/* ✅ SHARED FLOATING DROPDOWN PORTAL (Works on Mobile + Desktop) */}
+      {mounted && openDropdownId !== null && dropdownPos && activeUserForDropdown && createPortal(
         <div 
           className="fixed z-[100] w-60 max-h-[calc(100vh-24px)] overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] animate-in fade-in zoom-in-95 duration-100"
           style={{ top: dropdownPos.top, right: dropdownPos.right }}
@@ -494,10 +493,11 @@ export default function UsersTable({
               <Trash2 size={14} /> Delete User
             </button>
           )}
-        </div>
+        </div>,
+        typeof document !== "undefined" ? document.body : document.createElement("div")
       )}
 
-      {/* FOOTER & PAGINATION (Desktop Only: hidden md:flex) */}
+      {/* FOOTER & PAGINATION (Desktop Only) */}
       <div className="hidden md:flex p-4 border-t border-[var(--color-surface-border)] items-center justify-between gap-3">
         <p className="text-xs text-[var(--color-ink-muted)]">
           Showing {totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0} to {Math.min(currentPage * pageSize, totalItems)} of {totalItems} members

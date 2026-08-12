@@ -1,10 +1,12 @@
+// src/app/dashboard/tasks/TasksTab.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Calendar, Tag, Clock, Ban, CheckCircle2, MoreVertical,
   User as UserIcon, Users, UserX, Wrench, Building2, Briefcase, DollarSign, Shield, Car, Archive,
-  Search, Flag, Plus, Pencil
+  Search, Flag, Plus, Pencil, Mail, Phone
 } from "lucide-react";
 import type { Task, User } from "@/lib/types";
 
@@ -40,7 +42,7 @@ interface TasksTabProps {
   
   // Modal
   onOpenCreateModal: () => void;
-  onEdit: (task: Task) => void; // ✅ ADDED: Accepts the full task object for editing
+  onEdit: (task: Task) => void;
 }
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -56,6 +58,13 @@ const STATUS_STYLES: Record<string, string> = {
   unassigned: "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border-[var(--color-surface-border)]",
 };
 
+const PRIORITY_COLORS: Record<string, string> = {
+  urgent: "bg-rose-500",
+  high: "bg-amber-500",
+  medium: "bg-blue-500",
+  low: "bg-slate-400",
+};
+
 const CATEGORIES = ["fleet", "finance", "hr", "booking", "compliance", "maintenance", "operations", "other"];
 const PRIORITIES = ["urgent", "high", "medium", "low"];
 
@@ -64,18 +73,17 @@ export default function TasksTab({
   search, setSearch, priorityFilter, setPriorityFilter, categoryFilter, setCategoryFilter,
   currentPage, setCurrentPage, pageSize, totalPages, filteredTasks,
   openDropdownId, dropdownPos, onToggleDropdown, 
-  onAssign: _onAssign, // ✅ FIXED: Renamed locally to satisfy the linter
+  onAssign: _onAssign,
   onClaim, onStatusChange, onArchive,
   onOpenCreateModal,
-  onEdit, // ✅ ADDED: Now we can use onEdit(task) in the JSX below!
+  onEdit,
 }: TasksTabProps) {
-  
+  const router = useRouter();
   const [isPriorityOpen, setIsPriorityOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const priorityRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (priorityRef.current && !priorityRef.current.contains(event.target as Node)) setIsPriorityOpen(false);
@@ -89,13 +97,22 @@ export default function TasksTab({
     if (!dateStr) return { text: "No date", isOverdue: false };
     const date = new Date(dateStr);
     const isOverdue = date < new Date();
-    return { text: date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }), isOverdue };
+    return { 
+      text: date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }), 
+      isOverdue 
+    };
   };
 
   const getAssigneeName = (userId: number | null) => {
     if (!userId) return null;
     const user = users.find((u) => u.id === userId);
     return user?.full_name || "Unknown User";
+  };
+
+  const getAssigneeInitials = (userId: number | null) => {
+    const name = getAssigneeName(userId);
+    if (!name) return "?";
+    return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
   };
 
   if (loading) {
@@ -120,90 +137,101 @@ export default function TasksTab({
 
   return (
     <div className="flex flex-col h-full">
-      {/* ✅ INDEPENDENT TOOLBAR */}
-      <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-center justify-between">
+      {/* ✅ RESPONSIVE TOOLBAR - DNA matched to Clients/Invoices pages */}
+      <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
         
-        {/* Left: Metrics */}
-        <div className="flex items-center gap-4 px-4 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm w-full xl:w-auto overflow-x-auto">
-          <div className="flex items-center gap-2 whitespace-nowrap">
-            <div className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
+        {/* Metrics - Evenly Distributed */}
+        <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
+          <div className="flex items-center gap-2 whitespace-nowrap flex-1 min-w-0">
             <span className="text-xs font-medium text-[var(--color-ink-muted)]">Active</span>
             <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{metrics.totalActive}</span>
           </div>
           <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
-          <div className="flex items-center gap-2 whitespace-nowrap">
-            <div className="w-2 h-2 rounded-full bg-rose-500" />
+          <div className="flex items-center gap-2 whitespace-nowrap flex-1 min-w-0">
             <span className="text-xs font-medium text-[var(--color-ink-muted)]">Overdue</span>
             <span className="text-xs font-bold text-rose-500 tabular-nums">{metrics.overdue}</span>
           </div>
           <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
-          <div className="flex items-center gap-2 whitespace-nowrap">
-            <div className="w-2 h-2 rounded-full bg-amber-500" />
+          <div className="flex items-center gap-2 whitespace-nowrap flex-1 min-w-0">
             <span className="text-xs font-medium text-[var(--color-ink-muted)]">Unassigned</span>
             <span className="text-xs font-bold text-amber-500 tabular-nums">{metrics.unassigned}</span>
           </div>
         </div>
 
-        {/* Right: Controls */}
-        <div className="flex items-center gap-2 w-full xl:w-auto ml-auto">
-          {/* Search */}
-          <div className="relative w-full xl:w-56">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tasks..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
-            />
+        {/* Controls: Search + Filters + New Task */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
+          <div className="flex items-center gap-2 flex-1 sm:w-80">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tasks..."
+                className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
+              />
+            </div>
+
+            {/* ✅ PREMIUM PRIORITY FILTER DROPDOWN */}
+            <div className="relative flex-shrink-0" ref={priorityRef}>
+              <button
+                onClick={() => setIsPriorityOpen(!isPriorityOpen)}
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
+                  priorityFilter ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+                }`}
+                title="Filter by priority"
+              >
+                <Flag size={15} />
+              </button>
+              {isPriorityOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsPriorityOpen(false)} />
+                  <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                    <div className="py-1">
+                      <button onClick={() => { setPriorityFilter(""); setIsPriorityOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${!priorityFilter ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>All Priorities</button>
+                      <div className="h-px bg-[var(--color-surface-border)]" />
+                      {PRIORITIES.map(p => (
+                        <button key={p} onClick={() => { setPriorityFilter(p); setIsPriorityOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-medium capitalize transition-colors ${priorityFilter === p ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>{p}</button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* ✅ PREMIUM CATEGORY FILTER DROPDOWN */}
+            <div className="relative flex-shrink-0" ref={categoryRef}>
+              <button
+                onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
+                  categoryFilter ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+                }`}
+                title="Filter by category"
+              >
+                <Tag size={15} />
+              </button>
+              {isCategoryOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsCategoryOpen(false)} />
+                  <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                    <div className="py-1">
+                      <button onClick={() => { setCategoryFilter(""); setIsCategoryOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${!categoryFilter ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>All Categories</button>
+                      <div className="h-px bg-[var(--color-surface-border)]" />
+                      {CATEGORIES.map(c => (
+                        <button key={c} onClick={() => { setCategoryFilter(c); setIsCategoryOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-medium capitalize transition-colors ${categoryFilter === c ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>{c}</button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* ✅ Icon-Only Priority Filter */}
-          <div className="relative" ref={priorityRef}>
-            <button
-              onClick={() => setIsPriorityOpen(!isPriorityOpen)}
-              title="Filter by priority"
-              className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all ${
-                priorityFilter ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]" : "border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-              }`}
-            >
-              <Flag size={14} />
-            </button>
-            {isPriorityOpen && (
-              <div className="absolute top-full mt-2 right-0 w-40 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                <button onClick={() => { setPriorityFilter(""); setIsPriorityOpen(false); }} className={`w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium transition-colors ${!priorityFilter ? "bg-[var(--color-primary)]/5 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>All Priorities</button>
-                {PRIORITIES.map(p => (
-                  <button key={p} onClick={() => { setPriorityFilter(p); setIsPriorityOpen(false); }} className={`w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium capitalize transition-colors ${priorityFilter === p ? "bg-[var(--color-primary)]/5 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>{p}</button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ✅ Icon-Only Category Filter */}
-          <div className="relative" ref={categoryRef}>
-            <button
-              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-              title="Filter by category"
-              className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all ${
-                categoryFilter ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]" : "border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-              }`}
-            >
-              <Tag size={14} />
-            </button>
-            {isCategoryOpen && (
-              <div className="absolute top-full mt-2 right-0 w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                <button onClick={() => { setCategoryFilter(""); setIsCategoryOpen(false); }} className={`w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium transition-colors ${!categoryFilter ? "bg-[var(--color-primary)]/5 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>All Categories</button>
-                {CATEGORIES.map(c => (
-                  <button key={c} onClick={() => { setCategoryFilter(c); setIsCategoryOpen(false); }} className={`w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium capitalize transition-colors ${categoryFilter === c ? "bg-[var(--color-primary)]/5 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}>{c}</button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ✅ Exclusive New Task Button */}
+          {/* New Task Button */}
           <button
             onClick={onOpenCreateModal}
-            className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm flex-shrink-0"
+            className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm flex-shrink-0 cursor-pointer touch-manipulation active:scale-[0.98]"
           >
             <Plus size={14} strokeWidth={2.5} />
             New Task
@@ -211,8 +239,112 @@ export default function TasksTab({
         </div>
       </div>
 
-      {/* TABLE */}
-      <div className="overflow-x-auto flex-1">
+      {/* ✅ MOBILE CARD VIEW (< md) */}
+      <div className="block md:hidden p-4 space-y-3">
+        {tasks.map((task) => {
+          const dateInfo = formatDate(task.due_date);
+          const CategoryIcon = CATEGORY_ICONS[task.category] || Tag;
+          const assigneeName = getAssigneeName(task.user_id);
+          const isUnassigned = task.status === "unassigned" || task.user_id === null;
+          const statusStyle = STATUS_STYLES[task.status] || STATUS_STYLES.pending;
+
+          return (
+            <div
+              key={`mobile-task-${task.id}`}
+              className="p-4 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all cursor-pointer shadow-sm"
+              onClick={() => router.push(`/dashboard/tasks/${task.id}`)}
+            >
+              {/* Header: Category Icon + Title + Priority Dot */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
+                    <CategoryIcon size={18} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-bold text-[var(--color-ink)] truncate leading-tight">
+                      {task.title}
+                    </h4>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[task.priority] || "bg-slate-400"}`} />
+                      <span className="text-xs font-medium text-[var(--color-ink-muted)] capitalize">{task.priority}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3-Dots Menu */}
+                <div className="relative flex-shrink-0" data-dropdown-id={task.id}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onToggleDropdown(e, task.id); }}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] transition-all"
+                    title="More Actions"
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body: Assignee, Due Date, Status */}
+              <div className="border-t border-[var(--color-surface-border)]/60 pt-3 mt-3 space-y-2.5 text-xs">
+                {/* Assignee */}
+                <div className="flex items-center gap-2">
+                  {assigneeName ? (
+                    <>
+                      <div className="w-6 h-6 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-[10px] font-bold text-[var(--color-primary)] flex-shrink-0">
+                        {getAssigneeInitials(task.user_id)}
+                      </div>
+                      <span className="font-medium text-[var(--color-ink)] truncate">{assigneeName}</span>
+                    </>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]">
+                      <UserX size={10} /> Unassigned
+                    </span>
+                  )}
+                </div>
+
+                {/* Due Date */}
+                <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
+                  <Calendar size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                  <span className={`font-medium ${dateInfo.isOverdue ? "text-rose-500 font-bold" : ""}`}>
+                    {dateInfo.text}
+                  </span>
+                  {dateInfo.isOverdue && (
+                    <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-[9px] font-extrabold text-rose-500">OVERDUE</span>
+                  )}
+                </div>
+
+                {/* Status + Quick Actions */}
+                <div className="flex items-center justify-between pt-1 border-t border-[var(--color-surface-border)]/40">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${statusStyle}`}>
+                    {task.status === 'in_progress' && <Clock size={10} />}
+                    {task.status === 'blocked' && <Ban size={10} />}
+                    {task.status.replace("_", " ")}
+                  </span>
+
+                  {/* Quick Action: Claim or Complete */}
+                  {isUnassigned ? (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onClaim(task.id); }}
+                      className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                    >
+                      Claim
+                    </button>
+                  ) : task.status !== "completed" ? (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, "completed"); }}
+                      className="text-xs font-semibold text-emerald-600 hover:underline"
+                    >
+                      Complete
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ✅ DESKTOP TABLE VIEW (md+) */}
+      <div className="hidden md:block overflow-x-auto flex-1">
         <table className="w-full text-sm">
           <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
             <tr>
@@ -250,7 +382,7 @@ export default function TasksTab({
                     {assigneeName ? (
                       <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
                         <div className="w-6 h-6 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-[10px] font-bold text-[var(--color-primary)] flex-shrink-0">
-                          {assigneeName.split(" ").map((n) => n[0]).join("").substring(0, 2)}
+                          {getAssigneeInitials(task.user_id)}
                         </div>
                         <span className="font-medium truncate max-w-[120px]">{assigneeName}</span>
                       </div>
@@ -262,7 +394,7 @@ export default function TasksTab({
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${task.priority === 'urgent' ? 'bg-rose-500' : task.priority === 'high' ? 'bg-amber-500' : task.priority === 'medium' ? 'bg-blue-500' : 'bg-slate-400'}`} />
+                      <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[task.priority] || "bg-slate-400"}`} />
                       <span className="text-xs font-semibold capitalize text-[var(--color-ink)]">{task.priority}</span>
                     </div>
                   </td>
@@ -301,24 +433,9 @@ export default function TasksTab({
                                 <div className="h-px bg-[var(--color-surface-border)]" />
                               </>
                             )}
-                            {/* Divider */}
-<div className="h-px bg-[var(--color-surface-border)] mx-2 my-1" />
-
-{/* Edit Task Button */}
-<button 
-  onClick={() => onEdit(task)} 
-  className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
->
-  <Pencil size={14} /> Edit Task
-</button>
-
-{/* Archive Button (Destructive) */}
-<button 
-  onClick={() => onArchive(task.id)} 
-  className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors"
->
-  <Archive size={14} /> Archive Task
-</button>
+                            <div className="h-px bg-[var(--color-surface-border)] mx-2 my-1" />
+                            <button onClick={() => onEdit(task)} className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"><Pencil size={14} /> Edit Task</button>
+                            <button onClick={() => onArchive(task.id)} className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors"><Archive size={14} /> Archive Task</button>
                           </div>
                         )}
                       </div>
@@ -331,9 +448,9 @@ export default function TasksTab({
         </table>
       </div>
 
-      {/* PAGINATION */}
+      {/* ✅ PAGINATION - Desktop only, matches other tabs */}
       {filteredTasks.length > 0 && (
-        <div className="p-4 border-t border-[var(--color-surface-border)] flex items-center justify-between bg-[var(--color-surface)]">
+        <div className="hidden md:flex p-4 border-t border-[var(--color-surface-border)] items-center justify-between bg-[var(--color-surface)]">
           <p className="text-xs text-[var(--color-ink-muted)]">
             Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredTasks.length)} of {filteredTasks.length} tasks
           </p>

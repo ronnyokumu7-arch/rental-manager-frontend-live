@@ -122,7 +122,7 @@ export default function Sidebar({ navItems }: SidebarProps) {
                     }`}
                   >
                     {active && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[var(--color-primary)] shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[var(--color-primary)]" />
                     )}
                     <Icon
                       size={20}
@@ -148,7 +148,7 @@ export default function Sidebar({ navItems }: SidebarProps) {
                     }`}
                   >
                     {(isGroupOpen || active) && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[var(--color-primary)] shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[var(--color-primary)]" />
                     )}
                     <Icon
                       size={20}
@@ -158,7 +158,7 @@ export default function Sidebar({ navItems }: SidebarProps) {
                     <span
                       className={`absolute bottom-2 right-2 w-[5px] h-[5px] rounded-full transition-all ${
                         isGroupOpen || active
-                          ? "bg-[var(--color-primary)] shadow-[0_0_6px_rgba(99,102,241,0.8)]"
+                          ? "bg-[var(--color-primary)]"
                           : "bg-[var(--color-ink-subtle)]"
                       }`}
                     />
@@ -266,7 +266,7 @@ export default function Sidebar({ navItems }: SidebarProps) {
                       <span
                         className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all ${
                           childActive
-                            ? "bg-[var(--color-primary)] shadow-[0_0_6px_rgba(99,102,241,0.8)]"
+                            ? "bg-[var(--color-primary)]"
                             : "bg-[var(--color-ink-subtle)]"
                         }`}
                       />

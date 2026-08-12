@@ -15,6 +15,8 @@ import {
   Banknote,
   CreditCard,
   Receipt,
+  Smartphone,
+  Landmark,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { usePublicInvoice } from "@/hooks/public-docs/usePublicInvoice";
@@ -27,9 +29,10 @@ export default function PublicInvoicePage() {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<"mpesa" | "manual">("mpesa");
   const [reference, setReference] = useState("");
+  const [payChannel, setPayChannel] = useState<"mpesa" | "bank">("mpesa");
 
   const handleDownloadPdf = async () => {
-    if (!invoice) return; // ✅ FIX: Guard against null invoice for TypeScript
+    if (!invoice) return;
     
     try {
       toast.loading("Generating PDF...");
@@ -80,7 +83,7 @@ export default function PublicInvoicePage() {
   }
 
   const isPaid = invoice.status === "paid";
-  const remaining = invoice.amount_due - invoice.amount_paid;
+  const remaining = invoice.remaining_balance ?? 0;
 
   const handleSubmitPayment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +93,7 @@ export default function PublicInvoicePage() {
     return;
   };
 
-  // 3. Main Render (Matches PublicContractPage responsive design exactly)
+  // 3. Main Render
   return (
     <div className="min-h-screen bg-slate-50 py-6 sm:py-12 px-3 sm:px-6 lg:px-8">
       <Toaster position="top-center" />
@@ -141,7 +144,7 @@ export default function PublicInvoicePage() {
           <div className="p-4 sm:p-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
               
-              {/* Client Info */}
+              {/* Client Info (✅ phone under name) */}
               <div className="space-y-2 sm:space-y-4">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Client Details</h3>
                 <div className="flex items-start gap-3">
@@ -150,7 +153,7 @@ export default function PublicInvoicePage() {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-900">{invoice.client_name}</p>
-                    <p className="text-xs text-slate-500">Renter</p>
+                    <p className="text-xs text-slate-500">{invoice.client_phone || "Renter"}</p>
                   </div>
                 </div>
               </div>
@@ -163,7 +166,7 @@ export default function PublicInvoicePage() {
                     <Car size={18} className="text-slate-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-900">{invoice.booking_details?.vehicle || "N/A"}</p>
+                    <p className="text-sm font-bold text-slate-900">{invoice.vehicle_description || "N/A"}</p>
                     <p className="text-xs text-slate-500">Rental Vehicle</p>
                   </div>
                 </div>
@@ -202,8 +205,73 @@ export default function PublicInvoicePage() {
               </div>
             </div>
 
-            {/* Payment Section */}
+            {/* ✅ NEW: How to Complete Payment */}
             <div className="mt-6 sm:mt-10 p-4 sm:p-6 bg-slate-50 rounded-xl border border-slate-100">
+              <h4 className="text-sm font-bold text-slate-900 mb-1 flex items-center gap-2">
+                <CreditCard size={16} className="text-slate-600" />
+                How to Complete Payment
+              </h4>
+              <p className="text-xs text-slate-500 mb-4">
+                Pay using your preferred channel, then record the transaction reference below.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setPayChannel("mpesa")}
+                  className={`p-3 rounded-lg border text-left transition-colors ${
+                    payChannel === "mpesa"
+                      ? "bg-emerald-50 border-emerald-300 ring-1 ring-emerald-300"
+                      : "bg-white border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <p className={`text-xs font-bold flex items-center gap-1.5 ${payChannel === "mpesa" ? "text-emerald-700" : "text-slate-700"}`}>
+                    <Smartphone size={13} /> M-Pesa Express
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">PayBill Transfer</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPayChannel("bank")}
+                  className={`p-3 rounded-lg border text-left transition-colors ${
+                    payChannel === "bank"
+                      ? "bg-indigo-50 border-indigo-300 ring-1 ring-indigo-300"
+                      : "bg-white border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <p className={`text-xs font-bold flex items-center gap-1.5 ${payChannel === "bank" ? "text-indigo-700" : "text-slate-700"}`}>
+                    <Landmark size={13} /> Bank Transfer
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">EFT / RTGS</p>
+                </button>
+              </div>
+
+              {payChannel === "mpesa" ? (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  <p className="text-xs font-bold text-emerald-800 mb-2">M-Pesa Payment Instructions:</p>
+                  <div className="text-xs text-emerald-900 space-y-1">
+                    <p>1. Go to M-Pesa → Lipa na M-Pesa → <span className="font-bold">PayBill</span></p>
+                    <p>2. Business Number: <span className="font-bold">888222</span></p>
+                    <p>3. Account Number: <span className="font-bold">{invoice.invoice_number}</span></p>
+                    <p>4. Enter the amount and your M-Pesa PIN, then send.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                  <p className="text-xs font-bold text-indigo-800 mb-2">Bank Wire Transfer Details:</p>
+                  <div className="text-xs text-indigo-900 space-y-1">
+                    <p>Bank Name: <span className="font-bold">KCB Bank Kenya</span></p>
+                    <p>Account Name: <span className="font-bold">{invoice.tenant_name}</span></p>
+                    <p>Account Number: <span className="font-bold">12948572910</span></p>
+                    <p>Payment Reference: <span className="font-bold">{invoice.invoice_number}</span></p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Payment Section */}
+            <div className="mt-6 p-4 sm:p-6 bg-slate-50 rounded-xl border border-slate-100">
               <h4 className="text-sm font-bold text-slate-900 mb-3 sm:mb-4 flex items-center gap-2">
                 <CreditCard size={16} className="text-slate-600" />
                 Record Offline Payment
@@ -284,10 +352,11 @@ export default function PublicInvoicePage() {
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer (✅ defensive date check) */}
         <div className="mt-6 sm:mt-8 text-center">
           <p className="text-xs text-slate-400">
-            Secured by Rental Garage • Invoice generated on {new Date(invoice.created_at).toLocaleDateString()}
+            Secured by Rental Garage • Invoice generated on{" "}
+            {invoice.created_at ? new Date(invoice.created_at).toLocaleDateString() : "—"}
           </p>
         </div>
       </div>
