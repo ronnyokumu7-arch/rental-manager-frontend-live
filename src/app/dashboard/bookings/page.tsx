@@ -1,3 +1,4 @@
+// src/app/dashboard/bookings/page.tsx
 "use client";
 
 import { LayoutList, CalendarDays } from "lucide-react";
@@ -82,13 +83,16 @@ export default function BookingsPage() {
       {/* ── MAIN CONTENT ── */}
       <div className="w-full min-w-0 transition-opacity duration-150">
         {activeTab === "list" ? (
-          <BookingsList 
-            bookingsData={bookingsData}
-            clientMap={clientMap}
-            vehicleMap={vehicleMap}
-            isReferenceDataLoading={isRefDataLoading}
-            onExtendBooking={openExtendModal}
-          />
+          // ✅ WRAPPED BookingsList in same card container as Fleet/Clients pages
+          <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden animate-in fade-in duration-300">
+            <BookingsList 
+              bookingsData={bookingsData}
+              clientMap={clientMap}
+              vehicleMap={vehicleMap}
+              isReferenceDataLoading={isRefDataLoading}
+              onExtendBooking={openExtendModal}
+            />
+          </div>
         ) : (
           isRefDataLoading ? (
             <div className="h-48 sm:h-64 flex items-center justify-center text-xs sm:text-sm text-[var(--color-ink-muted)] bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)]">

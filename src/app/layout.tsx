@@ -1,28 +1,35 @@
-// src/app/layout.tsx
 export const dynamic = 'force-dynamic';
 
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { Toaster } from "react-hot-toast";
 import '@/styles/flatpickr-theme.css';
-import Providers from "@/components/Providers"; // ✅ NEW IMPORT
+import Providers from "@/components/Providers";
 
-// 1. Configure Sans-Serif Font (Primary UI)
+// 1. Sans-Serif (Primary UI / paragraphs)
 const sansFont = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-// 2. Configure Monospace Font (Technical IDs, code, license plates, etc.)
+// 2. Display (Titles, headers — brand identity)
+const displayFont = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+  weight: ["500", "600", "700"],
+});
+
+// 3. Monospace (Numbers, IDs, plates, amounts)
 const monoFont = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   display: "swap",
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -42,7 +49,7 @@ export default function RootLayout({
     <html 
       lang="en" 
       suppressHydrationWarning
-      className={`${sansFont.variable} ${monoFont.variable}`}
+      className={`${sansFont.variable} ${displayFont.variable} ${monoFont.variable}`}
     >
       <body className="
         font-sans 
@@ -53,7 +60,6 @@ export default function RootLayout({
         selection:text-[var(--color-primary-text)]
         scroll-smooth
       ">
-        {/* ✅ WRAPPED IN PROVIDERS (Adds React Query & Error Boundary) */}
         <Providers>
           <AuthProvider>
             <Toaster 

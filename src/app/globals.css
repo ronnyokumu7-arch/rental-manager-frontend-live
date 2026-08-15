@@ -1,6 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════
+   BRAND TYPOGRAPHY ENFORCEMENT (corrected variable names)
+   ═══════════════════════════════════════════════════════════ */
+@layer base {
+  /* 1. Everything defaults to Inter (UI/paragraphs) */
+  * {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+  }
+
+  /* 2. Titles & headers get the Space Grotesk brand voice */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display), var(--font-sans), sans-serif !important;
+    letter-spacing: -0.02em;
+  }
+
+  /* 3. Numbers & technical data get JetBrains Mono */
+  code, pre, .font-mono,
+  [class*="tabular-nums"] {
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace !important;
+  }
+
+  /* Map shorthand color classes to design tokens */
+  .text-ink-muted { color: var(--color-ink-muted) !important; }
+  .text-ink { color: var(--color-ink) !important; }
+  .text-primary { color: var(--color-primary) !important; }
+}
+
 /* ============================================================
    TAILWIND V4 THEME MAPPING
    Bridging CSS tokens directly into Tailwind utility generators

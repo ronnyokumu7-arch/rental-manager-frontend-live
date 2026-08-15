@@ -2,11 +2,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import {
-  Car, Archive, Shield, ShieldAlert, MoreVertical, Loader2, 
+  Car, Archive, Shield, Coins, ShieldAlert, Loader2, 
   Search, Filter, Ban, Wrench, Plus, Gauge
 } from "lucide-react";
+import FilterDropdown from "@/components/ui/FilterDropdown";
+import DataTable, { RowAction } from "@/components/ui/DataTable";
+import CardGrid from "@/components/ui/CardGrid";
 import type { Vehicle, VehicleStatus } from "@/lib/types";
 
 interface FleetListProps {
@@ -74,8 +77,8 @@ export default function FleetList({
   setCurrentPage,
   pageSize,
   actionLoadingId: _actionLoading,
-  openDropdownId,
-  setOpenDropdownId,
+  openDropdownId: _openDropdownId,
+  setOpenDropdownId: _setOpenDropdownId,
   setGarageVehicle,
   setGarageModalOpen,
   handleStatusAction,
@@ -84,186 +87,110 @@ export default function FleetList({
   filteredVehicles,
   paginatedVehicles,
   totalPages,
-  totalVehicles: _totalVehicles, // ✅ FIXED: Renamed to suppress unused variable warning
+  totalVehicles: _totalVehicles,
   availableVehicles,
   rentedVehicles,
 }: FleetListProps) {
   const router = useRouter();
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
   const garageVehiclesCount = useMemo(() => {
     return filteredVehicles.filter((v) => v.status === "awaiting_mileage" || v.status === "maintenance").length;
   }, [filteredVehicles]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (openDropdownId !== null && !target.closest(`[data-dropdown-id="${openDropdownId}"]`)) {
-        setOpenDropdownId(null);
-        setDropdownPos(null);
-      }
-      if (showFilterDropdown && !target.closest("[data-filter-dropdown]")) {
-        setShowFilterDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openDropdownId, setOpenDropdownId, showFilterDropdown]);
+  // ✅ Reusable row actions for both table and cards
+  const getVehicleActions = (vehicle: Vehicle): RowAction<Vehicle>[] => {
+    const actions: RowAction<Vehicle>[] = [
+      {
+        label: "Vehicle Profile",
+        icon: Car,
+        onClick: () => router.push(`/dashboard/fleet/${vehicle.id}`),
+      },
+    ];
 
-  const handleToggleDropdown = (e: React.MouseEvent, id: number) => {
-    e.stopPropagation();
-    if (openDropdownId === id) {
-      setOpenDropdownId(null);
-      setDropdownPos(null);
-    } else {
-      setOpenDropdownId(id);
-      const rect = e.currentTarget.getBoundingClientRect();
-      const dropdownHeight = 260;
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const positionAbove = spaceBelow < dropdownHeight;
-
-      setDropdownPos({
-        top: positionAbove ? rect.top - dropdownHeight - 8 : rect.bottom + 8,
-        right: Math.max(12, window.innerWidth - rect.right),
+    if (vehicle.is_archived) {
+      actions.push({
+        label: "Restore Vehicle",
+        icon: Archive,
+        variant: "primary",
+        onClick: () => handleStatusAction(vehicle.id, "restore"),
       });
+    } else {
+      if (vehicle.status === "pending_activation") {
+        actions.push({
+          label: "Activate Vehicle",
+          icon: Shield,
+          variant: "primary",
+          onClick: () => handleStatusAction(vehicle.id, "activate"),
+        });
+      }
+
+      if (vehicle.status === "rented") {
+        actions.push({
+          label: "End Trip",
+          icon: ShieldAlert,
+          variant: "default",
+          onClick: () => handleStatusAction(vehicle.id, "awaiting_mileage"),
+        });
+      }
+
+      if (vehicle.status === "awaiting_mileage" || vehicle.status === "maintenance") {
+        actions.push({
+          label: "Update Mileage",
+          icon: Wrench,
+          variant: "default",
+          onClick: () => {
+            setGarageVehicle(vehicle);
+            setGarageModalOpen(true);
+          },
+        });
+      }
+
+      if (vehicle.status === "maintenance") {
+        actions.push({
+          label: "Reactivate Vehicle",
+          icon: Shield,
+          variant: "primary",
+          onClick: () => handleStatusAction(vehicle.id, "reactivate"),
+        });
+      }
+
+      if (vehicle.status === "available") {
+        actions.push({
+          label: "Send to Maintenance",
+          icon: Shield,
+          variant: "default",
+          onClick: () => handleStatusAction(vehicle.id, "maintenance"),
+        });
+      }
+
+      // Always show these actions for non-archived vehicles
+      actions.push(
+        {
+          label: "Quick Garage",
+          icon: Wrench,
+          variant: "default",
+          separator: true,
+          onClick: () => {
+            setGarageVehicle(vehicle);
+            setGarageModalOpen(true);
+          },
+        },
+        {
+          label: "Archive",
+          icon: Archive,
+          variant: "default",
+          onClick: () => handleArchive(vehicle.id),
+        },
+        {
+          label: "Retire",
+          icon: Ban,
+          variant: "danger",
+          onClick: () => handleRetire(vehicle.id),
+        }
+      );
     }
-  };
 
-  const renderDropdownContent = (v: Vehicle) => {
-    const isArchived = v.is_archived;
-    return (
-      <div
-        className="fixed z-[100] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-        style={{ top: dropdownPos?.top, right: dropdownPos?.right }}
-      >
-        <button
-          onClick={() => {
-            router.push(`/dashboard/fleet/${v.id}`);
-            setOpenDropdownId(null);
-            setDropdownPos(null);
-          }}
-          className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
-        >
-          <Car size={14} /> Vehicle Profile
-        </button>
-
-        {isArchived ? (
-          <button
-            onClick={() => {
-              handleStatusAction(v.id, "restore");
-              setOpenDropdownId(null);
-              setDropdownPos(null);
-            }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-          >
-            <Archive size={14} /> Restore Vehicle
-          </button>
-        ) : (
-          <>
-            {v.status === "pending_activation" && (
-              <button
-                onClick={() => {
-                  handleStatusAction(v.id, "activate");
-                  setOpenDropdownId(null);
-                  setDropdownPos(null);
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-              >
-                <Shield size={14} /> Activate Vehicle
-              </button>
-            )}
-
-            {v.status === "rented" && (
-              <button
-                onClick={() => {
-                  handleStatusAction(v.id, "awaiting_mileage");
-                  setOpenDropdownId(null);
-                  setDropdownPos(null);
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-              >
-                <ShieldAlert size={14} /> End Trip
-              </button>
-            )}
-
-            {v.status === "awaiting_mileage" && (
-              <button
-                onClick={() => {
-                  setGarageVehicle(v);
-                  setGarageModalOpen(true);
-                  setOpenDropdownId(null);
-                  setDropdownPos(null);
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-amber-600 hover:bg-amber-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-              >
-                <Wrench size={14} /> Update Mileage
-              </button>
-            )}
-
-            {v.status === "maintenance" && (
-              <button
-                onClick={() => {
-                  handleStatusAction(v.id, "reactivate");
-                  setOpenDropdownId(null);
-                  setDropdownPos(null);
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-              >
-                <Shield size={14} /> Reactivate Vehicle
-              </button>
-            )}
-
-            {v.status === "available" && (
-              <button
-                onClick={() => {
-                  handleStatusAction(v.id, "maintenance");
-                  setOpenDropdownId(null);
-                  setDropdownPos(null);
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-              >
-                <Shield size={14} /> Send to Maintenance
-              </button>
-            )}
-
-            <button
-              onClick={() => {
-                setGarageVehicle(v);
-                setGarageModalOpen(true);
-                setOpenDropdownId(null);
-                setDropdownPos(null);
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors border-t border-[var(--color-surface-border)]"
-            >
-              <Wrench size={14} /> Quick Garage
-            </button>
-
-            <button
-              onClick={() => {
-                handleArchive(v.id);
-                setOpenDropdownId(null);
-                setDropdownPos(null);
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors border-t border-[var(--color-surface-border)]"
-            >
-              <Archive size={14} /> Archive
-            </button>
-
-            <button
-              onClick={() => {
-                handleRetire(v.id);
-                setOpenDropdownId(null);
-                setDropdownPos(null);
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-            >
-              <Ban size={14} /> Retire
-            </button>
-          </>
-        )}
-      </div>
-    );
+    return actions;
   };
 
   if (loading) {
@@ -276,8 +203,10 @@ export default function FleetList({
 
   return (
     <>
-      {/* METRICS COUNTER STRIP */}
+      {/* METRICS COUNTER STRIP + TOOLBAR */}
       <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
+        
+        {/* Metrics Counter Panel */}
         <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
           <div className="flex items-center gap-2 whitespace-nowrap">
             <span className="text-xs font-medium text-[var(--color-ink-muted)]">Available</span>
@@ -295,9 +224,10 @@ export default function FleetList({
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        {/* Controls: Search + Filter + CTA */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
           <div className="flex items-center gap-2 flex-1 sm:w-80">
+            {/* Search Input */}
             <div className="relative flex-1">
               <Search
                 size={16}
@@ -312,65 +242,18 @@ export default function FleetList({
               />
             </div>
 
-            {/* ✅ PREMIUM CUSTOM FILTER DROPDOWN - WIRED TO HOOK LOGIC */}
-            <div className="relative flex-shrink-0" data-filter-dropdown>
-              <button
-                type="button"
-                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
-                  statusFilter
-                    ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
-                    : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-                title="Filter by status"
-              >
-                <Filter size={15} />
-              </button>
-
-              {showFilterDropdown && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowFilterDropdown(false)} />
-                  <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                    <div className="py-1">
-                      {/* "All Statuses" - clears filter by setting to empty string "" */}
-                      <button
-                        onClick={() => {
-                          setStatusFilter("");
-                          setShowFilterDropdown(false);
-                        }}
-                        className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
-                          statusFilter === ""
-                            ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                            : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                        }`}
-                      >
-                        All Statuses
-                      </button>
-                      <div className="h-px bg-[var(--color-surface-border)]" />
-                      {/* Filter options - sets filter to specific VehicleStatus value */}
-                      {FLEET_FILTER_OPTIONS.filter((opt) => opt.value !== "").map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => {
-                            setStatusFilter(opt.value);
-                            setShowFilterDropdown(false);
-                          }}
-                          className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
-                            statusFilter === opt.value
-                              ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                              : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* ✅ Reusable FilterDropdown */}
+<FilterDropdown
+  filterId="fleet-status"
+  label="Status"
+  options={FLEET_FILTER_OPTIONS.filter((opt) => opt.value !== "")}
+  value={statusFilter || null}
+  onChange={(value) => setStatusFilter((value || "") as VehicleStatus | "")}  // 👈 add || ""
+  icon={Filter}
+/>
           </div>
 
+          {/* Add Vehicle CTA */}
           <button
             onClick={() => router.push("/dashboard/fleet/new")}
             className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm flex-shrink-0"
@@ -394,223 +277,246 @@ export default function FleetList({
         </div>
       ) : (
         <>
-          {/* MOBILE CARDS VIEW */}
-          <div className="block md:hidden p-4 space-y-3">
-            {filteredVehicles.map((v) => {
-              const isArchived = v.is_archived;
-              const displayStatus = isArchived ? "Archived" : statusLabels[v.status] || "Unknown";
-              const style = isArchived
-                ? { bg: "bg-[var(--color-surface-hover)]", text: "text-[var(--color-ink-muted)]" }
-                : statusStyles[v.status] || statusStyles.retired;
-
-              const showWrench = v.status === "awaiting_mileage" || v.status === "maintenance";
-              const showPulse = v.status === "rented";
-
-              return (
-                <div
-                  key={v.id}
-                  onClick={() => router.push(`/dashboard/fleet/${v.id}`)}
-                  className="p-4 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all cursor-pointer shadow-sm"
-                >
-                  {/* Top Deck: Avatar + Info + Odometer */}
-                  <div className="flex items-start justify-between gap-3">
+          {/* ✅ MOBILE: Reusable CardGrid (simplified, non-collapsible) */}
+          <div className="block md:hidden">
+            <CardGrid
+              data={paginatedVehicles}
+              getCardId={(v) => v.id}
+              
+              // Header: Icon + Vehicle Name + Stacked Plate/Odometer + Status Dot/Wrench
+              renderCardHeader={({ item }) => {
+                const statusColors: Record<string, string> = {
+                  pending_activation: "bg-amber-500",
+                  available: "bg-emerald-500",
+                  rented: "bg-[var(--color-primary)]",
+                  awaiting_mileage: "bg-amber-500",
+                  maintenance: "bg-orange-500",
+                  retired: "bg-gray-400",
+                };
+                const statusColor = statusColors[item.status] || "bg-gray-400";
+                const isPulsing = item.status === 'available' || item.status === 'rented';
+                
+                // Check if due for service (<500KM to next service OR overdue)
+                const kmToService = item.next_service_km ? item.next_service_km - item.current_mileage : null;
+                const isDueForService = kmToService !== null && kmToService <= 500; // ✅ Includes overdue (<=0)
+                
+                // Show wrench for: awaiting_mileage OR due for service (including overdue)
+                const showWrench = item.status === 'awaiting_mileage' || isDueForService;
+                
+                return (
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    {/* Left: Icon + Vehicle Info */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* ✅ Restored Circular Avatar */}
                       <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
                         <Car size={18} />
                       </div>
-                      <div className="min-w-0">
-                        <h4 className="text-sm font-bold text-[var(--color-ink)] truncate leading-tight">
-                          {v.make} {v.model}
+                      <div className="min-w-0 flex-1">
+                        <h4 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/fleet/${item.id}`);
+                          }}
+                          className="text-sm font-bold text-[var(--color-ink)] truncate cursor-pointer hover:text-[var(--color-primary)] transition-colors"
+                        >
+                          {item.make} {item.model}
                         </h4>
-                        <p className="text-xs text-[var(--color-ink-muted)] font-mono leading-tight mt-0.5">
-                          {formatPlate(v.plate_number)}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <Gauge size={11} className="text-[var(--color-primary)] flex-shrink-0" />
-                          <span className="text-xs font-bold text-[var(--color-primary-text)] font-mono">
-                            {v.current_mileage.toLocaleString()} KM
+                        
+                        {/* Stacked: Plate (Top) + Odometer (Bottom) */}
+                        <div className="flex flex-col gap-0.5 mt-0.5">
+                          {/* ✅ Plate Number - Muted Grey Color */}
+                          <span className="text-xs text-[var(--color-ink-muted)] truncate font-mono font-medium">
+                            {formatPlate(item.plate_number)}
                           </span>
+
+                          {/* Odometer Row */}
+                          <div className="flex items-center gap-1">
+                            <Gauge size={10} className="text-[var(--color-primary)] flex-shrink-0" />
+                            <span className="text-xs text-[var(--color-primary-text)] truncate font-medium font-mono">
+                              {item.current_mileage.toLocaleString()} KM
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {/* ✅ FIXED: Wrapped Wrench in span to support title prop */}
+                    
+                    {/* Right: Status Dot OR Wrench Icon */}
+                    <div className="relative flex-shrink-0 ml-2">
                       {showWrench ? (
-                        <span title={displayStatus} className="inline-flex">
-                          <Wrench size={16} className={style.text} />
+                        /* ✅ FIXED: Cleaned up comment syntax and wrapped icon in span for tooltip */
+                        <span title={
+                          kmToService !== null 
+                            ? kmToService > 0 
+                              ? `Due for service in ${kmToService} KM` 
+                              : `Overdue by ${Math.abs(kmToService)} KM`
+                            : "Awaiting mileage update"
+                        }>
+                          <Wrench size={16} className="text-amber-500 animate-pulse" />
                         </span>
                       ) : (
-                        <div
-                          className={`w-2.5 h-2.5 rounded-full ${style.bg.replace("/10", "")} ${showPulse ? "animate-pulse" : ""}`}
-                          title={displayStatus}
-                        />
+                        /* ✅ FIXED: Cleaned up comment syntax */
+                        <>
+                          {isPulsing && (
+                            <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${statusColor} animate-ping opacity-50`} />
+                          )}
+                          <div 
+                            className={`w-2.5 h-2.5 rounded-full ${statusColor} ${isPulsing ? 'animate-pulse' : ''}`}
+                            title={statusLabels[item.status]}
+                          />
+                        </>
                       )}
-                      <div className="relative" data-dropdown-id={v.id} onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={(e) => handleToggleDropdown(e, v.id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] transition-all"
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                        {openDropdownId === v.id && dropdownPos && renderDropdownContent(v)}
-                      </div>
                     </div>
                   </div>
-
-                  {/* Bottom Deck: Rate & Next Service */}
-                  <div className="border-t border-[var(--color-surface-border)]/60 pt-3 mt-3">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center flex-shrink-0">
-                          <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">$</span>
+                );
+              }}
+              
+              // Body: Divider + Rate/Service with Icons
+              renderCardBody={({ item }) => {
+                return (
+                  <>
+                    {/* First Divider */}
+                    <div className="border-t border-[var(--color-surface-border)]/60 pt-2 mt-2" />
+                    
+                    {/* Rate + Next Service */}
+                    <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                      {/* ✅ Daily Rate with Coins Icon */}
+                      <div>
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <Coins size={10} className="text-[var(--color-ink-muted)]" />
+                          <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Daily Rate</p>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-[9px] text-[var(--color-ink-muted)] font-medium">Daily Rate</p>
-                          <p className="text-xs font-bold text-[var(--color-ink)] truncate">
-                            KES {Number(v.daily_rate).toLocaleString()}
-                          </p>
-                        </div>
+                        <p className="text-xs font-bold text-[var(--color-ink)]">
+                          KES {Number(item.daily_rate).toLocaleString()}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center flex-shrink-0">
-                          <Wrench size={12} className="text-[var(--color-ink-muted)]" />
+
+                      {/* ✅ Next Service with Wrench Icon */}
+                      <div>
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <Wrench size={10} className="text-[var(--color-ink-muted)]" />
+                          <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Next Service</p>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-[9px] text-[var(--color-ink-muted)] font-medium">Next Service</p>
-                          <p className="text-xs font-mono text-[var(--color-ink)] truncate">
-                            {v.next_service_km ? `${v.next_service_km.toLocaleString()} KM` : "—"}
-                          </p>
-                        </div>
+                        <p className="text-xs font-mono text-[var(--color-ink)]">
+                          {item.next_service_km ? `${item.next_service_km.toLocaleString()} KM` : "—"}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  </>
+                );
+              }}
+              
+              // ✅ Row actions (3-dots menu) - correctly targeted
+              rowActions={getVehicleActions}
+              
+              // Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredVehicles.length}
+              pageSize={3}
+              onPageChange={setCurrentPage}
+            />
           </div>
 
-          {/* DESKTOP TABLE VIEW */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
-                <tr>
-                  <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                    Vehicle
-                  </th>
-                  <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                    Plate
-                  </th>
-                  <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                    Rate
-                  </th>
-                  <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                    Mileage
-                  </th>
-                  <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                    Next Service
-                  </th>
-                  <th className="px-6 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                    Manage
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--color-surface-border)]">
-                {paginatedVehicles.map((v) => {
-                  const isArchived = v.is_archived;
-                  const displayStatus = isArchived ? "Archived" : statusLabels[v.status] || "Unknown";
-                  const style = isArchived
-                    ? { bg: "bg-[var(--color-surface-hover)]", text: "text-[var(--color-ink-muted)]" }
-                    : statusStyles[v.status] || statusStyles.retired;
-
-                  return (
-                    <tr
-                      key={v.id}
-                      onClick={() => router.push(`/dashboard/fleet/${v.id}`)}
-                      className="hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors group"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] shrink-0">
-                            <Car size={16} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{v.make} {v.model}</p>
-                            <p className="text-xs text-[var(--color-ink-muted)] font-mono truncate">YOM-{v.year}</p>
-                          </div>
+          {/* ✅ DESKTOP: Reusable DataTable */}
+          <div className="hidden md:block">
+            <DataTable
+              data={paginatedVehicles}
+              columns={[
+                {
+                  header: "Vehicle",
+                  accessorKey: "make",
+                  cell: ({ row }) => {
+                    const v = row.original;
+                    return (
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] shrink-0">
+                          <Car size={16} />
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-semibold text-[var(--color-ink)] font-mono">
-                          {formatPlate(v.plate_number)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-semibold text-[var(--color-ink)]">
-                          KES {Number(v.daily_rate).toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style.bg} ${style.text}`}
-                        >
-                          {displayStatus}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 font-mono text-sm text-[var(--color-ink)]">
-                        {v.current_mileage.toLocaleString()} KM
-                      </td>
-                      <td className="px-6 py-4 font-mono text-sm text-[var(--color-ink-muted)]">
-                        {v.next_service_km ? `${v.next_service_km.toLocaleString()} KM` : "—"}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
-                          <div className="relative" data-dropdown-id={v.id}>
-                            <button
-                              onClick={(e) => handleToggleDropdown(e, v.id)}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-all"
-                              title="More Actions"
-                            >
-                              <MoreVertical size={14} />
-                            </button>
-                          </div>
+                        <div className="min-w-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/dashboard/fleet/${v.id}`);
+                            }}
+                            className="text-sm font-semibold text-[var(--color-ink)] truncate hover:text-[var(--color-primary)] transition-colors text-left"
+                          >
+                            {v.make} {v.model}
+                          </button>
+                          <p className="text-xs text-[var(--color-ink-muted)] font-mono truncate">YOM-{v.year}</p>
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* PAGINATION FOOTER */}
-          <div className="hidden md:flex p-4 border-t border-[var(--color-surface-border)] flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-[var(--color-ink-muted)] text-center sm:text-left">
-              Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredVehicles.length)} of{" "}
-              {filteredVehicles.length} vehicles
-            </p>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95"
-              >
-                Previous
-              </button>
-              <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-primary)] text-white">
-                {currentPage} / {totalPages || 1}
-              </span>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95"
-              >
-                Next
-              </button>
-            </div>
+                      </div>
+                    );
+                  },
+                },
+                {
+                  header: "Plate",
+                  accessorKey: "plate_number",
+                  cell: ({ row }) => (
+                    <span className="text-sm font-semibold text-[var(--color-ink)] font-mono">
+                      {formatPlate(row.original.plate_number)}
+                    </span>
+                  ),
+                },
+                {
+                  header: "Rate",
+                  accessorKey: "daily_rate",
+                  cell: ({ row }) => (
+                    <span className="text-sm font-semibold text-[var(--color-ink)]">
+                      KES {Number(row.original.daily_rate).toLocaleString()}
+                    </span>
+                  ),
+                },
+                {
+                  header: "Status",
+                  accessorKey: "status",
+                  cell: ({ row }) => {
+                    const v = row.original;
+                    const isArchived = v.is_archived;
+                    const displayStatus = isArchived ? "Archived" : statusLabels[v.status] || "Unknown";
+                    const style = isArchived
+                      ? { bg: "bg-[var(--color-surface-hover)]", text: "text-[var(--color-ink-muted)]" }
+                      : statusStyles[v.status] || statusStyles.retired;
+                    
+                    return (
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style.bg} ${style.text}`}>
+                        {displayStatus}
+                      </span>
+                    );
+                  },
+                },
+                {
+                  header: "Mileage",
+                  accessorKey: "current_mileage",
+                  cell: ({ row }) => (
+                    <span className="font-mono text-sm text-[var(--color-ink)]">
+                      {row.original.current_mileage.toLocaleString()} KM
+                    </span>
+                  ),
+                },
+                {
+                  header: "Next Service",
+                  accessorKey: "next_service_km",
+                  cell: ({ row }) => (
+                    <span className="font-mono text-sm text-[var(--color-ink-muted)]">
+                      {row.original.next_service_km ? `${row.original.next_service_km.toLocaleString()} KM` : "—"}
+                    </span>
+                  ),
+                },
+              ]}
+              // ✅ Row actions (3-dots menu) - correctly targeted
+              rowActions={getVehicleActions}
+              getRowId={(v) => v.id}
+              onRowClick={(v) => router.push(`/dashboard/fleet/${v.id}`)}
+              loading={loading}
+              emptyMessage="No vehicles found"
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredVehicles.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              viewMode="desktop"
+            />
           </div>
         </>
       )}

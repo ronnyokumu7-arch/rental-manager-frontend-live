@@ -1,12 +1,11 @@
+// src/app/dashboard/tasks/page.tsx
 "use client";
 
 import { useState } from "react";
-import {
-  ListChecks, Users, CheckCircle2
-} from "lucide-react";
+import { ListChecks, Users, CheckCircle2 } from "lucide-react";
 import { useTasksList } from "@/hooks/tasks/useTasksList";
 import type { Task } from "@/lib/types";
-import TaskProfileModal from "@/components/tasks/TaskProfileModal"; // ✅ Swapped
+import TaskProfileModal from "@/components/tasks/TaskProfileModal";
 import TasksTab from "@/components/tasks/TasksTab";
 import AssignedToTab from "@/components/tasks/AssignedTo";
 import CompletedTasksTab from "@/components/tasks/CompletedTasks";
@@ -18,7 +17,6 @@ const TABS = [
 ];
 
 export default function TasksPage() {
-  // ✅ NEW: Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -48,20 +46,19 @@ export default function TasksPage() {
     refetch,
   } = useTasksList();
 
-  // ✅ Handlers for the Modal
   const handleOpenNewTask = () => {
-    setEditingTask(null); // Clear editing state for "Create" mode
+    setEditingTask(null);
     setIsModalOpen(true);
   };
 
   const handleEditTask = (task: Task) => {
-    setEditingTask(task); // Set task for "Edit" mode
+    setEditingTask(task);
     setIsModalOpen(true);
   };
 
   return (
     <div className="space-y-6">
-      {/* Premium Header with Tab Switcher */}
+      {/* Header & Tab Switcher */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
@@ -75,6 +72,7 @@ export default function TasksPage() {
           </p>
         </div>
 
+        {/* Tab Switcher */}
         <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -97,10 +95,9 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {/* Main Content Card */}
+      {/* Main Content Card - Matches Fleet/Clients/Bookings pattern */}
       <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden animate-in fade-in duration-300">
         
-        {/* Tab 1: Tasks */}
         {activeTab === "tasks" && (
           <TasksTab
             tasks={paginatedTasks}
@@ -125,12 +122,11 @@ export default function TasksPage() {
             onClaim={handleClaim}
             onStatusChange={handleStatusChange}
             onArchive={handleArchive}
-            onOpenCreateModal={handleOpenNewTask} // ✅ Wired
-            onEdit={handleEditTask}               // ✅ Wired
+            onOpenCreateModal={handleOpenNewTask}
+            onEdit={handleEditTask}
           />
         )}
 
-        {/* Tab 2: Assigned To */}
         {activeTab === "assigned-to" && (
           <AssignedToTab
             tasks={paginatedTasks}
@@ -156,7 +152,6 @@ export default function TasksPage() {
           />
         )}
 
-        {/* Tab 3: Completed */}
         {activeTab === "completed" && (
           <CompletedTasksTab
             tasks={paginatedTasks}
@@ -180,10 +175,9 @@ export default function TasksPage() {
             onReopen={handleReopen}
           />
         )}
-
       </div>
 
-      {/* ✅ NEW: Unified Task Profile Modal */}
+      {/* Task Profile Modal */}
       <TaskProfileModal 
         open={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 

@@ -1,3 +1,4 @@
+// src/lib/api/contracts.ts
 import apiClient from "@/lib/api-client";
 import type { Contract, PublicContractView, PaginatedResponse } from "@/lib/types";
 
@@ -8,7 +9,7 @@ export const contractsApi = {
 
   // ✅ Correct backend route /contracts/bookings/{id}/regenerate
   generateForBooking: (bookingId: number) =>
-    apiClient.post<Contract>(`/contracts/bookings/${bookingId}/regenerate`).then((r) => r.data),
+    apiClient.post<Contract>(`/contracts/bookings/${bookingId}/regenerate`, {}, { timeout: 60000 }).then((r) => r.data),
 
   getById: (id: number) =>
     apiClient.get<Contract>(`/contracts/${id}`).then((r) => r.data),
@@ -16,8 +17,9 @@ export const contractsApi = {
   void: (id: number) =>
     apiClient.post<Contract>(`/contracts/${id}/void`).then((r) => r.data),
 
+  // ✅ FIXED: Added 60s timeout to prevent premature timeout during PDF generation
   regenerate: (bookingId: number) =>
-    apiClient.post<Contract>(`/contracts/bookings/${bookingId}/regenerate`).then((r) => r.data),
+    apiClient.post<Contract>(`/contracts/bookings/${bookingId}/regenerate`, {}, { timeout: 60000 }).then((r) => r.data),
 
   // ✅ 60s timeout so slow PDF regeneration isn't killed at 15s
   downloadPdf: (id: number) =>

@@ -1,18 +1,16 @@
 // src/components/financials/contracts/ContractsTable.tsx
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   FileText,
-  MoreVertical,
   Download,
   Copy,
   Send,
   Ban,
-  Calendar,
-  Hash,
 } from "lucide-react";
+import DataTable, { RowAction } from "@/components/ui/DataTable";
+import CardGrid from "@/components/ui/CardGrid";
 
 export type ContractStatus = "draft" | "sent" | "signed" | "void";
 
@@ -68,320 +66,255 @@ export default function ContractsTable({
   onCopyLink,
   onSend,
   onVoid,
+  onGenerate,
 }: ContractsTableProps) {
   const router = useRouter();
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
 
   const mobileItems = allData || data;
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (openDropdownId !== null && !target.closest(`[data-dropdown-id="${openDropdownId}"]`)) {
-        setOpenDropdownId(null);
-        setDropdownPos(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openDropdownId]);
+  // ✅ Reusable row actions for both table and cards
+  const getContractActions = (contract: ContractItem): RowAction<ContractItem>[] => {
+    const actions: RowAction<ContractItem>[] = [
+      {
+        label: "Download PDF",
+        icon: Download,
+        variant: "default",
+        onClick: () => onDownload(contract.id),
+      },
+      {
+        label: "Copy Sign Link",
+        icon: Copy,
+        variant: "default",
+        onClick: () => onCopyLink(contract.id),
+      },
+    ];
 
-  const handleToggleDropdown = (e: React.MouseEvent, id: number) => {
-    e.stopPropagation();
-    if (openDropdownId === id) {
-      setOpenDropdownId(null);
-      setDropdownPos(null);
-    } else {
-      setOpenDropdownId(id);
-      const rect = e.currentTarget.getBoundingClientRect();
-      setDropdownPos({
-        top: rect.bottom + 8,
-        right: window.innerWidth - rect.right,
+    if (contract.status !== "signed" && contract.status !== "void") {
+      actions.push({
+        label: "Send Contract",
+        icon: Send,
+        variant: "primary",
+        separator: true,
+        onClick: () => onSend(contract.id),
       });
     }
-  };
 
-  const activeContract = (allData || data).find((c) => c.id === openDropdownId);
+    if (contract.status !== "void") {
+      actions.push({
+        label: "Void Contract",
+        icon: Ban,
+        variant: "danger",
+        onClick: () => onVoid(contract.id),
+      });
+    }
+
+    // Optional: Generate contract action if onGenerate is provided
+    if (onGenerate && contract.booking_id) {
+      actions.push({
+        label: "Generate Contract",
+        icon: FileText,
+        variant: "default",
+        separator: true,
+        onClick: () => onGenerate(contract.booking_id!),
+      });
+    }
+
+    return actions;
+  };
 
   return (
     <div className="w-full">
-      {/* ── MOBILE CARD VIEW ── */}
-      <div className="block md:hidden p-4 space-y-3">
-        {mobileItems.map((c) => {
-          return (
-            <div
-              key={c.id}
-              onClick={() => {
-                if (c.booking_id) {
-                  router.push(`/dashboard/bookings/${c.booking_id}`);
-                }
-              }}
-              className="p-4 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all cursor-pointer shadow-sm"
-            >
-              {/* Card Header */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
-                    <FileText size={18} />
+      {/* ✅ MOBILE: Reusable CardGrid (simplified, non-collapsible) */}
+      <div className="block md:hidden">
+        <CardGrid
+          data={mobileItems}
+          getCardId={(c) => c.id}
+          
+          // Header: Icon + Contract Number + Client Name
+          renderCardHeader={({ item }) => (
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
+                <FileText size={18} />
+              </div>
+              <div className="min-w-0">
+                <h4 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (item.booking_id) {
+                      router.push(`/dashboard/bookings/${item.booking_id}`);
+                    }
+                  }}
+                  className="text-sm font-bold text-[var(--color-ink)] truncate cursor-pointer hover:text-[var(--color-primary)] transition-colors leading-tight"
+                >
+                  {item.contract_number || `C20260${item.id}`}
+                </h4>
+                <p className="text-xs text-[var(--color-ink-muted)] truncate mt-0.5 font-medium">
+                  {item.client_name || "Unassigned Client"}
+                </p>
+              </div>
+            </div>
+          )}
+          
+          // Body: All content in one clean section
+          renderCardBody={({ item }) => {
+            const style = statusStyles[item.status] || statusStyles.draft;
+            
+            return (
+              <div className="space-y-3">
+                {/* Booking Ref + Date */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Booking Ref</p>
+                    <p className="text-xs font-bold text-[var(--color-ink)] mt-0.5 font-mono truncate">
+                      {item.booking_number ? `#${item.booking_number}` : "—"}
+                    </p>
                   </div>
-                  <div className="min-w-0">
-                    <h4 className="text-sm font-bold text-[var(--color-ink)] truncate leading-tight">
-                      {c.contract_number || `C20260${c.id}`}
-                    </h4>
-                    <p className="text-xs text-[var(--color-ink-muted)] truncate mt-0.5 font-medium">
-                      {c.client_name || "Unassigned Client"}
+                  <div>
+                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Date</p>
+                    <p className="text-xs text-[var(--color-ink-muted)] mt-0.5">
+                      {item.signed_at ? formatDateShort(item.signed_at) : formatDateShort(item.created_at)}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  {/* Options Menu Button */}
-                  <div
-                    className="relative"
-                    data-dropdown-id={c.id}
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                {/* Status Dot + Quick Actions */}
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--color-surface-border)]/40">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2.5 h-2.5 rounded-full ${style.bg.replace('/10', '')}`} title={statusLabels[item.status]} />
+                    <span className="text-[10px] font-bold uppercase text-[var(--color-ink-muted)]">
+                      {statusLabels[item.status]}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
                     <button
-                      type="button"
-                      onClick={(e) => handleToggleDropdown(e, c.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] transition-all cursor-pointer"
-                      title="Actions"
+                      onClick={(e) => { e.stopPropagation(); onCopyLink(item.id); }}
+                      className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
                     >
-                      <MoreVertical size={16} />
+                      <Copy size={12} /> Copy
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDownload(item.id); }}
+                      className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
+                    >
+                      <Download size={12} /> PDF
                     </button>
                   </div>
                 </div>
               </div>
-
-              {/* Details Grid */}
-              <div className="border-t border-[var(--color-surface-border)]/60 pt-3 mt-3">
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {/* Booking Ref */}
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase font-bold text-[var(--color-ink-subtle)] flex items-center gap-1">
-                      <Hash size={10} /> Booking Ref
-                    </p>
-                    <p className="font-bold text-[var(--color-ink)] truncate mt-0.5">
-                      {c.booking_number ? `#${c.booking_number}` : "—"}
-                    </p>
-                  </div>
-
-                  {/* Date Signed / Created */}
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase font-bold text-[var(--color-ink-subtle)] flex items-center gap-1">
-                      <Calendar size={10} /> Date
-                    </p>
-                    <p className="font-medium text-[var(--color-ink-muted)] truncate mt-0.5">
-                      {c.signed_at ? formatDateShort(c.signed_at) : formatDateShort(c.created_at)}
-                    </p>
-                  </div>
-
-                  {/* Status + Icon-Only Action Buttons */}
-                  <div className="col-span-2 border-t border-[var(--color-surface-border)]/60 pt-3 mt-3 flex items-center justify-between">
-                    {/* Status Badge */}
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
-                        statusStyles[c.status]?.bg || "bg-slate-500/10"
-                      } ${statusStyles[c.status]?.text || "text-slate-500"}`}
-                    >
-                      {statusLabels[c.status] || c.status}
-                    </span>
-
-                    {/* Plain Icon-Only Action Buttons: Copy (Left) + Download (Right) */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onCopyLink(c.id);
-                        }}
-                        className="p-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-lg transition-all cursor-pointer"
-                        title="Copy Share Link"
-                      >
-                        <Copy size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDownload(c.id);
-                        }}
-                        className="p-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-lg transition-all cursor-pointer"
-                        title="Download PDF"
-                      >
-                        <Download size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+            );
+          }}
+          
+          // ✅ Row actions (3-dots menu) - correctly targeted via portal
+          rowActions={getContractActions}
+          
+          // Pagination - using same pageSize as desktop for consistency
+          currentPage={1}
+          totalPages={1}
+          totalItems={mobileItems.length}
+          pageSize={3}
+          onPageChange={() => {}} // No pagination on mobile for now
+        />
       </div>
 
-      {/* ── DESKTOP TABLE VIEW ── */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
-          <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
-            <tr>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                Contract
-              </th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                Booking Ref
-              </th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                Client
-              </th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                Date Signed
-              </th>
-              <th className="px-6 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--color-surface-border)]">
-            {data.map((c) => {
-              const style = statusStyles[c.status] || statusStyles.draft;
-
-              return (
-                <tr
-                  key={c.id}
-                  onClick={() => {
-                    if (c.booking_id) {
-                      router.push(`/dashboard/bookings/${c.booking_id}`);
-                    }
-                  }}
-                  className="hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors group"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] shrink-0">
-                        <FileText size={16} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[var(--color-ink)] truncate">
-                          {c.contract_number || `C20260${c.id}`}
-                        </p>
-                      </div>
+      {/* ✅ DESKTOP: Reusable DataTable */}
+      <div className="hidden md:block">
+        <DataTable
+          data={data}
+          columns={[
+            {
+              header: "Contract",
+              accessorKey: "contract_number",
+              cell: ({ row }) => {
+                const c = row.original;
+                return (
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] shrink-0">
+                      <FileText size={16} />
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-[var(--color-ink)] font-mono">
-                      {c.booking_number ? `#${c.booking_number}` : "—"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[var(--color-ink)] truncate">
-                        {c.client_name || "Unassigned Client"}
-                      </p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (c.booking_id) {
+                            router.push(`/dashboard/bookings/${c.booking_id}`);
+                          }
+                        }}
+                        className="text-sm font-semibold text-[var(--color-ink)] truncate hover:text-[var(--color-primary)] transition-colors text-left"
+                      >
+                        {c.contract_number || `C20260${c.id}`}
+                      </button>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style.bg} ${style.text}`}
-                    >
-                      {statusLabels[c.status] || c.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-medium text-[var(--color-ink-muted)] truncate whitespace-nowrap">
-                      {formatDateShort(c.signed_at || c.created_at)}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div
-                      className="flex items-center justify-end"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="relative" data-dropdown-id={c.id}>
-                        <button
-                          type="button"
-                          onClick={(e) => handleToggleDropdown(e, c.id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-all cursor-pointer"
-                          title="More Actions"
-                        >
-                          <MoreVertical size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </div>
+                );
+              },
+            },
+            {
+              header: "Booking Ref",
+              accessorKey: "booking_number",
+              cell: ({ row }) => (
+                <span className="text-sm font-medium text-[var(--color-ink)] font-mono">
+                  {row.original.booking_number ? `#${row.original.booking_number}` : "—"}
+                </span>
+              ),
+            },
+            {
+              header: "Client",
+              accessorKey: "client_name",
+              cell: ({ row }) => (
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[var(--color-ink)] truncate">
+                    {row.original.client_name || "Unassigned Client"}
+                  </p>
+                </div>
+              ),
+            },
+            {
+              header: "Status",
+              accessorKey: "status",
+              cell: ({ row }) => {
+                const c = row.original;
+                const style = statusStyles[c.status] || statusStyles.draft;
+                return (
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style.bg} ${style.text}`}>
+                    {statusLabels[c.status] || c.status}
+                  </span>
+                );
+              },
+            },
+            {
+              header: "Date Signed",
+              accessorKey: "signed_at",
+              cell: ({ row }) => {
+                const c = row.original;
+                return (
+                  <p className="text-sm font-medium text-[var(--color-ink-muted)] truncate whitespace-nowrap">
+                    {formatDateShort(c.signed_at || c.created_at)}
+                  </p>
+                );
+              },
+            },
+          ]}
+          // ✅ Row actions (3-dots menu) - correctly targeted via portal
+          rowActions={getContractActions}
+          getRowId={(c) => c.id}
+          onRowClick={(c) => {
+            if (c.booking_id) {
+              router.push(`/dashboard/bookings/${c.booking_id}`);
+            }
+          }}
+          loading={false}
+          emptyMessage="No contracts found"
+          // Pagination props - handled by parent ContractsTab
+          currentPage={1}
+          totalPages={1}
+          totalItems={data.length}
+          pageSize={7}
+          onPageChange={() => {}}
+          viewMode="desktop"
+        />
       </div>
-
-      {/* ── SHARED DROPDOWN OVERLAY ── */}
-      {openDropdownId !== null && dropdownPos && activeContract && (
-        <div
-          data-dropdown-id={openDropdownId}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="fixed z-[100] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-          style={{ top: dropdownPos.top, right: dropdownPos.right }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              onDownload(activeContract.id);
-              setOpenDropdownId(null);
-              setDropdownPos(null);
-            }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
-          >
-            <Download size={14} /> Download PDF
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              onCopyLink(activeContract.id);
-              setOpenDropdownId(null);
-              setDropdownPos(null);
-            }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors border-t border-[var(--color-surface-border)] cursor-pointer"
-          >
-            <Copy size={14} /> Copy Sign Link
-          </button>
-
-          {activeContract.status !== "signed" && activeContract.status !== "void" && (
-            <button
-              type="button"
-              onClick={() => {
-                onSend(activeContract.id);
-                setOpenDropdownId(null);
-                setDropdownPos(null);
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-500/10 transition-colors border-t border-[var(--color-surface-border)] cursor-pointer"
-            >
-              <Send size={14} /> Send Contract
-            </button>
-          )}
-
-          {activeContract.status !== "void" && (
-            <button
-              type="button"
-              onClick={() => {
-                onVoid(activeContract.id);
-                setOpenDropdownId(null);
-                setDropdownPos(null);
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors border-t border-[var(--color-surface-border)] cursor-pointer"
-            >
-              <Ban size={14} /> Void Contract
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }

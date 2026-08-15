@@ -188,6 +188,10 @@ export function useContracts() {
       
       toast.dismiss();
       toast.success("Contract generated successfully!");
+      
+      // ✅ FIXED: Force a full refetch to ensure the list is in sync with backend
+      await fetchContracts();
+      
       return true;
     } catch (error: any) {
       toast.dismiss();

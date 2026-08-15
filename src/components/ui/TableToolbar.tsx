@@ -1,11 +1,9 @@
+// src/components/ui/TableToolbar.tsx
 "use client";
-import { useState } from "react";
-import { Search, Filter, Download, ChevronDown, X } from "lucide-react";
 
-interface FilterOption {
-  value: string;
-  label: string;
-}
+import { useState } from "react";
+import { Search, Download, ChevronDown, X, Filter } from "lucide-react";
+import FilterDropdown, { FilterOption } from "./FilterDropdown";
 
 interface TableToolbarProps {
   // View Toggle
@@ -19,174 +17,132 @@ interface TableToolbarProps {
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
 
-  // Filter
+  // Filter (now uses FilterDropdown)
+  filterId: string; // Unique ID for the filter dropdown
+  filterLabel: string; // Label for the filter (e.g., "Status")
   filterValue: string | null;
   onFilterChange: (value: string | null) => void;
   filterOptions: FilterOption[];
-  filterPlaceholder?: string;
 
   // Export
   onExport?: (format: "csv" | "excel") => void;
 }
 
 export default function TableToolbar({
-  viewMode,
-  onViewModeChange,
   activeCount,
   vaultCount,
   searchValue,
   onSearchChange,
   searchPlaceholder = "Search...",
+  filterId,
+  filterLabel,
   filterValue,
   onFilterChange,
   filterOptions,
-  filterPlaceholder = "All",
   onExport,
 }: TableToolbarProps) {
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   return (
-    <div className="p-4 border-b border-surface-border bg-surface-card">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        
-        {/* Left Side: Toggle + Search */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1 w-full">
-          
-          {/* View Toggle - Active/Vault */}
-          <div className="inline-flex p-1 rounded-lg bg-surface-hover border border-surface-border flex-shrink-0">
-            <button
-              onClick={() => onViewModeChange("active")}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
-                viewMode === "active"
-                  ? "bg-surface-card text-ink shadow-sm border border-surface-border"
-                  : "text-ink-muted hover:text-ink hover:bg-surface-card/50"
-              }`}
-            >
-              Active <span className="ml-1 text-xs opacity-70">({activeCount})</span>
-            </button>
-            <button
-              onClick={() => onViewModeChange("vault")}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
-                viewMode === "vault"
-                  ? "bg-surface-card text-ink shadow-sm border border-surface-border"
-                  : "text-ink-muted hover:text-ink hover:bg-surface-card/50"
-              }`}
-            >
-              Vault <span className="ml-1 text-xs opacity-70">({vaultCount})</span>
-            </button>
-          </div>
+    <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
+      
+      {/* Left: View Toggle + Metrics (matches Clients page counter pattern) */}
+      <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <span className="text-xs font-medium text-[var(--color-ink-muted)]">Active</span>
+          <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{activeCount}</span>
+        </div>
+        <div className="w-px h-3 bg-[var(--color-surface-border)] flex-shrink-0" />
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <span className="text-xs font-medium text-[var(--color-ink-muted)]">Vault</span>
+          <span className="text-xs font-bold text-[var(--color-ink-muted)] tabular-nums">{vaultCount}</span>
+        </div>
+      </div>
 
-          {/* Search Input with Enhanced Hover */}
-          <div className="relative w-full sm:w-72 flex-shrink-0 group">
-            <Search 
-              size={16} 
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle transition-colors group-hover:text-ink-muted" 
-            />
+      {/* Right: Search + Filter + Export (matches Clients page controls pattern) */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
+        <div className="flex items-center gap-2 flex-1 sm:w-80">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
             <input
               type="text"
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-surface-border bg-surface-card text-ink placeholder:text-ink-subtle 
-                transition-all duration-200
-                hover:border-surface-border-strong hover:shadow-sm
-                focus:border-accent-dark focus:ring-2 focus:ring-accent-bg/20 focus:outline-none"
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
             />
             {searchValue && (
               <button
+                type="button"
                 onClick={() => onSearchChange("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)] transition-all"
               >
-                <X size={14} />
+                <X size={13} />
               </button>
             )}
           </div>
+
+          {/* ✅ Reusable FilterDropdown (replaces native select) */}
+          <FilterDropdown
+            filterId={filterId}
+            label={filterLabel}
+            options={filterOptions}
+            value={filterValue}
+            onChange={onFilterChange}
+            icon={Filter}
+          />
         </div>
 
-        {/* Right Side: Filter + Export */}
-        <div className="flex items-center gap-2 w-full lg:w-auto justify-end">
-          
-          {/* Filter Dropdown with Enhanced Hover */}
-          <div className="relative w-full sm:w-48 flex-shrink-0 group">
-            <Filter 
-              size={14} 
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle pointer-events-none transition-colors group-hover:text-ink-muted" 
-            />
-            <select
-              value={filterValue || ""}
-              onChange={(e) => onFilterChange(e.target.value || null)}
-              className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-surface-border bg-surface-card text-ink appearance-none cursor-pointer
-                transition-all duration-200
-                hover:border-surface-border-strong hover:shadow-sm
-                focus:border-accent-dark focus:ring-2 focus:ring-accent-bg/20 focus:outline-none"
+        {/* Export Button with Dropdown */}
+        {onExport && (
+          <div className="relative flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm flex-shrink-0 cursor-pointer touch-manipulation active:scale-[0.98]"
             >
-              <option value="">{filterPlaceholder}</option>
-              {filterOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown 
-              size={14} 
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle pointer-events-none transition-colors group-hover:text-ink-muted" 
-            />
+              <Download size={14} />
+              Export
+              <ChevronDown size={12} />
+            </button>
+            
+            {showExportMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowExportMenu(false)} />
+                <div className="absolute right-0 top-[calc(100%+8px)] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                  <button
+                    type="button"
+                    onClick={() => { onExport("csv"); setShowExportMenu(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[var(--color-success-bg)] flex items-center justify-center text-[var(--color-success-text)] font-bold text-xs">
+                      CSV
+                    </div>
+                    <div>
+                      <div className="font-medium">Download CSV</div>
+                      <div className="text-[10px] text-[var(--color-ink-subtle)]">Comma-separated</div>
+                    </div>
+                  </button>
+                  <div className="h-px bg-[var(--color-surface-border)]" />
+                  <button
+                    type="button"
+                    onClick={() => { onExport("excel"); setShowExportMenu(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] font-bold text-xs">
+                      XLS
+                    </div>
+                    <div>
+                      <div className="font-medium">Download Excel</div>
+                      <div className="text-[10px] text-[var(--color-ink-subtle)]">Microsoft Excel</div>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-
-          {/* Export Button with Dropdown */}
-          {onExport && (
-            <div className="relative">
-              <button
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-surface-border bg-surface-card text-ink-muted
-                  transition-all duration-200
-                  hover:border-surface-border-strong hover:text-ink hover:shadow-sm
-                  focus:border-accent-dark focus:ring-2 focus:ring-accent-bg/20 focus:outline-none"
-              >
-                <Download size={14} />
-                Export
-                <ChevronDown size={12} className="ml-1" />
-              </button>
-              
-              {showExportMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-10" 
-                    onClick={() => setShowExportMenu(false)} 
-                  />
-                  <div className="absolute right-0 top-full mt-2 w-48 z-20 bg-surface-card border border-surface-border rounded-lg shadow-[var(--shadow-dropdown)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                    <button
-                      onClick={() => { onExport("csv"); setShowExportMenu(false); }}
-                      className="w-full px-4 py-3 text-left text-sm text-ink hover:bg-surface-hover flex items-center gap-3 transition-colors"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-success-bg flex items-center justify-center text-success-text font-bold text-xs">
-                        CSV
-                      </div>
-                      <div>
-                        <div className="font-medium">Download CSV</div>
-                        <div className="text-xs text-ink-subtle">Comma-separated</div>
-                      </div>
-                    </button>
-                    <div className="h-px bg-surface-border" />
-                    <button
-                      onClick={() => { onExport("excel"); setShowExportMenu(false); }}
-                      className="w-full px-4 py-3 text-left text-sm text-ink hover:bg-surface-hover flex items-center gap-3 transition-colors"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-accent-bg flex items-center justify-center text-accent-dark font-bold text-xs">
-                        XLS
-                      </div>
-                      <div>
-                        <div className="font-medium">Download Excel</div>
-                        <div className="text-xs text-ink-subtle">Microsoft Excel</div>
-                      </div>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-        </div>
+        )}
       </div>
     </div>
   );

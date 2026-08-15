@@ -3,9 +3,11 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Search, FileText, Filter, FileSignature } from "lucide-react";
+import FilterDropdown from "@/components/ui/FilterDropdown";
 import { useContracts } from "@/hooks/financials/useContracts";
 import ContractsTable from "./contracts/ContractsTable";
 import GenerateContractModal from "./contracts/GenerateContractModal";
+import type { ContractStatus } from "@/lib/types"; // ✅ FIXED: Added missing type import
 
 export default function ContractsTab() {
   const {
@@ -26,7 +28,6 @@ export default function ContractsTab() {
 
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [_generateForId, setGenerateForId] = useState<number | null>(null);
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
   const pageSize = 7;
 
@@ -59,18 +60,6 @@ export default function ContractsTab() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search, statusFilter, setCurrentPage]);
-
-  // Handle click outside for filter dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (showFilterDropdown && !target.closest('[data-filter-container]')) {
-        setShowFilterDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showFilterDropdown]);
 
   return (
     <>
@@ -111,61 +100,20 @@ export default function ContractsTab() {
                 />
               </div>
 
-              {/* ✅ PREMIUM ICON-ONLY FILTER DROPDOWN */}
-              <div className="relative flex-shrink-0" data-filter-container>
-                <button
-                  type="button"
-                  onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                  className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
-                    statusFilter !== "all"
-                      ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
-                      : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                  }`}
-                  title="Filter by status"
-                >
-                  <Filter size={15} />
-                </button>
-
-                {showFilterDropdown && (
-                  <>
-                    {/* Backdrop to close on outside click */}
-                    <div className="fixed inset-0 z-40" onClick={() => setShowFilterDropdown(false)} />
-                    
-                    {/* Dropdown Menu */}
-                    <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                      <div className="py-1">
-                        {/* "All Statuses" - clears filter */}
-                        <button
-                          onClick={() => { setStatusFilter("all"); setShowFilterDropdown(false); }}
-                          className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
-                            statusFilter === "all"
-                              ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                              : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                          }`}
-                        >
-                          All Statuses
-                        </button>
-                        <div className="h-px bg-[var(--color-surface-border)]" />
-                        
-                        {/* Filter options */}
-                        {["draft", "sent", "signed", "void"].map((value) => (
-                          <button
-                            key={value}
-                            onClick={() => { setStatusFilter(value as any); setShowFilterDropdown(false); }}
-                            className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors capitalize ${
-                              statusFilter === value
-                                ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                                : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                            }`}
-                          >
-                            {value}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
+              {/* ✅ Reusable FilterDropdown for Status */}
+              <FilterDropdown
+                filterId="contract-status"
+                label="Status"
+                options={[
+                  { label: "Draft", value: "draft" },
+                  { label: "Sent", value: "sent" },
+                  { label: "Signed", value: "signed" },
+                  { label: "Void", value: "void" },
+                ]}
+                value={statusFilter === "all" ? null : statusFilter}
+                onChange={(value) => setStatusFilter((value || "all") as ContractStatus | "all")}
+                icon={Filter}
+              />
             </div>
 
             {/* Generate Contract Button */}
@@ -183,7 +131,7 @@ export default function ContractsTab() {
           </div>
         </div>
 
-        {/* Content Area - REMOVED p-4 wrapper for edge-to-edge table */}
+        {/* Content Area */}
         {loading ? (
           <div className="p-12 text-center text-[var(--color-ink-muted)] flex items-center justify-center gap-2">
             <div className="w-5 h-5 rounded-full border-2 border-[var(--color-primary)] border-t-transparent animate-spin" />
@@ -203,7 +151,7 @@ export default function ContractsTab() {
           </div>
         ) : (
           <>
-            {/* ✅ EDGE-TO-EDGE TABLE: No p-4 wrapper */}
+            {/* Contracts Table */}
             <ContractsTable
               data={paginatedContracts as any}
               allData={displayedContracts as any}

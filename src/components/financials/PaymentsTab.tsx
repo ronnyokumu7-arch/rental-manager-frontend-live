@@ -3,8 +3,10 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Search, FileText, Filter, Upload, Calendar } from "lucide-react";
+import FilterDropdown from "@/components/ui/FilterDropdown";
 import { usePayments } from "@/hooks/financials/usePayments";
 import PaymentsTable from "./payments/PaymentsTable";
+import type { PaymentStatus } from "@/lib/types"; // ✅ FIXED: Added PaymentStatus import
 
 type DateRange = "all" | "today" | "yesterday" | "this_week" | "this_month" | "last_month" | "last_3_months" | "last_6_months" | "last_year";
 
@@ -15,8 +17,6 @@ export default function PaymentsTab() {
     currentPage, setCurrentPage,
   } = usePayments();
 
-  const [showDateDropdown, setShowDateDropdown] = useState(false);
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [dateFilter, setDateFilter] = useState<DateRange>("all");
 
   const pageSize = 7;
@@ -90,21 +90,6 @@ export default function PaymentsTab() {
     setCurrentPage(1);
   }, [search, statusFilter, dateFilter, setCurrentPage]);
 
-  // Handle click outside for filter dropdowns
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (showDateDropdown && !target.closest('[data-date-filter]')) {
-        setShowDateDropdown(false);
-      }
-      if (showStatusDropdown && !target.closest('[data-status-filter]')) {
-        setShowStatusDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showDateDropdown, showStatusDropdown]);
-
   // --- Action Handlers ---
   const handleDownloadPdf = (id: number) => {
     console.log(`Download PDF for payment ${id}`);
@@ -147,9 +132,6 @@ export default function PaymentsTab() {
     window.URL.revokeObjectURL(url);
   };
 
-  // ✅ REMOVED: Unused `dateFilterLabels` object (dead code flagged by noUnusedLocals).
-  // The date dropdown uses an inline `{ value, label }` array instead.
-
   return (
     <>
       <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden">
@@ -190,115 +172,38 @@ export default function PaymentsTab() {
                 />
               </div>
 
-              {/* ✅ PREMIUM DATE FILTER DROPDOWN */}
-              <div className="relative flex-shrink-0" data-date-filter>
-                <button
-                  type="button"
-                  onClick={() => { setShowDateDropdown(!showDateDropdown); setShowStatusDropdown(false); }}
-                  className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
-                    dateFilter !== "all"
-                      ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
-                      : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                  }`}
-                  title="Filter by date range"
-                >
-                  <Calendar size={15} />
-                </button>
+              {/* ✅ Reusable FilterDropdown for Date */}
+              <FilterDropdown
+                filterId="payment-date"
+                label="Date"
+                options={[
+                  { label: "Today", value: "today" },
+                  { label: "Yesterday", value: "yesterday" },
+                  { label: "This Week", value: "this_week" },
+                  { label: "This Month", value: "this_month" },
+                  { label: "Last Month", value: "last_month" },
+                  { label: "Last 3 Months", value: "last_3_months" },
+                  { label: "Last 6 Months", value: "last_6_months" },
+                  { label: "Last Year", value: "last_year" },
+                ]}
+                value={dateFilter === "all" ? null : dateFilter}
+                onChange={(value) => setDateFilter((value || "all") as DateRange)}
+                icon={Calendar}
+              />
 
-                {showDateDropdown && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowDateDropdown(false)} />
-                    <div className="absolute right-0 top-[calc(100%+8px)] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                      <div className="py-1 max-h-80 overflow-y-auto">
-                        <button
-                          onClick={() => { setDateFilter("all"); setShowDateDropdown(false); }}
-                          className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
-                            dateFilter === "all"
-                              ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                              : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                          }`}
-                        >
-                          All Time
-                        </button>
-                        <div className="h-px bg-[var(--color-surface-border)]" />
-                        {[
-                          { value: "today", label: "Today" },
-                          { value: "yesterday", label: "Yesterday" },
-                          { value: "this_week", label: "This Week" },
-                          { value: "this_month", label: "This Month" },
-                          { value: "last_month", label: "Last Month" },
-                          { value: "last_3_months", label: "Last 3 Months" },
-                          { value: "last_6_months", label: "Last 6 Months" },
-                          { value: "last_year", label: "Last Year" },
-                        ].map(({ value, label }) => (
-                          <button
-                            key={value}
-                            onClick={() => { setDateFilter(value as DateRange); setShowDateDropdown(false); }}
-                            className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
-                              dateFilter === value
-                                ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                                : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* ✅ PREMIUM STATUS FILTER DROPDOWN */}
-              <div className="relative flex-shrink-0" data-status-filter>
-                <button
-                  type="button"
-                  onClick={() => { setShowStatusDropdown(!showStatusDropdown); setShowDateDropdown(false); }}
-                  className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
-                    statusFilter !== "all"
-                      ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
-                      : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                  }`}
-                  title="Filter by payment status"
-                >
-                  <Filter size={15} />
-                </button>
-
-                {showStatusDropdown && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowStatusDropdown(false)} />
-                    <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                      <div className="py-1">
-                        <button
-                          onClick={() => { setStatusFilter("all"); setShowStatusDropdown(false); }}
-                          className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
-                            statusFilter === "all"
-                              ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                              : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                          }`}
-                        >
-                          All Statuses
-                        </button>
-                        <div className="h-px bg-[var(--color-surface-border)]" />
-                        {/* ✅ FIXED: Added `as const` to narrow array to exact literal union types */}
-                        {(["completed", "pending", "failed"] as const).map((value) => (
-                          <button
-                            key={value}
-                            onClick={() => { setStatusFilter(value); setShowStatusDropdown(false); }}
-                            className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors capitalize ${
-                              statusFilter === value
-                                ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                                : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                            }`}
-                          >
-                            {value}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
+              {/* ✅ Reusable FilterDropdown for Status */}
+              <FilterDropdown
+                filterId="payment-status"
+                label="Status"
+                options={[
+                  { label: "Completed", value: "completed" },
+                  { label: "Pending", value: "pending" },
+                  { label: "Failed", value: "failed" },
+                ]}
+                value={statusFilter === "all" ? null : statusFilter}
+                onChange={(value) => setStatusFilter((value || "all") as PaymentStatus | "all")}
+                icon={Filter}
+              />
             </div>
 
             {/* Export CSV Button */}

@@ -1,9 +1,11 @@
+// src/hooks/useDashboard.ts
 import { useState, useEffect, useMemo } from "react";
 import { bookingsApi } from "@/lib/api/bookings";
 import { clientsApi } from "@/lib/api/clients";
 import { vehiclesApi } from "@/lib/api/vehicles";
 import { tasksApi } from "@/lib/api/tasks";
-import type { Booking, Client, Vehicle, Task } from "@/lib/types";
+import { invoicesApi } from "@/lib/api/invoices";
+import type { Booking, Client, Vehicle, Task, Invoice } from "@/lib/types";
 
 export function useDashboard() {
   const [loading, setLoading] = useState(true);
@@ -11,24 +13,26 @@ export function useDashboard() {
   const [clients, setClients] = useState<Client[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         // Fetch all core data in parallel
-        const [bookingsData, clientsData, vehiclesData, tasksData] = await Promise.all([
+        const [bookingsData, clientsData, vehiclesData, tasksData, invoicesData] = await Promise.all([
           bookingsApi.list(),
           clientsApi.list(),
           vehiclesApi.list(),
-          tasksApi.getMyTasks({ page_size: 50 }), // ✅ FIXED: Changed limit to page_size
+          tasksApi.getMyTasks({ page_size: 50 }),
+          invoicesApi.list(),
         ]);
 
-        // ✅ FIXED: Added safe fallbacks just in case
         setBookings(bookingsData || []);
         setClients(clientsData || []);
         setVehicles(vehiclesData || []);
         setTasks(tasksData || []);
+        setInvoices(invoicesData || []);
       } catch (error) {
         console.error("Failed to load dashboard data", error);
       } finally {
@@ -39,7 +43,6 @@ export function useDashboard() {
     fetchData();
   }, []);
 
-  // ── Live Calculations ──────────────────────────────────────────────────────
   const stats = useMemo(() => {
     const activeBookings = bookings.filter(b => b.status === 'active' || b.status === 'confirmed').length;
     const fleetSize = vehicles.filter(v => !v.is_archived).length;
@@ -56,8 +59,18 @@ export function useDashboard() {
       })
       .reduce((sum, b) => sum + Number(b.total_amount), 0);
 
-    return { activeBookings, fleetSize, totalClients, mtdRevenue };
-  }, [bookings, vehicles, clients]);
+    // ✅ FIXED: Total collected revenue (paid + partially_paid invoices) with Number() coercion
+    const totalRevenue = invoices
+      .filter(inv => ["paid", "partially_paid"].includes(inv.status))
+      .reduce((sum, inv) => sum + Number(inv.amount_paid || 0), 0);
+
+    // ✅ FIXED: Pending payments (outstanding balance) with Number() coercion
+    const pendingPayments = invoices
+      .filter(inv => ["sent", "overdue", "partially_paid"].includes(inv.status))
+      .reduce((sum, inv) => sum + Number(inv.remaining_balance || 0), 0);
+
+    return { activeBookings, fleetSize, totalClients, mtdRevenue, totalRevenue, pendingPayments };
+  }, [bookings, vehicles, clients, invoices]);
 
   const alerts = useMemo(() => {
     const vehiclesDueService = vehicles.filter(v =>
@@ -77,7 +90,6 @@ export function useDashboard() {
     return { vehiclesDueService, dlsExpiring, overdueReturns };
   }, [vehicles, clients, bookings]);
 
-  // Unified feed for Upcoming Bookings (uses the same hook data)
   const upcomingBookings = useMemo(() => {
     return bookings
       .filter(b => b.status === 'confirmed' || b.status === 'active')

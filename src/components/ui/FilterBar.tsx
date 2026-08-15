@@ -1,19 +1,16 @@
+// src/components/ui/FilterBar.tsx
 "use client";
 
-import React from "react";
-import { Filter, X } from "lucide-react";
+import { Filter as FilterIcon } from "lucide-react";
+import FilterDropdown, { FilterOption } from "./FilterDropdown";
 
-interface FilterOption {
-  label: string;
-  value: string;
-}
-
-interface FilterConfig {
+export interface FilterConfig {
   id: string;
   label: string;
   options: FilterOption[];
   value: string | null;
   onChange: (value: string | null) => void;
+  icon?: React.ElementType; // Optional custom icon per filter
 }
 
 interface FilterBarProps {
@@ -26,41 +23,28 @@ export default function FilterBar({ filters, onClearAll }: FilterBarProps) {
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <div className="flex items-center gap-1.5 text-ink-muted">
-        <Filter size={16} strokeWidth={1.8} />
+      <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
+        <FilterIcon size={16} strokeWidth={1.8} />
         <span className="text-sm font-medium">Filters:</span>
       </div>
 
       {filters.map((filter) => (
-        <div key={filter.id} className="relative">
-          <select
-            value={filter.value || ""}
-            onChange={(e) => filter.onChange(e.target.value || null)}
-            className={`input pl-3 pr-8 py-1.5 text-sm font-medium appearance-none cursor-pointer
-              ${filter.value ? "bg-accent-bg text-accent-dark border-accent/30" : ""}`}
-          >
-            <option value="">{filter.label}</option>
-            {filter.options.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          {filter.value && (
-            <button
-              onClick={() => filter.onChange(null)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink"
-            >
-              <X size={14} strokeWidth={2} />
-            </button>
-          )}
-        </div>
+        <FilterDropdown
+          key={filter.id}
+          filterId={filter.id}
+          label={filter.label}
+          options={filter.options}
+          value={filter.value}
+          onChange={filter.onChange}
+          icon={filter.icon}
+        />
       ))}
 
       {activeCount > 0 && onClearAll && (
         <button
+          type="button"
           onClick={onClearAll}
-          className="btn-ghost btn-sm text-danger hover:bg-danger-bg"
+          className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-danger-text)] hover:bg-[var(--color-danger-bg)] transition-colors"
         >
           Clear all ({activeCount})
         </button>

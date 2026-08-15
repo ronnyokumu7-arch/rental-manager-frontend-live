@@ -31,7 +31,7 @@ export function PricingGrid({
       id: "Starter" as PlanId,
       name: "Starter",
       icon: Zap,
-      price: billingCycle === "annual" ? "15,000" : "18,000",
+      price: billingCycle === "annual" ? "3,500" : "4,500",
       desc: "Essential operations for boutique fleets.",
       features: ["Up to 10 Vehicles", "Digital Contracts", "Standard Reporting"],
     },
@@ -39,7 +39,7 @@ export function PricingGrid({
       id: "Professional" as PlanId,
       name: "Pro Fleet",
       icon: Crown,
-      price: billingCycle === "annual" ? "42,000" : "50,000",
+      price: billingCycle === "annual" ? "7,500" : "14,000",
       desc: "Scaling commercial fleets & multi-user teams.",
       features: [
         "Up to 50 Vehicles",
@@ -53,7 +53,7 @@ export function PricingGrid({
       id: "Enterprise" as PlanId,
       name: "Enterprise",
       icon: Layers,
-      price: billingCycle === "annual" ? "100,000" : "120,000",
+      price: billingCycle === "annual" ? "25,000" : "30,000",
       desc: "Dedicated infrastructure & bespoke integrations.",
       features: [
         "Unlimited Fleet Size",

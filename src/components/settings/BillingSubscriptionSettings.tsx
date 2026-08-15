@@ -252,9 +252,9 @@ export default function BillingSubscriptionSettings() {
                   <div className="text-[10px] text-[var(--color-ink-subtle)] uppercase font-bold tracking-wider mb-1">Total Payable</div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-black text-[var(--color-ink)]">
-                      KES {selectedPlan === 'Starter' ? (billingCycle === 'annual' ? '15,000' : '18,000') : 
-                           selectedPlan === 'Professional' ? (billingCycle === 'annual' ? '42,000' : '50,000') : 
-                           billingCycle === 'annual' ? '100,000' : '120,000'}
+                      KES {selectedPlan === 'Starter' ? (billingCycle === 'annual' ? '3,500' : '4,500') : 
+                           selectedPlan === 'Professional' ? (billingCycle === 'annual' ? '7,500' : '14,000') : 
+                           billingCycle === 'annual' ? '25,000' : '30,000'}
                     </span>
                     <span className="text-xs text-[var(--color-ink-muted)]">/mo</span>
                   </div>

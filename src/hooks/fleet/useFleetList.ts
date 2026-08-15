@@ -1,5 +1,5 @@
-import { confirmAction } from "@/lib/utils/confirmAction";
 // src/hooks/fleet/useFleetList.ts
+import { confirmAction } from "@/lib/utils/confirmAction";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
 import { vehiclesApi } from "@/lib/api/vehicles";
@@ -19,23 +19,18 @@ export function useFleetList() {
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
 
+  // ✅ FIXED: Fetch all vehicles (no server-side status filtering)
   const fetchVehicles = useCallback(async () => {
     setLoading(true);
     try {
-      // ✅ FIXED: Strictly typed, no 'any'. Only sends status if it's a valid enum.
-      const params: Record<string, string> = {};
-      if (statusFilter) {
-        params.status = statusFilter;
-      }
-      
-      const data = await vehiclesApi.list(params);
+      const data = await vehiclesApi.list();
       setVehicles(data);
     } catch {
       toast.error("Failed to load fleet data");
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, []);
 
   useEffect(() => {
     fetchVehicles();
@@ -45,16 +40,22 @@ export function useFleetList() {
     setCurrentPage(1);
   }, [search, statusFilter]);
 
+  // ✅ FIXED: Client-side filtering for BOTH search AND status (like Bookings)
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((v) => {
+      // Search filter
       const searchLower = search.toLowerCase();
-      return (
+      const matchesSearch =
         v.make.toLowerCase().includes(searchLower) ||
         v.model.toLowerCase().includes(searchLower) ||
-        v.plate_number.toLowerCase().includes(searchLower)
-      );
+        v.plate_number.toLowerCase().includes(searchLower);
+      
+      // Status filter
+      const matchesStatus = statusFilter === "" || v.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
     });
-  }, [vehicles, search]);
+  }, [vehicles, search, statusFilter]);
 
   const paginatedVehicles = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -66,7 +67,6 @@ export function useFleetList() {
   const availableVehicles = vehicles.filter((v) => v.status === "available").length;
   const rentedVehicles = vehicles.filter((v) => v.status === "rented").length;
 
-  // ✅ SANITIZED: Perfectly aligned with backend lifecycle endpoints & robust error handling
   const handleStatusAction = async (id: number, action: string) => {
     setActionLoadingId(id);
     try {
@@ -94,7 +94,6 @@ export function useFleetList() {
       }
       await fetchVehicles();
     } catch (error: unknown) {
-      // ✅ FIXED: Robust error extraction for FastAPI HTTPExceptions
       const err = error as { response?: { data?: { detail?: string } } };
       const errorMsg = err.response?.data?.detail || "Failed to update vehicle";
       toast.error(errorMsg);

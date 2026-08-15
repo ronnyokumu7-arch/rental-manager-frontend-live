@@ -1,12 +1,14 @@
-// src/app/dashboard/tasks/CompletedTasksTab.tsx
+// src/app/dashboard/tasks/CompletedTasks.tsx
 "use client";
 
-import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Calendar, Tag, CheckCircle2, MoreVertical, RotateCcw, Eye,
+  Calendar, Tag, CheckCircle2, RotateCcw, Eye,
   Search, Clock, Users, UserX, Wrench, Building2, Briefcase, DollarSign, Shield, Car
 } from "lucide-react";
+import FilterDropdown from "@/components/ui/FilterDropdown";
+import DataTable, { RowAction } from "@/components/ui/DataTable";
+import CardGrid from "@/components/ui/CardGrid";
 import type { Task, User } from "@/lib/types";
 import type { TimeFilter } from "@/hooks/tasks/useTasksList";
 
@@ -57,57 +59,70 @@ const PRIORITY_COLORS: Record<string, string> = {
   low: "bg-slate-400",
 };
 
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return "No date";
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+};
+
+const getAssigneeName = (userId: number | null, users: User[]) => {
+  if (!userId) return null;
+  const user = users.find((u) => u.id === userId);
+  return user?.full_name || "Unknown User";
+};
+
+const getAssigneeInitials = (userId: number | null, users: User[]) => {
+  const name = getAssigneeName(userId, users);
+  if (!name) return "?";
+  return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
+};
+
 export default function CompletedTasksTab({
-  tasks, users, metrics,
+  tasks, users, loading, metrics,
   search, setSearch, timeFilter, setTimeFilter,
   selectedUserId, setSelectedUserId,
   currentPage, setCurrentPage, pageSize, totalPages, filteredTasks,
-  openDropdownId, dropdownPos, onToggleDropdown, onReopen
+  openDropdownId: _openDropdownId, // ✅ Not used - handled by reusable components
+  dropdownPos: _dropdownPos, // ✅ Not used - handled by reusable components
+  onToggleDropdown: _onToggleDropdown, // ✅ Not used - handled by reusable components
+  onReopen,
 }: CompletedTasksTabProps) {
   const router = useRouter();
-  const [isTimeOpen, setIsTimeOpen] = useState(false);
-  const [isUserOpen, setIsUserOpen] = useState(false);
-  const timeRef = useRef<HTMLDivElement>(null);
-  const userRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (timeRef.current && !timeRef.current.contains(event.target as Node)) setIsTimeOpen(false);
-      if (userRef.current && !userRef.current.contains(event.target as Node)) setIsUserOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "No date";
-    return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  };
-
-  const getAssigneeName = (userId: number | null) => {
-    if (!userId) return null;
-    const user = users.find((u) => u.id === userId);
-    return user?.full_name || "Unknown User";
-  };
-
-  const getAssigneeInitials = (userId: number | null) => {
-    const name = getAssigneeName(userId);
-    if (!name) return "?";
-    return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
-  };
-
-  const selectedUser = users.find(u => u.id.toString() === selectedUserId);
 
   // Calculate total completed (all time)
   const totalCompleted = tasks.length;
 
+  // ✅ Reusable row actions for both table and cards
+  const getTaskActions = (task: Task): RowAction<Task>[] => [
+    {
+      label: "Reopen Task",
+      icon: RotateCcw,
+      variant: "primary",
+      onClick: () => onReopen(task.id),
+    },
+    {
+      label: "View Details",
+      icon: Eye,
+      variant: "default",
+      separator: true,
+      onClick: () => router.push(`/dashboard/tasks/${task.id}`),
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="p-12 text-center text-[var(--color-ink-muted)] flex items-center justify-center gap-2">
+        <Clock className="w-5 h-5 animate-spin" /> Loading tasks...
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
-      {/* ✅ RESPONSIVE TOOLBAR - Match Clients page layout */}
+      {/* ✅ TOOLBAR: Metrics + Search + Filters */}
       <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
         
-        {/* Metrics - Compact on left, same as Clients page */}
-        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar w-full xl:w-auto">
+        {/* Metrics Counter Panel */}
+        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
           <div className="flex items-center gap-2 whitespace-nowrap">
             <span className="text-xs font-medium text-[var(--color-ink-muted)]">All</span>
             <span className="text-xs font-bold text-[var(--color-ink)] tabular-nums">{totalCompleted}</span>
@@ -124,7 +139,7 @@ export default function CompletedTasksTab({
           </div>
         </div>
 
-        {/* Controls - On right, same as Clients page */}
+        {/* Controls: Search + Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
           <div className="flex items-center gap-2 flex-1 sm:w-80">
             {/* Search Input */}
@@ -139,276 +154,220 @@ export default function CompletedTasksTab({
               />
             </div>
 
-            {/* ✅ Icon-Only Time Filter with Fixed Dropdown */}
-            <div className="relative flex-shrink-0" ref={timeRef}>
-              <button
-                onClick={() => setIsTimeOpen(!isTimeOpen)}
-                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
-                  timeFilter ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-                title={timeFilter ? `Time: ${TIME_OPTIONS.find(t => t.id === timeFilter)?.label || 'All Time'}` : "Filter by time"}
-              >
-                <Clock size={15} />
-              </button>
-              {isTimeOpen && (
-                <>
-                  <div className="fixed inset-0 z-[100]" onClick={() => setIsTimeOpen(false)} />
-                  {/* Fixed dropdown positioning - renders above button on mobile */}
-                  <div 
-                    className="absolute bottom-full mb-2 right-0 w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-[101] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                  >
-                    <div className="py-1">
-                      {TIME_OPTIONS.map(opt => (
-                        <button 
-                          key={opt.id} 
-                          onClick={() => { setTimeFilter(opt.id); setIsTimeOpen(false); }} 
-                          className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${timeFilter === opt.id ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* ✅ Reusable FilterDropdown - Time */}
+            <FilterDropdown
+              filterId="completed-time"
+              label="Time"
+              options={TIME_OPTIONS.filter((opt) => opt.id !== "").map((opt) => ({ label: opt.label, value: opt.id }))}
+              value={timeFilter || null}
+              onChange={(value) => setTimeFilter((value || "") as TimeFilter)}
+              icon={Clock}
+            />
 
-            {/* ✅ Icon-Only User Filter with Fixed Dropdown */}
-            <div className="relative flex-shrink-0" ref={userRef}>
-              <button
-                onClick={() => setIsUserOpen(!isUserOpen)}
-                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
-                  selectedUserId ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                }`}
-                title={selectedUserId ? `User: ${selectedUser?.full_name || 'All Users'}` : "Filter by user"}
-              >
-                <Users size={15} />
-              </button>
-              {isUserOpen && (
-                <>
-                  <div className="fixed inset-0 z-[100]" onClick={() => setIsUserOpen(false)} />
-                  {/* Fixed dropdown positioning - renders above button on mobile */}
-                  <div 
-                    className="absolute bottom-full mb-2 right-0 w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-[101] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-                  >
-                    <div className="py-1">
-                      <button 
-                        onClick={() => { setSelectedUserId(""); setIsUserOpen(false); }} 
-                        className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${!selectedUserId ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}
-                      >
-                        All Users
-                      </button>
-                      <div className="h-px bg-[var(--color-surface-border)]" />
-                      {users.map(user => (
-                        <button 
-                          key={user.id} 
-                          onClick={() => { setSelectedUserId(user.id.toString()); setIsUserOpen(false); }} 
-                          className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${selectedUserId === user.id.toString() ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"}`}
-                        >
-                          {user.full_name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* ✅ Reusable FilterDropdown - User (custom options) */}
+            <FilterDropdown
+              filterId="completed-user"
+              label="User"
+              options={users.map((user) => ({ label: user.full_name, value: user.id.toString() }))}
+              value={selectedUserId || null}
+              onChange={(value) => setSelectedUserId(value || "")}
+              icon={Users}
+            />
           </div>
         </div>
       </div>
 
-      {/* ✅ MOBILE CARD VIEW (< md) */}
-      <div className="block md:hidden p-4 space-y-3">
-        {filteredTasks.map((task) => {
-          const CategoryIcon = CATEGORY_ICONS[task.category] || Tag;
-          const assigneeName = getAssigneeName(task.user_id);
-
-          return (
-            <div
-              key={`mobile-completed-task-${task.id}`}
-              className="p-4 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all cursor-pointer shadow-sm opacity-75 hover:opacity-100"
-              onClick={() => router.push(`/dashboard/tasks/${task.id}`)}
-            >
-              {/* Header: Category Icon + Title + Priority Dot */}
-              <div className="flex items-start justify-between gap-3">
+      {/* Content Area */}
+      <>
+        {/* ✅ MOBILE: Reusable CardGrid */}
+        <div className="block md:hidden">
+          <CardGrid<Task> // ✅ FIXED: Explicitly pass Task generic type
+            data={filteredTasks}
+            getCardId={(task) => task.id}
+            
+            // Header: Icon + Title + Priority (completed styling)
+            renderCardHeader={({ item }) => {
+              const CategoryIcon = CATEGORY_ICONS[item.category] || Tag;
+              return (
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="w-10 h-10 rounded-lg bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center text-emerald-500 flex-shrink-0">
                     <CategoryIcon size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-sm font-bold truncate leading-tight line-through decoration-[var(--color-ink-subtle)]/50 text-[var(--color-ink)]">
-                      {task.title}
+                    <h4 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/tasks/${item.id}`);
+                      }}
+                      className="text-sm font-bold truncate cursor-pointer hover:text-[var(--color-primary)] transition-colors leading-tight line-through decoration-[var(--color-ink-subtle)]/50 text-[var(--color-ink)]"
+                    >
+                      {item.title}
                     </h4>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[task.priority] || "bg-slate-400"}`} />
-                      <span className="text-xs font-medium text-[var(--color-ink-muted)] capitalize">{task.priority}</span>
+                      <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[item.priority] || "bg-slate-400"}`} />
+                      <span className="text-xs font-medium text-[var(--color-ink-muted)] capitalize">{item.priority}</span>
                     </div>
                   </div>
                 </div>
-
-                {/* 3-Dots Menu */}
-                <div className="relative flex-shrink-0" data-dropdown-id={task.id}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onToggleDropdown(e, task.id); }}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] transition-all"
-                    title="More Actions"
-                  >
-                    <MoreVertical size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Body: Assignee, Completed Date, Category */}
-              <div className="border-t border-[var(--color-surface-border)]/60 pt-3 mt-3 space-y-2.5 text-xs">
-                {/* Assignee */}
-                <div className="flex items-center gap-2">
-                  {assigneeName ? (
-                    <>
-                      <div className="w-6 h-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
-                        {getAssigneeInitials(task.user_id)}
-                      </div>
-                      <span className="font-medium text-[var(--color-ink)] truncate">{assigneeName}</span>
-                    </>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]">
-                      <UserX size={10} /> Unassigned
-                    </span>
-                  )}
-                </div>
-
-                {/* Completed Date */}
-                <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
-                  <CheckCircle2 size={13} className="text-emerald-500 flex-shrink-0" />
-                  <span className="font-medium">Completed on {formatDate(task.completed_at)}</span>
-                </div>
-
-                {/* Category + Quick Action */}
-                <div className="flex items-center justify-between pt-1 border-t border-[var(--color-surface-border)]/40">
-                  <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
-                    <Tag size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                    <span className="font-medium capitalize">{task.category}</span>
-                  </div>
-
-                  {/* Quick Action: Reopen */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onReopen(task.id); }}
-                    className="text-xs font-semibold text-blue-600 hover:underline"
-                  >
-                    Reopen
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ✅ DESKTOP TABLE VIEW (md+) */}
-      <div className="hidden md:block overflow-x-auto flex-1">
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
-            <tr>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Task</th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Assigned To</th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Priority</th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Due Date</th>
-              <th className="px-6 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Manage</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--color-surface-border)]">
-            {tasks.map((task) => {
-              const CategoryIcon = CATEGORY_ICONS[task.category] || Tag;
-              const assigneeName = getAssigneeName(task.user_id);
-
+              );
+            }}
+            
+            // ✅ FIXED: Merged renderCardPreview and renderCardDetails into renderCardBody
+            renderCardBody={({ item }) => {
+              const assigneeName = getAssigneeName(item.user_id, users);
+              
               return (
-                <tr key={task.id} className="hover:bg-[var(--color-surface-hover)] transition-colors group opacity-75 hover:opacity-100">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center text-emerald-500 flex-shrink-0">
-                        <CategoryIcon size={16} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[var(--color-ink)] truncate line-through decoration-[var(--color-ink-subtle)]/50">
-                          {task.title}
-                        </p>
-                        <p className="text-xs text-[var(--color-ink-muted)] truncate capitalize flex items-center gap-1 mt-0.5">
-                          <Tag size={10} /> {task.category}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-4">
+                <div className="space-y-2.5 text-xs">
+                  {/* Assignee */}
+                  <div className="flex items-center gap-2">
                     {assigneeName ? (
-                      <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
+                      <>
                         <div className="w-6 h-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
-                          {getAssigneeInitials(task.user_id)}
+                          {getAssigneeInitials(item.user_id, users)}
                         </div>
-                        <span className="font-medium truncate max-w-[120px]">{assigneeName}</span>
-                      </div>
+                        <span className="font-medium text-[var(--color-ink)] truncate">{assigneeName}</span>
+                      </>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]">
                         <UserX size={10} /> Unassigned
                       </span>
                     )}
-                  </td>
+                  </div>
 
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[task.priority] || "bg-slate-400"}`} />
-                      <span className="text-xs font-semibold capitalize text-[var(--color-ink)]">{task.priority}</span>
-                    </div>
-                  </td>
+                  {/* Completed Date */}
+                  <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
+                    <CheckCircle2 size={13} className="text-emerald-500 flex-shrink-0" />
+                    <span className="font-medium">Completed on {formatDate(item.completed_at)}</span>
+                  </div>
 
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Calendar size={12} className="text-[var(--color-ink-subtle)]" />
-                      <span className="text-xs font-medium text-[var(--color-ink)]">
-                        {formatDate(task.due_date)}
-                      </span>
-                    </div>
-                  </td>
+                  {/* Divider */}
+                  <div className="border-t border-[var(--color-surface-border)]/60 pt-2 mt-2" />
 
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
-                      <div className="relative" data-dropdown-id={task.id}>
-                        <button onClick={(e) => onToggleDropdown(e, task.id)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-all" title="More Actions">
-                          <MoreVertical size={14} />
+                  {/* Category */}
+                  <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
+                    <Tag size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                    <span className="font-medium capitalize">{item.category}</span>
+                  </div>
+                  
+                  {/* Quick Action: Reopen */}
+                  <div className="pt-2 border-t border-[var(--color-surface-border)]/40">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onReopen(item.id); }}
+                      className="text-xs font-semibold text-blue-600 hover:underline"
+                    >
+                      Reopen Task
+                    </button>
+                  </div>
+                </div>
+              );
+            }}
+            
+            // ✅ Row actions (3-dots menu) - correctly targeted
+            rowActions={getTaskActions}
+            
+            // Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredTasks.length}
+            pageSize={3} // Mobile: 2.5-3 cards visible
+            onPageChange={setCurrentPage}
+          />
+        </div>
+
+        {/* ✅ DESKTOP: Reusable DataTable */}
+        <div className="hidden md:block">
+          <DataTable
+            data={filteredTasks}
+            columns={[
+              {
+                header: "Task",
+                accessorKey: "title",
+                cell: ({ row }) => {
+                  const task = row.original;
+                  const CategoryIcon = CATEGORY_ICONS[task.category] || Tag;
+                  return (
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center text-emerald-500 flex-shrink-0">
+                        <CategoryIcon size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/tasks/${task.id}`);
+                          }}
+                          className="text-sm font-semibold text-[var(--color-ink)] truncate line-through decoration-[var(--color-ink-subtle)]/50 hover:text-[var(--color-primary)] transition-colors text-left"
+                        >
+                          {task.title}
                         </button>
-                        {openDropdownId === task.id && dropdownPos && (
-                          <div className="fixed z-[100] w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] overflow-hidden animate-in fade-in zoom-in-95 duration-100" style={{ top: dropdownPos.top, right: dropdownPos.right }}>
-                            <button onClick={() => onReopen(task.id)} className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-blue-600 hover:bg-blue-500/10 transition-colors">
-                              <RotateCcw size={14} /> Reopen Task
-                            </button>
-                            <div className="h-px bg-[var(--color-surface-border)]" />
-                            <button className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors">
-                              <Eye size={14} /> View Details
-                            </button>
-                          </div>
-                        )}
+                        <p className="text-xs text-[var(--color-ink-muted)] truncate capitalize flex items-center gap-1 mt-0.5">
+                          <Tag size={10} /> {task.category}
+                        </p>
                       </div>
                     </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ✅ PAGINATION - Desktop only, matches other tabs */}
-      {filteredTasks.length > 0 && (
-        <div className="hidden md:flex p-4 border-t border-[var(--color-surface-border)] items-center justify-between bg-[var(--color-surface)]">
-          <p className="text-xs text-[var(--color-ink-muted)]">
-            Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredTasks.length)} of {filteredTasks.length} tasks
-          </p>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95">Previous</button>
-            <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-primary)] text-white">{currentPage} / {totalPages || 1}</span>
-            <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0} className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all active:scale-95">Next</button>
-          </div>
+                  );
+                },
+              },
+              {
+                header: "Assigned To",
+                accessorKey: "user_id",
+                cell: ({ row }) => {
+                  const task = row.original;
+                  const assigneeName = getAssigneeName(task.user_id, users);
+                  
+                  return assigneeName ? (
+                    <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
+                      <div className="w-6 h-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                        {getAssigneeInitials(task.user_id, users)}
+                      </div>
+                      <span className="font-medium truncate max-w-[120px]">{assigneeName}</span>
+                    </div>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]">
+                      <UserX size={10} /> Unassigned
+                    </span>
+                  );
+                },
+              },
+              {
+                header: "Priority",
+                accessorKey: "priority",
+                cell: ({ row }) => (
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[row.original.priority] || "bg-slate-400"}`} />
+                    <span className="text-xs font-semibold capitalize text-[var(--color-ink)]">{row.original.priority}</span>
+                  </div>
+                ),
+              },
+              {
+                header: "Due Date",
+                accessorKey: "due_date",
+                cell: ({ row }) => (
+                  <div className="flex items-center gap-2">
+                    <Calendar size={12} className="text-[var(--color-ink-subtle)]" />
+                    <span className="text-xs font-medium text-[var(--color-ink)]">
+                      {formatDate(row.original.due_date)}
+                    </span>
+                  </div>
+                ),
+              },
+            ]}
+            // ✅ Row actions (3-dots menu) - correctly targeted
+            rowActions={getTaskActions}
+            getRowId={(task) => task.id}
+            onRowClick={(task) => router.push(`/dashboard/tasks/${task.id}`)}
+            loading={loading}
+            emptyMessage="No completed tasks found"
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredTasks.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            viewMode="desktop"
+          />
         </div>
-      )}
+      </>
     </div>
   );
 }

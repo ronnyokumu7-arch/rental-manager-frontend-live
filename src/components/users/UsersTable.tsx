@@ -1,13 +1,13 @@
 // src/components/users/UsersTable.tsx
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createPortal } from "react-dom";
 import { 
   Users, User as UserIcon, Mail, Phone, Building2, Shield, ShieldAlert, 
-  Briefcase, MoreVertical, KeyRound, Loader2, CheckCircle, Trash2, Send, Star
+  Briefcase, KeyRound, Loader2, CheckCircle, Trash2, Send, Star
 } from "lucide-react";
+import DataTable, { RowAction } from "@/components/ui/DataTable";
+import CardGrid from "@/components/ui/CardGrid";
 import type { User } from "@/lib/types";
 
 // Helpers
@@ -50,77 +50,80 @@ interface UsersTableProps {
 
 export default function UsersTable({
   users, allUsers, loading, currentPage, totalPages, setCurrentPage, totalItems, pageSize,
-  actionLoadingId, openDropdownId, setOpenDropdownId,
+  actionLoadingId, openDropdownId: _openDropdownId, setOpenDropdownId: _setOpenDropdownId,
   onSuspend, onVerify: _onVerify, onDelete, onResetLink, onSendVerification,
   currentUserRole
 }: UsersTableProps) {
   const router = useRouter();
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const mobileList = allUsers && allUsers.length > 0 ? allUsers : users;
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (openDropdownId !== null && !target.closest(`[data-dropdown-id="${openDropdownId}"]`)) {
-        setOpenDropdownId(null);
-        setDropdownPos(null);
-      }
-    };
+  // ✅ Reusable row actions for both table and cards
+  const getUserActions = (user: User): RowAction<User>[] => {
+    const actions: RowAction<User>[] = [
+      {
+        label: "View Full Profile",
+        icon: UserIcon,
+        onClick: () => router.push(`/dashboard/users/${user.id}`),
+      },
+      {
+        label: "Send Reset Link",
+        icon: KeyRound,
+        variant: "default",
+        onClick: () => onResetLink(user.id),
+      },
+    ];
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openDropdownId, setOpenDropdownId]);
-
-  const handleToggleDropdown = (e: React.MouseEvent, userId: number) => {
-    e.stopPropagation();
-    if (openDropdownId === userId) {
-      setOpenDropdownId(null);
-      setDropdownPos(null);
+    // Email verification actions
+    if (user.email_verified) {
+      actions.push({
+        label: "Email Verified",
+        icon: CheckCircle,
+        variant: "default",
+        disabled: true,
+        onClick: () => {}, // ✅ FIXED: Added empty onClick for disabled action
+      });
     } else {
-      setOpenDropdownId(userId);
-      const rect = e.currentTarget.getBoundingClientRect();
-      
-      const dropdownWidth = 240;
-      const estimatedDropdownHeight = 220;
-      const edgePadding = 12;
-      const scrollY = window.scrollY;
-
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      // Calculate right position (align to right edge of button)
-      let rightPos = viewportWidth - rect.right;
-      if (viewportWidth - rightPos < dropdownWidth + edgePadding) {
-        rightPos = Math.max(edgePadding, viewportWidth - rect.left - dropdownWidth);
-      }
-
-      // Calculate top position with scroll offset
-      const spaceBelow = viewportHeight - rect.bottom;
-      const spaceAbove = rect.top;
-
-      let topPos: number;
-      if (spaceBelow < estimatedDropdownHeight + edgePadding && spaceAbove > spaceBelow) {
-        // Position above the button
-        topPos = scrollY + rect.top - estimatedDropdownHeight - 8;
-      } else {
-        // Position below the button
-        topPos = scrollY + rect.bottom + 8;
-      }
-
-      // Ensure dropdown stays within viewport bounds
-      topPos = Math.max(scrollY + edgePadding, Math.min(topPos, scrollY + viewportHeight - estimatedDropdownHeight - edgePadding));
-
-      setDropdownPos({
-        top: topPos,
-        right: rightPos,
+      actions.push({
+        label: "Send Email Verification",
+        icon: Mail,
+        variant: "default",
+        onClick: () => onSendVerification(user.id, "email"),
       });
     }
+
+    // Phone verification actions
+    if (user.phone_number) {
+      if (user.phone_verified) {
+        actions.push({
+          label: "Phone Verified",
+          icon: CheckCircle,
+          variant: "default",
+          disabled: true,
+          onClick: () => {}, // ✅ FIXED: Added empty onClick for disabled action
+        });
+      } else {
+        actions.push({
+          label: "Send Phone Verification",
+          icon: Send,
+          variant: "default",
+          onClick: () => onSendVerification(user.id, "phone"),
+        });
+      }
+    }
+
+    // Delete action (with permission check)
+    if (!(user.is_tenant_owner && currentUserRole !== "super_admin")) {
+      actions.push({
+        label: "Delete User",
+        icon: Trash2,
+        variant: "danger",
+        separator: true,
+        onClick: () => onDelete(user.id),
+      });
+    }
+
+    return actions;
   };
 
   if (loading) {
@@ -145,382 +148,325 @@ export default function UsersTable({
     );
   }
 
-  const allAvailableUsers = allUsers || users;
-  const activeUserForDropdown = allAvailableUsers.find((u) => u.id === openDropdownId);
-
   return (
     <>
-      {/* MOBILE CONTINUOUS SCROLL CARD VIEW (< md) */}
-      <div className="block md:hidden p-4 space-y-3">
-        {mobileList.map((u) => {
-          // ✅ REMOVED: Unused displayRole, color, and Icon variables (only used in desktop view)
+      {/* ✅ MOBILE: Reusable CardGrid */}
+      <div className="block md:hidden">
+        <CardGrid<User> // ✅ FIXED: Explicitly pass User generic type
+          data={mobileList}
+          getCardId={(user) => user.id}
           
-          const emailVerified = u.email_verified === true;
-          const phoneVerified = u.phone_verified === true;
-          const isAgencyOwner = u.is_tenant_owner === true;
-          const bothVerified = emailVerified && phoneVerified;
-          const partiallyVerified = emailVerified || phoneVerified;
-
-          const shieldColor = isAgencyOwner || bothVerified 
-            ? "hidden" 
-            : partiallyVerified 
-              ? "text-amber-500" 
-              : "text-[var(--color-ink-muted)]";
-
-          let ActionIcon = ShieldAlert;
-          let actionColor = "text-amber-600 bg-amber-500/10 hover:bg-amber-500/20";
-          let actionTitle = "Suspend";
-          let actionHandler = () => onSuspend(u);
-          let showMainAction = true;
-
-          if (isAgencyOwner) {
-            showMainAction = false;
-          } else if (bothVerified && u.is_suspended) {
-            ActionIcon = Shield;
-            actionColor = "text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20";
-            actionTitle = "Reactivate";
-            actionHandler = () => onSuspend(u);
-          } else if (!bothVerified && !partiallyVerified) {
-            showMainAction = false;
-          }
-
-          return (
-            <div
-              key={`mobile-user-card-${u.id}`}
-              className="p-4 rounded-xl bg-[var(--color-surface-hover)]/40 border border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/30 transition-all space-y-3 shadow-sm"
-            >
-              {/* Header Bar */}
-              <div className="flex items-start justify-between gap-2.5">
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
-                    <UserIcon size={18} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <h4 className="text-sm font-bold text-[var(--color-ink)] leading-snug break-words truncate">
-                        {u.full_name}
-                      </h4>
-                      {isAgencyOwner && (
-                        <span title="Agency Owner" className="flex-shrink-0">
-                          <Star size={14} className="text-amber-500 fill-amber-500/20" />
-                        </span>
-                      )}
-                      {!isAgencyOwner && !bothVerified && (
-                        <div className={`relative flex-shrink-0 ${shieldColor}`}>
-                          <Shield size={14} />
-                          <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold leading-none -mt-0.5">!</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-primary-text)] mt-0.5">
-                      <Building2 size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                      <span className="break-words">{u.department || "Unassigned"}</span>
-                    </div>
-                  </div>
+          // Header: Avatar + Name + Role/Department
+          renderCardHeader={({ item }) => {
+            const isAgencyOwner = item.is_tenant_owner === true;
+            const emailVerified = item.email_verified === true;
+            const phoneVerified = item.phone_verified === true;
+            const bothVerified = emailVerified && phoneVerified;
+            const partiallyVerified = emailVerified || phoneVerified;
+            
+            const shieldColor = isAgencyOwner || bothVerified 
+              ? "hidden" 
+              : partiallyVerified 
+                ? "text-amber-500" 
+                : "text-[var(--color-ink-muted)]";
+            
+            return (
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
+                  <UserIcon size={18} />
                 </div>
-
-                {/* 3-Dots Menu Button */}
-                <div className="relative flex-shrink-0" data-dropdown-id={u.id}>
-                  <button
-                    type="button"
-                    onClick={(e) => handleToggleDropdown(e, u.id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface)] transition-all"
-                    title="More Actions"
-                  >
-                    <MoreVertical size={16} />
-                  </button>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <h4 className="text-sm font-bold text-[var(--color-ink)] leading-snug break-words truncate">
+                      {item.full_name}
+                    </h4>
+                    {isAgencyOwner && (
+                      <span title="Agency Owner" className="flex-shrink-0">
+                        <Star size={14} className="text-amber-500 fill-amber-500/20" />
+                      </span>
+                    )}
+                    {!isAgencyOwner && !bothVerified && (
+                      <div className={`relative flex-shrink-0 ${shieldColor}`}>
+                        <Shield size={14} />
+                        <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold leading-none -mt-0.5">!</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-primary-text)] mt-0.5">
+                    <Building2 size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                    <span className="break-words">{item.department || "Unassigned"}</span>
+                  </div>
                 </div>
               </div>
+            );
+          }}
+          
+          // ✅ FIXED: Merged renderCardPreview and renderCardDetails into renderCardBody
+          renderCardBody={({ item }) => {
+            const emailVerified = item.email_verified === true;
+            const phoneVerified = item.phone_verified === true;
+            const isAgencyOwner = item.is_tenant_owner === true;
+            const bothVerified = emailVerified && phoneVerified;
+            const partiallyVerified = emailVerified || phoneVerified;
 
-              {/* Body Details */}
-              <div className="border-t border-[var(--color-surface-border)]/60 pt-3 mt-3 space-y-2.5 text-xs">
+            let statusBg = "bg-[var(--color-success-bg)]";
+            let statusText = "text-[var(--color-success-text)]";
+            let statusLabel = "Active";
+            let StatusIcon = CheckCircle;
+            
+            if (isAgencyOwner) {
+              statusBg = "bg-amber-500/10";
+              statusText = "text-amber-600 dark:text-amber-400";
+              statusLabel = "Agency Owner";
+              StatusIcon = Star;
+            } else if (bothVerified) {
+              if (item.is_suspended) {
+                statusBg = "bg-[var(--color-danger-bg)]";
+                statusText = "text-[var(--color-danger-text)]";
+                statusLabel = "Suspended";
+                StatusIcon = ShieldAlert;
+              }
+            } else if (partiallyVerified) {
+              statusBg = "bg-amber-500/10";
+              statusText = "text-amber-600 dark:text-amber-400";
+              statusLabel = "Verify";
+              StatusIcon = Shield;
+            } else {
+              statusBg = "bg-gray-500/10";
+              statusText = "text-gray-600 dark:text-gray-400";
+              statusLabel = "Pending";
+              StatusIcon = Mail;
+            }
+
+            const showMainAction = !isAgencyOwner && !(bothVerified && !partiallyVerified) && partiallyVerified;
+            const isSuspended = item.is_suspended && bothVerified;
+            
+            return (
+              <div className="space-y-2.5 text-xs">
+                {/* Job Title */}
                 <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
                   <Briefcase size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                  <span className="break-words font-medium">{u.job_title || "No title"}</span>
+                  <span className="break-words font-medium">{item.job_title || "No title"}</span>
                 </div>
 
+                {/* Email */}
                 <a 
-                  href={`mailto:${u.email}`} 
+                  href={`mailto:${item.email}`} 
                   onClick={(e) => e.stopPropagation()} 
                   className="flex items-center gap-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors min-w-0"
                 >
                   <Mail size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                  <span className="break-all font-medium">{u.email}</span>
+                  <span className="break-all font-medium">{item.email}</span>
                   {emailVerified && (
                     <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0 ml-0.5" />
                   )}
                 </a>
 
+                {/* Phone */}
                 <a 
-                  href={`tel:${u.phone_number}`} 
+                  href={`tel:${item.phone_number}`} 
                   onClick={(e) => e.stopPropagation()} 
                   className="flex items-center gap-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors min-w-0"
                 >
                   <Phone size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                  <span className="break-words font-medium">{u.phone_number || "No phone"}</span>
+                  <span className="break-words font-medium">{item.phone_number || "No phone"}</span>
                   {phoneVerified && (
                     <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0 ml-0.5" />
                   )}
                 </a>
-              </div>
 
-              {showMainAction && (
-                <div className="flex items-center justify-end pt-1 border-t border-[var(--color-surface-border)]/40">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); actionHandler(); }}
-                    disabled={actionLoadingId === u.id}
-                    className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all disabled:opacity-50 ${actionColor}`}
-                  >
-                    {actionLoadingId === u.id ? <Loader2 size={12} className="animate-spin" /> : <ActionIcon size={12} />}
-                    <span>{actionTitle}</span>
-                  </button>
+                {/* Divider */}
+                <div className="border-t border-[var(--color-surface-border)]/60 pt-2 mt-2" />
+
+                {/* Status Badge */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">Status:</span>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${statusBg} ${statusText}`}>
+                    <StatusIcon size={10} />
+                    {statusLabel}
+                  </span>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* DESKTOP TABLE VIEW */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--color-surface-hover)] border-b border-[var(--color-surface-border)]">
-            <tr>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Team Member</th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Role</th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Department</th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Phone</th>
-              <th className="px-6 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Status</th>
-              <th className="px-6 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">Manage</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--color-surface-border)]">
-            {users.map((u) => {
-              const displayRole = getRoleDisplay(u.role, u.department, u.job_title);
-              const { color, Icon } = getRoleStyle(u.role, u.job_title);
-              
-              const emailVerified = u.email_verified === true;
-              const phoneVerified = u.phone_verified === true;
-              const isAgencyOwner = u.is_tenant_owner === true;
-
-              let statusBg = "bg-[var(--color-success-bg)]";
-              let statusText = "text-[var(--color-success-text)]";
-              let statusLabel = "Active";
-              let StatusIcon = CheckCircle;
-              let statusTooltip = "Fully verified and active";
-              
-              let ActionIcon = ShieldAlert;
-              let actionColor = "text-amber-600 hover:bg-amber-500/10";
-              let actionTitle = "Suspend User";
-              let actionHandler = () => onSuspend(u);
-              let showMainAction = true;
-
-              if (isAgencyOwner) {
-                statusBg = "bg-amber-500/10";
-                statusText = "text-amber-600 dark:text-amber-400";
-                statusLabel = "Agency Owner";
-                StatusIcon = Star;
-                statusTooltip = "Primary owner of this tenant";
-                showMainAction = false;
-              } else if (emailVerified && phoneVerified) {
-                if (u.is_suspended) {
-                  statusBg = "bg-[var(--color-danger-bg)]";
-                  statusText = "text-[var(--color-danger-text)]";
-                  statusLabel = "Suspended";
-                  StatusIcon = ShieldAlert;
-                  statusTooltip = "Account suspended by admin";
-                  ActionIcon = Shield;
-                  actionColor = "text-emerald-600 hover:bg-emerald-500/10";
-                  actionTitle = "Reactivate User";
-                  actionHandler = () => onSuspend(u);
-                }
-              } else if (emailVerified || phoneVerified) {
-                statusBg = "bg-amber-500/10";
-                statusText = "text-amber-600 dark:text-amber-400";
-                statusLabel = "Verify";
-                StatusIcon = Shield;
-                showMainAction = false;
-                statusTooltip = emailVerified ? "Email verified, phone pending" : "Phone verified, email pending";
-              } else {
-                statusBg = "bg-gray-500/10";
-                statusText = "text-gray-600 dark:text-gray-400";
-                statusLabel = "Pending";
-                StatusIcon = Mail;
-                statusTooltip = "Awaiting email and phone verification";
-                showMainAction = false;
-              }
-
-              return (
-                <tr key={u.id} className="group hover:bg-[var(--color-surface-hover)]/40 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
-                        <UserIcon size={16} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{u.full_name}</p>
-                        <a href={`mailto:${u.email}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors truncate">
-                          <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                          <span className="truncate">{u.email}</span>
-                          {emailVerified && <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0" />}
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className={`flex items-center gap-2 text-sm font-medium ${color}`}>
-                      <Icon size={16} strokeWidth={2} />
-                      <span>{displayRole}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {u.department ? (
-                      <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
-                        <Building2 size={14} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                        <span className="font-medium truncate">{u.department}</span>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-[var(--color-ink-subtle)] italic">Unassigned</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    {u.phone_number ? (
-                      <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
-                        <Phone size={12} className="text-[var(--color-ink-subtle)]" />
-                        <span className="font-medium">{u.phone_number}</span>
-                        {phoneVerified && <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0" />}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-[var(--color-ink-subtle)] italic">Not provided</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span 
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${statusBg} ${statusText}`}
-                      title={statusTooltip}
+                
+                {/* Quick Action */}
+                {showMainAction && (
+                  <div className="pt-2 border-t border-[var(--color-surface-border)]/40">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onSuspend(item); }}
+                      disabled={actionLoadingId === item.id}
+                      className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all disabled:opacity-50 ${
+                        isSuspended 
+                          ? "text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20" 
+                          : "text-amber-600 bg-amber-500/10 hover:bg-amber-500/20"
+                      }`}
                     >
-                      <StatusIcon size={10} />
-                      {statusLabel}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                      {showMainAction && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); actionHandler(); }}
-                          disabled={actionLoadingId === u.id}
-                          className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all disabled:opacity-50 ${actionColor}`}
-                          title={actionTitle}
-                        >
-                          {actionLoadingId === u.id ? <Loader2 size={14} className="animate-spin" /> : <ActionIcon size={14} />}
-                        </button>
-                      )}
-
-                      <div className="relative" data-dropdown-id={u.id}>
-                        <button
-                          onClick={(e) => handleToggleDropdown(e, u.id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-all"
-                          title="More Actions"
-                        >
-                          <MoreVertical size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                      {actionLoadingId === item.id ? <Loader2 size={12} className="animate-spin" /> : <ShieldAlert size={12} />}
+                      <span>{isSuspended ? "Reactivate" : "Suspend"}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          }}
+          
+          // ✅ Row actions (3-dots menu) - correctly targeted via portal in CardGrid
+          rowActions={getUserActions}
+          
+          // Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={3}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
-      {/* ✅ SHARED FLOATING DROPDOWN PORTAL (Works on Mobile + Desktop) */}
-      {mounted && openDropdownId !== null && dropdownPos && activeUserForDropdown && createPortal(
-        <div 
-          className="fixed z-[100] w-60 max-h-[calc(100vh-24px)] overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-xl)] animate-in fade-in zoom-in-95 duration-100"
-          style={{ top: dropdownPos.top, right: dropdownPos.right }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button 
-            onClick={() => { router.push(`/dashboard/users/${activeUserForDropdown.id}`); setOpenDropdownId(null); setDropdownPos(null); }} 
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
-          >
-            <UserIcon size={14} /> View Full Profile
-          </button>
-          
-          <button 
-            onClick={() => { onResetLink(activeUserForDropdown.id); setOpenDropdownId(null); setDropdownPos(null); }} 
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors border-t border-[var(--color-surface-border)]"
-          >
-            <KeyRound size={14} /> Send Reset Link
-          </button>
-          
-          {activeUserForDropdown.email_verified ? (
-            <div className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border-t border-[var(--color-surface-border)] opacity-60 cursor-not-allowed">
-              <CheckCircle size={14} /> Email Verified
-            </div>
-          ) : (
-            <button 
-              onClick={() => { onSendVerification(activeUserForDropdown.id, "email"); setOpenDropdownId(null); setDropdownPos(null); }} 
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors border-t border-[var(--color-surface-border)]"
-            >
-              <Mail size={14} /> Send Email Verification
-            </button>
-          )}
+      {/* ✅ DESKTOP: Reusable DataTable */}
+      <div className="hidden md:block">
+        <DataTable
+          data={users}
+          columns={[
+            {
+              header: "Team Member",
+              accessorKey: "full_name",
+              cell: ({ row }) => {
+                const user = row.original;
+                const emailVerified = user.email_verified === true;
+                
+                return (
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
+                      <UserIcon size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{user.full_name}</p>
+                      <a href={`mailto:${user.email}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors truncate">
+                        <Mail size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                        <span className="truncate">{user.email}</span>
+                        {emailVerified && <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0" />}
+                      </a>
+                    </div>
+                  </div>
+                );
+              },
+            },
+            {
+              header: "Role",
+              accessorKey: "role",
+              cell: ({ row }) => {
+                const user = row.original;
+                const displayRole = getRoleDisplay(user.role, user.department, user.job_title);
+                const { color, Icon } = getRoleStyle(user.role, user.job_title);
+                
+                return (
+                  <div className={`flex items-center gap-2 text-sm font-medium ${color}`}>
+                    <Icon size={16} strokeWidth={2} />
+                    <span>{displayRole}</span>
+                  </div>
+                );
+              },
+            },
+            {
+              header: "Department",
+              accessorKey: "department",
+              cell: ({ row }) => {
+                const user = row.original;
+                return user.department ? (
+                  <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
+                    <Building2 size={14} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                    <span className="font-medium truncate">{user.department}</span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-[var(--color-ink-subtle)] italic">Unassigned</span>
+                );
+              },
+            },
+            {
+              header: "Phone",
+              accessorKey: "phone_number",
+              cell: ({ row }) => {
+                const user = row.original;
+                const phoneVerified = user.phone_verified === true;
+                
+                return user.phone_number ? (
+                  <div className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
+                    <Phone size={12} className="text-[var(--color-ink-subtle)]" />
+                    <span className="font-medium">{user.phone_number}</span>
+                    {phoneVerified && <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0" />}
+                  </div>
+                ) : (
+                  <span className="text-sm text-[var(--color-ink-subtle)] italic">Not provided</span>
+                );
+              },
+            },
+            {
+              header: "Status",
+              accessorKey: "status",
+              cell: ({ row }) => {
+                const user = row.original;
+                const emailVerified = user.email_verified === true;
+                const phoneVerified = user.phone_verified === true;
+                const isAgencyOwner = user.is_tenant_owner === true;
+                const bothVerified = emailVerified && phoneVerified;
+                const partiallyVerified = emailVerified || phoneVerified;
 
-          {activeUserForDropdown.phone_number ? (
-            activeUserForDropdown.phone_verified ? (
-              <div className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border-t border-[var(--color-surface-border)] opacity-60 cursor-not-allowed">
-                <CheckCircle size={14} /> Phone Verified
-              </div>
-            ) : (
-              <button 
-                onClick={() => { onSendVerification(activeUserForDropdown.id, "phone"); setOpenDropdownId(null); setDropdownPos(null); }} 
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors border-t border-[var(--color-surface-border)]"
-              >
-                <Send size={14} /> Send Phone Verification
-              </button>
-            )
-          ) : null}
-
-          {!(activeUserForDropdown.is_tenant_owner && currentUserRole !== "super_admin") && (
-            <button 
-              onClick={() => { onDelete(activeUserForDropdown.id); setOpenDropdownId(null); setDropdownPos(null); }} 
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-            >
-              <Trash2 size={14} /> Delete User
-            </button>
-          )}
-        </div>,
-        // ✅ FIXED: Removed unnecessary check. `mounted` guarantees we are in the browser, so `document.body` is always safe.
-        document.body
-      )}
-
-      {/* FOOTER & PAGINATION (Desktop Only) */}
-      <div className="hidden md:flex p-4 border-t border-[var(--color-surface-border)] items-center justify-between gap-3">
-        <p className="text-xs text-[var(--color-ink-muted)]">
-          Showing {totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0} to {Math.min(currentPage * pageSize, totalItems)} of {totalItems} members
-        </p>
-        <div className="flex items-center gap-1.5">
-          <button 
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} 
-            disabled={currentPage === 1} 
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all border border-transparent"
-          >
-            Previous
-          </button>
-          <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--color-primary)] text-white tabular-nums">
-            {currentPage} / {totalPages || 1}
-          </span>
-          <button 
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} 
-            disabled={currentPage === totalPages || totalPages === 0} 
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] disabled:opacity-30 transition-all border border-transparent"
-          >
-            Next
-          </button>
-        </div>
+                let statusBg = "bg-[var(--color-success-bg)]";
+                let statusText = "text-[var(--color-success-text)]";
+                let statusLabel = "Active";
+                let StatusIcon = CheckCircle;
+                let statusTooltip = "Fully verified and active";
+                
+                if (isAgencyOwner) {
+                  statusBg = "bg-amber-500/10";
+                  statusText = "text-amber-600 dark:text-amber-400";
+                  statusLabel = "Agency Owner";
+                  StatusIcon = Star;
+                  statusTooltip = "Primary owner of this tenant";
+                } else if (bothVerified) {
+                  if (user.is_suspended) {
+                    statusBg = "bg-[var(--color-danger-bg)]";
+                    statusText = "text-[var(--color-danger-text)]";
+                    statusLabel = "Suspended";
+                    StatusIcon = ShieldAlert;
+                    statusTooltip = "Account suspended by admin";
+                  }
+                } else if (partiallyVerified) {
+                  statusBg = "bg-amber-500/10";
+                  statusText = "text-amber-600 dark:text-amber-400";
+                  statusLabel = "Verify";
+                  StatusIcon = Shield;
+                  statusTooltip = emailVerified ? "Email verified, phone pending" : "Phone verified, email pending";
+                } else {
+                  statusBg = "bg-gray-500/10";
+                  statusText = "text-gray-600 dark:text-gray-400";
+                  statusLabel = "Pending";
+                  StatusIcon = Mail;
+                  statusTooltip = "Awaiting email and phone verification";
+                }
+                
+                return (
+                  <span 
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${statusBg} ${statusText}`}
+                    title={statusTooltip}
+                  >
+                    <StatusIcon size={10} />
+                    {statusLabel}
+                  </span>
+                );
+              },
+            },
+          ]}
+          // ✅ Row actions (3-dots menu) - correctly targeted via portal in DataTable
+          rowActions={getUserActions}
+          getRowId={(user) => user.id}
+          loading={loading}
+          emptyMessage="No team members found"
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          viewMode="desktop"
+        />
       </div>
     </>
   );

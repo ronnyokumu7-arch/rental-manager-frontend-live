@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Activity, BarChart3,
-  Car, Users, TrendingUp, Clock, CheckCircle2, Wrench, Plus
+  Car, TrendingUp, Clock, CheckCircle2, Wrench, Plus, DollarSign, AlertCircle, Banknote
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -21,29 +21,50 @@ const TABS = [
 /* ────────────────────────────────────────────────────────────
    ✅ PREMIUM CHROME-LESS STAT TILE
    No card box, no sub-text — just tinted icon chip + value + label.
-   The icon chip provides structure; whitespace does the rest.
+   Currency tiles render a Banknote glyph instead of a "KES" prefix
+   to save horizontal real-estate on mobile.
    ──────────────────────────────────────────────────────────── */
 function StatCard({
   label,
   value,
   icon: Icon,
   iconClass,
+  size = "default", // "default" | "compact"
+  currency = false,
 }: {
   label: string;
   value: string;
   icon: LucideIcon;
   iconClass: string;
+  size?: "default" | "compact";
+  currency?: boolean;
 }) {
+  const isCompact = size === "compact";
+
   return (
-    <div className="flex items-center gap-3 lg:gap-4">
-      <div className={`w-10 h-10 lg:w-11 lg:h-11 rounded-xl flex items-center justify-center shrink-0 ${iconClass}`}>
-        <Icon size={18} />
+    <div className={`flex items-center ${isCompact ? "gap-2 lg:gap-4" : "gap-3 lg:gap-4"}`}>
+      <div className={`rounded-xl flex items-center justify-center shrink-0 ${iconClass} ${
+        isCompact ? "w-8 h-8 lg:w-11 lg:h-11" : "w-10 h-10 lg:w-11 lg:h-11"
+      }`}>
+        <Icon size={isCompact ? 16 : 18} />
       </div>
       <div className="min-w-0">
-        <p className="text-xl lg:text-2xl font-extrabold tracking-tight text-[var(--color-ink)] tabular-nums truncate">
-          {value}
+        {/* ✅ Value row: optional Banknote glyph + number (number truncates last) */}
+        <p className={`flex items-center gap-1 font-extrabold tracking-tight text-[var(--color-ink)] tabular-nums whitespace-nowrap ${
+          isCompact ? "text-base lg:text-2xl" : "text-lg lg:text-2xl"
+        }`}>
+          {currency && (
+            <Banknote
+              size={isCompact ? 15 : 17}
+              className="text-[var(--color-ink-subtle)] shrink-0"
+              aria-label="Kenyan Shillings"
+            />
+          )}
+          <span className="truncate">{value}</span>
         </p>
-        <p className="text-[10px] lg:text-[11px] font-bold sentencecase tracking-wider text-[var(--color-ink-muted)] truncate">
+        <p className={`font-bold sentencecase tracking-wider text-[var(--color-ink-muted)] truncate ${
+          isCompact ? "text-[9px] lg:text-[11px]" : "text-[10px] lg:text-[11px]"
+        }`}>
           {label}
         </p>
       </div>
@@ -104,36 +125,57 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── TAB 1: OVERVIEW ── */}
+      {/* ─ TAB 1: OVERVIEW ── */}
       {activeTab === "overview" && (
         <div className="space-y-6 animate-in fade-in duration-300">
           
-          {/* ✅ PREMIUM: chrome-less 2×2 stat grid on phones, 4-up strip on desktop */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-            <StatCard
-              label="Active Bookings"
-              value={String(stats.activeBookings)}
-              icon={LayoutDashboard}
-              iconClass="bg-[var(--color-primary-muted)] text-[var(--color-primary-text)]"
-            />
-            <StatCard
-              label="Fleet Size"
-              value={String(stats.fleetSize)}
-              icon={Car}
-              iconClass="bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]"
-            />
-            <StatCard
-              label="Total Clients"
-              value={String(stats.totalClients)}
-              icon={Users}
-              iconClass="bg-[var(--color-success-bg)] text-[var(--color-success-text)]"
-            />
-            <StatCard
-              label="Revenue This Month"
-              value={`KES ${stats.mtdRevenue.toLocaleString()}`}
-              icon={TrendingUp}
-              iconClass="bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]"
-            />
+          {/* ✅ PREMIUM: Money-focused stat grid with mobile optimization */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6">
+            
+            {/* Revenue This Month - Full width on mobile/tablet, normal on desktop */}
+            <div className="col-span-2 lg:col-span-1">
+              <StatCard
+                label="Revenue This Month"
+                value={stats.mtdRevenue.toLocaleString()}
+                icon={TrendingUp}
+                iconClass="bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]"
+                currency
+              />
+            </div>
+            
+            {/* Total Revenue - Hidden on mobile, visible on desktop */}
+            <div className="hidden lg:block col-span-1">
+              <StatCard
+                label="Total Revenue"
+                value={(stats.totalRevenue ?? 0).toLocaleString()}
+                icon={DollarSign}
+                iconClass="bg-[var(--color-primary-muted)] text-[var(--color-primary-text)]"
+                currency
+              />
+            </div>
+            
+            {/* Pending Payments - Compact on mobile */}
+            <div className="col-span-1">
+              <StatCard
+                label="Pending Payments"
+                value={(stats.pendingPayments ?? 0).toLocaleString()}
+                icon={AlertCircle}
+                iconClass="bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]"
+                size="compact"
+                currency
+              />
+            </div>
+            
+            {/* Fleet Size - Compact on mobile */}
+            <div className="col-span-1">
+              <StatCard
+                label="Fleet Size"
+                value={String(stats.fleetSize)}
+                icon={Car}
+                iconClass="bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]"
+                size="compact"
+              />
+            </div>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
@@ -149,11 +191,11 @@ export default function DashboardPage() {
               <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-  <p className="text-[11px] font-bold text-[var(--color-ink-muted)] sentencecase tracking-wider">Fleet Status</p>
-  <p className="text-[11px] font-medium text-[var(--color-ink-subtle)] mt-0.5">
-    {vehicles.filter((v) => v.status !== "maintenance").length}/{vehicles.length} vehicles operational
-  </p>
-</div>
+                    <p className="text-[11px] font-bold text-[var(--color-ink-muted)] sentencecase tracking-wider">Fleet Status</p>
+                    <p className="text-[11px] font-medium text-[var(--color-ink-subtle)] mt-0.5">
+                      {vehicles.filter((v) => v.status !== "maintenance").length}/{vehicles.length} vehicles operational
+                    </p>
+                  </div>
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--color-success-bg)] border border-[var(--color-success-bg)]">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-success)] opacity-75"></span>
@@ -270,7 +312,7 @@ export default function DashboardPage() {
         title="Create New Booking"
       >
         <Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
-        <span className="absolute right-full mr-4 px-3 py-1.5 bg-[var(--color-surface)] text-[var(--color-ink)] text-xs font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-[var(--color-surface-border)]">
+        <span className="absolute right-full mr-4 px-1.5 py-1.5 bg-[var(--color-surface)] text-[var(--color-ink)] text-xs font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-[var(--color-surface-border)]">
           New Booking
         </span>
       </button>

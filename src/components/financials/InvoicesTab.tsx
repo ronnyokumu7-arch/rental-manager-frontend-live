@@ -3,11 +3,12 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Search, FileText, Filter, FileSignature } from "lucide-react";
+import FilterDropdown from "@/components/ui/FilterDropdown";
 import { useInvoices } from "@/hooks/financials/useInvoices";
 import InvoicesTable from "./invoices/InvoicesTable";
 import RecordPaymentModal from "./invoices/RecordPaymentModal";
 import CreateInvoiceModal from "./invoices/CreateInvoiceModal";
-import type { Invoice } from "@/lib/types";
+import type { Invoice, InvoiceStatus } from "@/lib/types"; // ✅ FIXED: Added InvoiceStatus import
 
 export default function InvoicesTab() {
   const {
@@ -21,7 +22,6 @@ export default function InvoicesTab() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
   const pageSize = 7;
 
@@ -49,18 +49,6 @@ export default function InvoicesTab() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search, statusFilter, setCurrentPage]);
-
-  // Handle click outside for filter dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (showFilterDropdown && !target.closest('[data-filter-container]')) {
-        setShowFilterDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showFilterDropdown]);
 
   const openPaymentModal = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
@@ -102,66 +90,27 @@ export default function InvoicesTab() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search invoice or booking ID..."
+                  placeholder="Search invoice..."
                   className="w-full pl-9 pr-4 py-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all text-sm"
                 />
               </div>
 
-              {/* ✅ PREMIUM ICON-ONLY FILTER DROPDOWN */}
-              <div className="relative flex-shrink-0" data-filter-container>
-                <button
-                  type="button"
-                  onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                  className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
-                    statusFilter !== "all"
-                      ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
-                      : "bg-[var(--color-surface)] border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
-                  }`}
-                  title="Filter by status"
-                >
-                  <Filter size={15} />
-                </button>
-
-                {showFilterDropdown && (
-                  <>
-                    {/* Backdrop to close on outside click */}
-                    <div className="fixed inset-0 z-40" onClick={() => setShowFilterDropdown(false)} />
-                    
-                    {/* Dropdown Menu */}
-                    <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                      <div className="py-1">
-                        {/* "All Statuses" - clears filter */}
-                        <button
-                          onClick={() => { setStatusFilter("all"); setShowFilterDropdown(false); }}
-                          className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors ${
-                            statusFilter === "all"
-                              ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                              : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                          }`}
-                        >
-                          All Statuses
-                        </button>
-                        <div className="h-px bg-[var(--color-surface-border)]" />
-                        
-                        {/* ✅ FIXED: Added `as const` to narrow the array to exact literal types */}
-                        {(["draft", "sent", "partially_paid", "paid", "overdue", "void"] as const).map((value) => (
-                          <button
-                            key={value}
-                            onClick={() => { setStatusFilter(value); setShowFilterDropdown(false); }}
-                            className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors capitalize ${
-                              statusFilter === value
-                                ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                                : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                            }`}
-                          >
-                            {value.replace("_", " ")}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
+              {/* ✅ Reusable FilterDropdown for Status */}
+              <FilterDropdown
+                filterId="invoice-status"
+                label="Status"
+                options={[
+                  { label: "Draft", value: "draft" },
+                  { label: "Sent", value: "sent" },
+                  { label: "Partially Paid", value: "partially_paid" },
+                  { label: "Paid", value: "paid" },
+                  { label: "Overdue", value: "overdue" },
+                  { label: "Void", value: "void" },
+                ]}
+                value={statusFilter === "all" ? null : statusFilter}
+                onChange={(value) => setStatusFilter((value || "all") as InvoiceStatus | "all")}
+                icon={Filter}
+              />
             </div>
 
             {/* Generate Invoice Button */}
