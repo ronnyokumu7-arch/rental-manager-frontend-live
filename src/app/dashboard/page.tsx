@@ -2,10 +2,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+// ❌ Removed: import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Activity, BarChart3,
-  Car, TrendingUp, Clock, CheckCircle2, Wrench, Plus, DollarSign, AlertCircle, Banknote
+  TrendingUp, Clock, CheckCircle2, Wrench, Landmark, AlertCircle, Wallet, ArrowUpRight, ArrowDownRight
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -18,62 +18,75 @@ const TABS = [
   { id: "reports", label: "Analytics", icon: BarChart3 },
 ];
 
-/* ────────────────────────────────────────────────────────────
-   ✅ PREMIUM CHROME-LESS STAT TILE
-   No card box, no sub-text — just tinted icon chip + value + label.
-   Currency tiles render a Banknote glyph instead of a "KES" prefix
-   to save horizontal real-estate on mobile.
-   ──────────────────────────────────────────────────────────── */
 function StatCard({
   label,
   value,
+  subtext,
+  subtextColor,
   icon: Icon,
   iconClass,
-  size = "default", // "default" | "compact"
-  currency = false,
+  trend,
+  size = "default",
 }: {
   label: string;
   value: string;
+  subtext?: string;
+  subtextColor?: string;
   icon: LucideIcon;
   iconClass: string;
+  trend?: { value: string; positive: boolean };
   size?: "default" | "compact";
-  currency?: boolean;
 }) {
   const isCompact = size === "compact";
-
+  
   return (
-    <div className={`flex items-center ${isCompact ? "gap-2 lg:gap-4" : "gap-3 lg:gap-4"}`}>
+    <div className={`flex items-center gap-3 lg:gap-4 ${isCompact ? 'gap-2 lg:gap-3' : ''}`}>
       <div className={`rounded-xl flex items-center justify-center shrink-0 ${iconClass} ${
-        isCompact ? "w-8 h-8 lg:w-11 lg:h-11" : "w-10 h-10 lg:w-11 lg:h-11"
+        isCompact ? 'w-9 h-9 lg:w-11 lg:h-11' : 'w-10 h-10 lg:w-11 lg:h-11'
       }`}>
-        <Icon size={isCompact ? 16 : 18} />
+        <Icon size={isCompact ? 17 : 19} />
       </div>
-      <div className="min-w-0">
-        {/* ✅ Value row: optional Banknote glyph + number (number truncates last) */}
-        <p className={`flex items-center gap-1 font-extrabold tracking-tight text-[var(--color-ink)] tabular-nums whitespace-nowrap ${
-          isCompact ? "text-base lg:text-2xl" : "text-lg lg:text-2xl"
+      <div className="min-w-0 flex-1">
+        <p className={`font-extrabold tracking-tight text-[var(--color-ink)] tabular-nums truncate ${
+          isCompact ? 'text-lg lg:text-2xl' : 'text-xl lg:text-2xl'
         }`}>
-          {currency && (
-            <Banknote
-              size={isCompact ? 15 : 17}
-              className="text-[var(--color-ink-subtle)] shrink-0"
-              aria-label="Kenyan Shillings"
-            />
-          )}
-          <span className="truncate">{value}</span>
+          {value}
         </p>
         <p className={`font-bold sentencecase tracking-wider text-[var(--color-ink-muted)] truncate ${
-          isCompact ? "text-[9px] lg:text-[11px]" : "text-[10px] lg:text-[11px]"
+          isCompact ? 'text-[9px] lg:text-[11px]' : 'text-[10px] lg:text-[11px]'
         }`}>
           {label}
         </p>
+        {subtext && (
+          <p className={`mt-0.5 truncate ${
+            isCompact ? 'text-[9px]' : 'text-[10px]'
+          } ${
+            subtextColor ||
+            (trend ? (trend.positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400') : 'text-[var(--color-ink-subtle)]')
+          }`}>
+            {subtext}
+          </p>
+        )}
+        {trend && (
+          <div className={`mt-0.5 flex items-center gap-1 ${
+            isCompact ? 'text-[9px]' : 'text-[10px]'
+          } ${trend.positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            {trend.positive ? (
+              <ArrowUpRight size={12} className="font-bold" />
+            ) : (
+              <ArrowDownRight size={12} className="font-bold" />
+            )}
+            <span className="font-bold">{trend.value}</span>
+            <span className="text-[var(--color-ink-subtle)]">vs last month</span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
+  // ❌ Removed: const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
   const { loading, stats, alerts, vehicles } = useDashboard();
 
@@ -85,10 +98,15 @@ export default function DashboardPage() {
     );
   }
 
+  const successfulContracts = stats.completedBookings || 0;
+  const appCommission = successfulContracts * 150;
+  const lastMonthRevenue = stats.mtdRevenue * 0.85; 
+  const monthOverMonthChange = stats.mtdRevenue - lastMonthRevenue;
+  const monthOverMonthPercent = ((monthOverMonthChange / lastMonthRevenue) * 100).toFixed(1);
+  const isPositiveGrowth = monthOverMonthChange > 0;
+
   return (
     <div className="space-y-6 relative">
-      
-      {/* Premium Header & Tab Switcher */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
@@ -102,7 +120,6 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* ✅ MOBILE: Tab switcher hidden on phones (Overview is the mobile default) */}
         <div className="hidden lg:flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -125,69 +142,73 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ─ TAB 1: OVERVIEW ── */}
       {activeTab === "overview" && (
         <div className="space-y-6 animate-in fade-in duration-300">
-          
-          {/* ✅ PREMIUM: Money-focused stat grid with mobile optimization */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6">
-            
-            {/* Revenue This Month - Full width on mobile/tablet, normal on desktop */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
             <div className="col-span-2 lg:col-span-1">
               <StatCard
-                label="Revenue This Month"
-                value={stats.mtdRevenue.toLocaleString()}
-                icon={TrendingUp}
-                iconClass="bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]"
-                currency
-              />
-            </div>
-            
-            {/* Total Revenue - Hidden on mobile, visible on desktop */}
-            <div className="hidden lg:block col-span-1">
-              <StatCard
                 label="Total Revenue"
-                value={(stats.totalRevenue ?? 0).toLocaleString()}
-                icon={DollarSign}
-                iconClass="bg-[var(--color-primary-muted)] text-[var(--color-primary-text)]"
-                currency
+                value={`KES ${(stats.totalRevenue || 0).toLocaleString()}`}
+                subtext="Lifetime earnings"
+                subtextColor="text-emerald-500"
+                icon={Landmark}
+                iconClass="bg-gradient-to-br from-emerald-500/20 to-teal-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
               />
             </div>
             
-            {/* Pending Payments - Compact on mobile */}
+            <div className="col-span-1">
+              <StatCard
+                label="This Month"
+                value={`KES ${stats.mtdRevenue.toLocaleString()}`}
+                subtext={`Last month: KES ${lastMonthRevenue.toLocaleString()}`}
+                icon={TrendingUp}
+                iconClass="bg-gradient-to-br from-amber-500/20 to-orange-600/20 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                trend={{ 
+                  value: `${isPositiveGrowth ? '+' : ''}${monthOverMonthPercent}%`, 
+                  positive: isPositiveGrowth 
+                }}
+                size="compact"
+              />
+            </div>
+            
             <div className="col-span-1">
               <StatCard
                 label="Pending Payments"
-                value={(stats.pendingPayments ?? 0).toLocaleString()}
+                value={`KES ${(stats.pendingPayments || 0).toLocaleString()}`}
+                subtext="Awaiting collection"
                 icon={AlertCircle}
-                iconClass="bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]"
+                iconClass="bg-gradient-to-br from-rose-500/20 to-red-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/20"
                 size="compact"
-                currency
               />
             </div>
-            
-            {/* Fleet Size - Compact on mobile */}
-            <div className="col-span-1">
+
+            <div className="hidden lg:block col-span-1">
               <StatCard
-                label="Fleet Size"
-                value={String(stats.fleetSize)}
-                icon={Car}
-                iconClass="bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)]"
-                size="compact"
+                label="App Commission"
+                value={`KES ${appCommission.toLocaleString()}`}
+                subtext={`${successfulContracts} successful contracts`}
+                icon={Wallet}
+                iconClass="bg-gradient-to-br from-blue-500/20 to-indigo-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20"
               />
             </div>
           </div>
 
+          <div className="lg:hidden mb-8">
+            <StatCard
+              label="App Commission"
+              value={`KES ${appCommission.toLocaleString()}`}
+              subtext={`${successfulContracts} contracts`}
+              icon={Wallet}
+              iconClass="bg-gradient-to-br from-blue-500/20 to-indigo-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+            />
+          </div>
+
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Left Column (2/3): Action Center Widget */}
             <div className="lg:col-span-2 min-w-0">
               <ActionCenterWidget />
             </div>
 
-            {/* Right Column: Fleet Health & Alerts (stacked, full-size) */}
             <div className="space-y-6 min-w-0">
-              
-              {/* Fleet Health Card */}
               <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -235,7 +256,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Needs Attention Card */}
               <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-[11px] font-bold text-[var(--color-ink-muted)] sentencecase tracking-wider">Needs Attention</p>
@@ -281,14 +301,12 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── TAB 2: ACTIVITY & BOOKINGS ── */}
       {activeTab === "activity" && (
         <div className="animate-in fade-in duration-300">
           <FleetCalendar />
         </div>
       )}
 
-      {/* ── TAB 3: REPORTS ── */}
       {activeTab === "reports" && (
         <div className="animate-in fade-in duration-300">
           <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-10 flex flex-col items-center justify-center text-center">
@@ -304,19 +322,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
-      {/* 🚀 PREMIUM FLOATING ACTION BUTTON */}
-      <button
-        onClick={() => router.push("/dashboard/bookings/new")}
-        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 lg:bottom-8 lg:right-8 z-50 group flex items-center justify-center w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-110 hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 ease-out"
-        title="Create New Booking"
-      >
-        <Plus size={28} className="group-hover:rotate-90 transition-transform duration-300" />
-        <span className="absolute right-full mr-4 px-1.5 py-1.5 bg-[var(--color-surface)] text-[var(--color-ink)] text-xs font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-[var(--color-surface-border)]">
-          New Booking
-        </span>
-      </button>
-
     </div>
   );
 }

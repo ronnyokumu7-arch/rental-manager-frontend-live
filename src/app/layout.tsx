@@ -61,6 +61,9 @@ export default function RootLayout({
         selection:text-[var(--color-primary-text)]
         scroll-smooth
       ">
+        {/* ✅ Vercel Analytics — lightweight script injector, no UI */}
+        <Analytics />
+        
         <Providers>
           <AuthProvider>
             <Toaster 
