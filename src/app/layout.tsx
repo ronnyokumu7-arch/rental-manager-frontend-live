@@ -7,6 +7,7 @@ import { AuthProvider } from "@/context/auth-context";
 import { Toaster } from "react-hot-toast";
 import '@/styles/flatpickr-theme.css';
 import Providers from "@/components/Providers";
+import { Analytics } from "@vercel/analytics/next"
 
 // 1. Sans-Serif (Primary UI / paragraphs)
 const sansFont = Inter({
