@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Loader2, FileText, AlertCircle, Link2, CheckCircle2 } from "lucide-react";
+import { Loader2, FileText, AlertCircle, Link2, CheckCircle2, RotateCcw } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { bookingsApi } from "@/lib/api/bookings";
 import { contractsApi } from "@/lib/api/contracts";
@@ -15,7 +15,6 @@ interface GenerateContractModalProps {
   onGenerated: () => void;
 }
 
-// ── Design System Constants ──────────────────────────────────────────────────
 const inputClass = "w-full px-4 py-3 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] outline-none transition-all duration-200 text-sm";
 const labelClass = "block text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] mb-2";
 
@@ -48,7 +47,8 @@ export default function GenerateContractModal({ open, onClose, onGenerated }: Ge
     return bookings.filter(b => {
       const contract = contractMap.get(b.id);
       if (contract) {
-        return contract.status !== "signed" && contract.status !== "void";
+        // ✅ FIXED: Allow void contracts to be regenerated (excludes only signed)
+        return contract.status !== "signed";
       }
       return b.status === "pending" || b.status === "confirmed";
     });
@@ -56,6 +56,7 @@ export default function GenerateContractModal({ open, onClose, onGenerated }: Ge
 
   const selectedBooking = bookings.find(b => b.id === selectedBookingId);
   const existingContract = contracts.find(c => c.booking_id === selectedBookingId);
+  const isVoidContract = existingContract?.status === "void";
 
   const handleGenerateOrCopy = async () => {
     if (!selectedBookingId) return;
@@ -63,22 +64,29 @@ export default function GenerateContractModal({ open, onClose, onGenerated }: Ge
     
     try {
       if (existingContract) {
-        toast.loading("Generating share link...", { duration: 1000 });
-        const res = await contractsApi.generateShareLink(existingContract.id);
-        
-        // ✅ BULLETPROOF URL CONSTRUCTION:
-        // Guarantees a fully qualified URL regardless of backend env vars.
-        const fullUrl = res.share_url && res.share_url.startsWith("http")
-          ? res.share_url
-          : `${window.location.origin}/contracts/view/${res.share_token}`;
+        if (isVoidContract) {
+          // ✅ NEW: Regenerate void contract (deletes old, creates new draft)
+          toast.loading("Regenerating contract...", { duration: 1000 });
+          await contractsApi.regenerate(selectedBookingId);
+          toast.dismiss();
+          toast.success("Contract regenerated successfully!");
+        } else {
+          // Copy share link for active contracts
+          toast.loading("Generating share link...", { duration: 1000 });
+          const res = await contractsApi.generateShareLink(existingContract.id);
+          
+          const fullUrl = res.share_url && res.share_url.startsWith("http")
+            ? res.share_url
+            : `${window.location.origin}/contracts/view/${res.share_token}`;
 
-        await navigator.clipboard.writeText(fullUrl);
-        toast.dismiss();
-        toast.success("Contract link copied to clipboard!");
+          await navigator.clipboard.writeText(fullUrl);
+          toast.dismiss();
+          toast.success("Contract link copied to clipboard!");
+        }
         onGenerated();
         handleClose();
       } else {
-        // ✅ CHANGED: Use the safe, dedicated generateForBooking endpoint for orphan bookings
+        // Generate new contract for orphan bookings
         toast.loading("Generating contract...", { duration: 1000 });
         await contractsApi.generateForBooking(selectedBookingId);
         toast.dismiss();
@@ -103,7 +111,6 @@ export default function GenerateContractModal({ open, onClose, onGenerated }: Ge
     <Modal open={open} onClose={handleClose} title="Contract Management" subtitle="Generate contract or copy share link" size="md">
       <div className="space-y-6">
         
-        {/* Booking Selection */}
         <div>
           <label className={labelClass}>
             Select Booking <span className="text-[var(--color-danger)]">*</span>
@@ -138,7 +145,6 @@ export default function GenerateContractModal({ open, onClose, onGenerated }: Ge
           )}
         </div>
 
-        {/* Booking Details Preview */}
         {selectedBooking && (
           <div className="p-5 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]">
             <div className="flex items-center gap-2 mb-4">
@@ -168,24 +174,35 @@ export default function GenerateContractModal({ open, onClose, onGenerated }: Ge
               </div>
             </div>
             
-            {/* Contract Status Indicator */}
             {existingContract && (
-              <div className="mt-4 p-4 rounded-xl bg-[var(--color-success-bg)]/30 border border-[var(--color-success-bg)]">
+              <div className={`mt-4 p-4 rounded-xl border ${
+                isVoidContract 
+                  ? "bg-[var(--color-danger-bg)]/30 border-[var(--color-danger-bg)]" 
+                  : "bg-[var(--color-success-bg)]/30 border-[var(--color-success-bg)]"
+              }`}>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-[var(--color-success-text)]" />
-                  <span className="text-xs font-bold text-[var(--color-success-text)]">
+                  {isVoidContract ? (
+                    <AlertCircle size={16} className="text-[var(--color-danger-text)]" />
+                  ) : (
+                    <CheckCircle2 size={16} className="text-[var(--color-success-text)]" />
+                  )}
+                  <span className={`text-xs font-bold ${
+                    isVoidContract ? "text-[var(--color-danger-text)]" : "text-[var(--color-success-text)]"
+                  }`}>
                     Contract exists ({existingContract.status})
                   </span>
                 </div>
                 <p className="text-xs text-[var(--color-ink-muted)] mt-1">
-                  Clicking the button will copy the share link to your clipboard.
+                  {isVoidContract 
+                    ? "Clicking the button will regenerate a new contract for this booking."
+                    : "Clicking the button will copy the share link to your clipboard."
+                  }
                 </p>
               </div>
             )}
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--color-surface-border)]">
           <button 
             type="button" 
@@ -201,6 +218,8 @@ export default function GenerateContractModal({ open, onClose, onGenerated }: Ge
           >
             {loading ? (
               <Loader2 size={14} className="animate-spin" />
+            ) : isVoidContract ? (
+              <RotateCcw size={14} />
             ) : existingContract ? (
               <Link2 size={14} />
             ) : (
@@ -208,9 +227,11 @@ export default function GenerateContractModal({ open, onClose, onGenerated }: Ge
             )}
             {loading 
               ? "Processing..." 
-              : existingContract 
-                ? "Copy Contract Link" 
-                : "Generate Contract"
+              : isVoidContract
+                ? "Regenerate Contract"
+                : existingContract 
+                  ? "Copy Contract Link" 
+                  : "Generate Contract"
             }
           </button>
         </div>

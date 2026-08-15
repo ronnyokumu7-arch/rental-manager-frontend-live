@@ -8,7 +8,13 @@ import {
   Copy,
   Send,
   Ban,
+  RotateCcw,
+  CalendarDays,
+  User,
+  PenLine,
+  CheckCircle2,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import DataTable, { RowAction } from "@/components/ui/DataTable";
 import CardGrid from "@/components/ui/CardGrid";
 
@@ -17,8 +23,8 @@ export type ContractStatus = "draft" | "sent" | "signed" | "void";
 export interface ContractItem {
   id: number;
   contract_number: string;
-  booking_id?: number;           // ✅ For routing: /dashboard/bookings/123
-  booking_number?: string;       // ✅ For display: #BK-123
+  booking_id?: number;
+  booking_number?: string;
   client_name?: string;
   client_phone?: string;
   status: ContractStatus;
@@ -43,6 +49,14 @@ const statusStyles: Record<ContractStatus, { bg: string; text: string }> = {
   sent: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400" },
   signed: { bg: "bg-[var(--color-success-bg)]", text: "text-[var(--color-success-text)]" },
   void: { bg: "bg-[var(--color-danger-bg)]", text: "text-[var(--color-danger-text)]" },
+};
+
+// ✅ Premium per-status icons for the pill
+const statusIcons: Record<ContractStatus, LucideIcon> = {
+  draft: PenLine,
+  sent: Send,
+  signed: CheckCircle2,
+  void: Ban,
 };
 
 const statusLabels: Record<ContractStatus, string> = {
@@ -72,9 +86,25 @@ export default function ContractsTable({
 
   const mobileItems = allData || data;
 
-  // ✅ Reusable row actions for both table and cards
   const getContractActions = (contract: ContractItem): RowAction<ContractItem>[] => {
-    const actions: RowAction<ContractItem>[] = [
+    const actions: RowAction<ContractItem>[] = [];
+    const isVoid = contract.status === "void";
+
+    // ✅ Void contracts: only show "Regenerate Contract"
+    if (isVoid) {
+      if (onGenerate && contract.booking_id) {
+        actions.push({
+          label: "Regenerate Contract",
+          icon: RotateCcw,
+          variant: "primary",
+          onClick: () => onGenerate(contract.booking_id!),
+        });
+      }
+      return actions;
+    }
+
+    // ✅ Non-void contracts: show normal actions
+    actions.push(
       {
         label: "Download PDF",
         icon: Download,
@@ -86,10 +116,10 @@ export default function ContractsTable({
         icon: Copy,
         variant: "default",
         onClick: () => onCopyLink(contract.id),
-      },
-    ];
+      }
+    );
 
-    if (contract.status !== "signed" && contract.status !== "void") {
+    if (contract.status !== "signed") {
       actions.push({
         label: "Send Contract",
         icon: Send,
@@ -99,38 +129,26 @@ export default function ContractsTable({
       });
     }
 
-    if (contract.status !== "void") {
-      actions.push({
-        label: "Void Contract",
-        icon: Ban,
-        variant: "danger",
-        onClick: () => onVoid(contract.id),
-      });
-    }
-
-    // Optional: Generate contract action if onGenerate is provided
-    if (onGenerate && contract.booking_id) {
-      actions.push({
-        label: "Generate Contract",
-        icon: FileText,
-        variant: "default",
-        separator: true,
-        onClick: () => onGenerate(contract.booking_id!),
-      });
-    }
+    actions.push({
+      label: "Void Contract",
+      icon: Ban,
+      variant: "danger",
+      separator: true,
+      onClick: () => onVoid(contract.id),
+    });
 
     return actions;
   };
 
   return (
     <div className="w-full">
-      {/* ✅ MOBILE: Reusable CardGrid (simplified, non-collapsible) */}
+      {/* ✅ MOBILE: Reusable CardGrid */}
       <div className="block md:hidden">
         <CardGrid
           data={mobileItems}
           getCardId={(c) => c.id}
           
-          // Header: Icon + Contract Number + Client Name
+          // Header: Icon + Contract Number + User icon + Client Name
           renderCardHeader={({ item }) => (
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
@@ -148,20 +166,24 @@ export default function ContractsTable({
                 >
                   {item.contract_number || `C20260${item.id}`}
                 </h4>
-                <p className="text-xs text-[var(--color-ink-muted)] truncate mt-0.5 font-medium">
-                  {item.client_name || "Unassigned Client"}
+                {/* ✅ User icon beside client name */}
+                <p className="flex items-center gap-1 text-xs text-[var(--color-ink-muted)] mt-0.5 font-medium min-w-0">
+                  <User size={10} className="flex-shrink-0 text-[var(--color-ink-subtle)]" />
+                  <span className="truncate">{item.client_name || "Unassigned Client"}</span>
                 </p>
               </div>
             </div>
           )}
           
-          // Body: All content in one clean section
+          // Body: captions + inline icons, status pill, PDF-only action
           renderCardBody={({ item }) => {
             const style = statusStyles[item.status] || statusStyles.draft;
+            const StatusIcon = statusIcons[item.status] || FileText;
+            const isVoid = item.status === "void";
             
             return (
               <div className="space-y-3">
-                {/* Booking Ref + Date */}
+                {/* Booking Ref + Date (Calendar icon inline) */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Booking Ref</p>
@@ -170,36 +192,31 @@ export default function ContractsTable({
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Date</p>
-                    <p className="text-xs text-[var(--color-ink-muted)] mt-0.5">
-                      {item.signed_at ? formatDateShort(item.signed_at) : formatDateShort(item.created_at)}
-                    </p>
+                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Date Signed</p>
+                    <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                      <CalendarDays size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                      <span className="text-xs text-[var(--color-ink-muted)] truncate">
+                        {item.signed_at ? formatDateShort(item.signed_at) : formatDateShort(item.created_at)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Status Dot + Quick Actions */}
+                {/* ✅ Status pill with matching icon (dot eliminated) + PDF-only */}
                 <div className="flex items-center justify-between pt-2 border-t border-[var(--color-surface-border)]/40">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2.5 h-2.5 rounded-full ${style.bg.replace('/10', '')}`} title={statusLabels[item.status]} />
-                    <span className="text-[10px] font-bold uppercase text-[var(--color-ink-muted)]">
-                      {statusLabels[item.status]}
-                    </span>
-                  </div>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style.bg} ${style.text}`}>
+                    <StatusIcon size={10} className="flex-shrink-0" />
+                    {statusLabels[item.status]}
+                  </span>
                   
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onCopyLink(item.id); }}
-                      className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
-                    >
-                      <Copy size={12} /> Copy
-                    </button>
+                  {!isVoid && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onDownload(item.id); }}
                       className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
                     >
-                      <Download size={12} /> PDF
+                      <Download size={13} />
                     </button>
-                  </div>
+                  )}
                 </div>
               </div>
             );
@@ -276,8 +293,10 @@ export default function ContractsTable({
               cell: ({ row }) => {
                 const c = row.original;
                 const style = statusStyles[c.status] || statusStyles.draft;
+                const StatusIcon = statusIcons[c.status] || FileText;
                 return (
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style.bg} ${style.text}`}>
+                    <StatusIcon size={10} className="flex-shrink-0" />
                     {statusLabels[c.status] || c.status}
                   </span>
                 );

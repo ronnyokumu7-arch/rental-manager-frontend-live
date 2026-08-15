@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Receipt, CreditCard, Banknote, Upload, FileText, RotateCcw, ExternalLink, Download, Copy } from "lucide-react";
+import { Receipt, CreditCard, Banknote, Upload, FileText, RotateCcw, ExternalLink, Download, CalendarDays, User } from "lucide-react";
 import DataTable, { RowAction } from "@/components/ui/DataTable";
 import CardGrid from "@/components/ui/CardGrid";
 import type { Payment, PaymentMethod, PaymentStatus } from "@/lib/types";
@@ -34,6 +34,17 @@ const getStatusStyle = (status: PaymentStatus) => {
     case "pending": return { bg: "bg-[var(--color-warning-bg)]", text: "text-[var(--color-warning-text)]" };
     case "void": return { bg: "bg-[var(--color-surface-hover)]", text: "text-[var(--color-ink-muted)]" };
     default: return { bg: "bg-[var(--color-surface-hover)]", text: "text-[var(--color-ink-muted)]" };
+  }
+};
+
+// ✅ Solid, saturated dot colors so the status pops on dark mode
+const getStatusDotColor = (status: PaymentStatus) => {
+  switch (status) {
+    case "completed": return "bg-emerald-500";
+    case "failed": return "bg-rose-500";
+    case "pending": return "bg-amber-500";
+    case "void": return "bg-gray-400";
+    default: return "bg-gray-400";
   }
 };
 
@@ -72,7 +83,7 @@ export default function PaymentsTable({
     if (onDownloadPdf) {
       actions.push({
         label: "Download PDF",
-        icon: FileText,
+        icon: Download,
         variant: "default",
         onClick: () => onDownloadPdf(payment.id),
       });
@@ -93,109 +104,103 @@ export default function PaymentsTable({
 
   return (
     <div className="w-full">
-      {/* ✅ MOBILE: Reusable CardGrid (simplified, non-collapsible) */}
+      {/* ✅ MOBILE: Reusable CardGrid */}
       <div className="block md:hidden">
-        <CardGrid<Payment> // ✅ FIXED: Explicitly pass Payment generic type
+        <CardGrid<Payment>
           data={data}
           getCardId={(payment) => payment.id}
-          // ✅ FIXED: Removed deprecated getCardTitle prop
           
-          // Header: Icon + Invoice Ref + Client Name
+          // Header: Icon + Invoice Ref + User icon + Client Name (full, sentence case) + Status dot
           renderCardHeader={({ item }) => {
             const invoiceRef = (item as any).invoice?.invoice_number || (item as any).invoice_number || `Invoice #${item.invoice_id || "N/A"}`;
             const clientName = (item as any).client?.full_name || (item as any).client_name || "Unknown Client";
+            const dotColor = getStatusDotColor(item.status);
+            
             return (
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
-                  <Receipt size={18} />
+              <div className="flex items-center justify-between w-full min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
+                    <Receipt size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-bold text-[var(--color-ink)] truncate leading-tight">
+                      {invoiceRef}
+                    </h4>
+                    {/* ✅ Client name: correct location (header subtitle), full, sentence case */}
+                    <p className="flex items-center gap-1 text-xs text-[var(--color-ink-muted)] mt-0.5 font-medium min-w-0">
+                      <User size={10} className="flex-shrink-0 text-[var(--color-ink-subtle)]" />
+                      <span className="truncate">{clientName}</span>
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h4 className="text-sm font-bold text-[var(--color-ink)] truncate leading-tight">
-                    {invoiceRef}
-                  </h4>
-                  <p className="text-xs text-[var(--color-ink-muted)] truncate mt-0.5 font-medium">
-                    {clientName}
-                  </p>
+                
+                {/* ✅ Status dot only (no caption), right next to ⋮ menu */}
+                <div className="relative flex-shrink-0 ml-2">
+                  <span
+                    className={`block w-2.5 h-2.5 rounded-full ${dotColor}`}
+                    title={statusLabels[item.status]}
+                  />
                 </div>
               </div>
             );
           }}
           
-          // Body: All content in one clean section
+          // Body: captions + inline icons, method pill + RECEIPT
           renderCardBody={({ item }) => {
             const date = item.paid_at ? new Date(item.paid_at) : new Date(item.created_at);
             const methodStyle = getMethodStyle(item.method);
             const MethodIcon = getMethodIcon(item.method);
-            const statusStyle = getStatusStyle(item.status);
             
             return (
-              <div className="space-y-3">
-                {/* Amount + Date */}
+              <div className="space-y-2.5">
+                {/* Captions on top, icons inline with the values */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Amount</p>
-                    <p className="text-sm font-bold text-[var(--color-ink)] mt-0.5 tabular-nums">
-                      {item.currency_code || "KES"} {Number(item.amount).toLocaleString()}
-                    </p>
+                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Total Amount</p>
+                    <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                      <Banknote size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                      <span className="text-sm font-bold text-[var(--color-ink)] tabular-nums truncate">
+                        {item.currency_code || "KES"} {Number(item.amount).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Date</p>
-                    <p className="text-xs text-[var(--color-ink-muted)] mt-0.5">
-                      {formatDate(date)}
-                    </p>
+                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Date Received</p>
+                    <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                      <CalendarDays size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                      <span className="text-xs font-medium text-[var(--color-ink-muted)] tabular-nums">
+                        {formatDate(date)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Payment Method */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">Method:</span>
+                {/* Method pill (no caption) + RECEIPT-only quick action */}
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--color-surface-border)]/40">
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${methodStyle.bg} ${methodStyle.text}`}>
-                    <MethodIcon size={10} />
+                    <MethodIcon size={10} className="flex-shrink-0" />
                     {item.method}
                   </span>
-                </div>
-
-                {/* Status Dot + Quick Actions */}
-                <div className="flex items-center justify-between pt-2 border-t border-[var(--color-surface-border)]/40">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2.5 h-2.5 rounded-full ${statusStyle.bg.replace('/10', '')}`} title={statusLabels[item.status]} />
-                    <span className="text-[10px] font-bold uppercase text-[var(--color-ink-muted)]">
-                      {statusLabels[item.status]}
-                    </span>
-                  </div>
                   
-                  <div className="flex items-center gap-2">
-                    {onDownloadPdf && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onDownloadPdf(item.id); }}
-                        className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
-                      >
-                        <Download size={12} /> PDF
-                      </button>
-                    )}
-                    {onExportCsv && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onExportCsv(item.id); }}
-                        className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
-                      >
-                        <Copy size={12} /> CSV
-                      </button>
-                    )}
-                  </div>
+                  {onDownloadPdf && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDownloadPdf(item.id); }}
+                      className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
+                    >
+                      <Download size={13} />
+                    </button>
+                  )}
                 </div>
               </div>
             );
           }}
           
-          // ✅ Row actions (3-dots menu) - correctly targeted via portal
           rowActions={getPaymentActions}
-          
-          // Pagination - using same pageSize as desktop for consistency
           currentPage={1}
           totalPages={1}
           totalItems={data.length}
           pageSize={3}
-          onPageChange={() => {}} // No pagination on mobile for now
+          onPageChange={() => {}}
         />
       </div>
 
@@ -276,7 +281,7 @@ export default function PaymentsTable({
                 const payment = row.original;
                 const clientName = (payment as any).client?.full_name || (payment as any).client_name || "Unknown Client";
                 const clientId = (payment as any).client?.id || (payment as any).client_id;
-                
+
                 return clientId ? (
                   <button
                     onClick={(e) => {
@@ -290,7 +295,7 @@ export default function PaymentsTable({
                     <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ) : (
-                  <span className="text-sm text-[var(--color-ink-muted)] italic">Unknown</span>
+                  <span className="text-sm text-[var(--color-ink-muted)] italic">{clientName}</span>
                 );
               },
             },
@@ -322,12 +327,10 @@ export default function PaymentsTable({
               },
             },
           ]}
-          // ✅ Row actions (3-dots menu) - correctly targeted via portal
           rowActions={getPaymentActions}
           getRowId={(payment) => payment.id}
           loading={false}
           emptyMessage="No payments found"
-          // Pagination props - handled by parent PaymentsTab
           currentPage={1}
           totalPages={1}
           totalItems={data.length}
