@@ -26,7 +26,7 @@ const HEADER_COPY: Record<SubTab, { title: string; description: string; icon: Lu
   },
   bookings: {
     title: "Upcoming Bookings",
-    description: "Track pickups and drop-offs before they happen",
+    description: "Track latests trips & late returns",
     icon: Calendar,
     iconClassName: "scale-y-90",
   },

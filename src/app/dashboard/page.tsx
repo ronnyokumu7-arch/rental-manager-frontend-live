@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from "react";
-// ❌ Removed: import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Activity, BarChart3,
   TrendingUp, Clock, CheckCircle2, Wrench, Landmark, AlertCircle, Wallet, ArrowUpRight, ArrowDownRight
@@ -18,64 +17,79 @@ const TABS = [
   { id: "reports", label: "Analytics", icon: BarChart3 },
 ];
 
+/* ── Forex-style zigzag sparkline ── */
+function TrendSparkline({ positive }: { positive: boolean }) {
+  const path = positive
+    ? "M0,24 L14,20 L28,23 L42,15 L56,18 L70,10 L84,13 L100,6"
+    : "M0,8 L14,12 L28,9 L42,17 L56,14 L70,22 L84,19 L100,26";
+  const color = positive ? "var(--color-success)" : "var(--color-danger)";
+  return (
+    <svg viewBox="0 0 100 32" className="w-24 h-8" preserveAspectRatio="none" fill="none">
+      <path d={path} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="100" cy={positive ? 6 : 26} r="2.5" fill={color} />
+    </svg>
+  );
+}
+
+/* ── Compact card: icon + digits side-by-side, with label + subtext caption ── */
+function MiniStat({ label, value, subtext, icon: Icon, iconClass }: {
+  label: string; value: string; subtext?: string; icon: LucideIcon; iconClass: string;
+}) {
+  return (
+    <div className="flex items-start gap-2.5 min-w-0">
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${iconClass}`}>
+        <Icon size={16} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm sm:text-base font-extrabold tracking-tight text-[var(--color-ink)] tabular-nums break-words leading-tight">
+          {value}
+        </p>
+        <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] truncate">
+          {label}
+        </p>
+        {subtext && (
+          <p className="text-[9px] sm:text-[10px] text-[var(--color-ink-subtle)] truncate mt-0.5">
+            {subtext}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Desktop stat card ── */
 function StatCard({
-  label,
-  value,
-  subtext,
-  subtextColor,
-  icon: Icon,
-  iconClass,
-  trend,
-  size = "default",
+  label, value, subtext, subtextColor, icon: Icon, iconClass, trend, size = "default",
 }: {
-  label: string;
-  value: string;
-  subtext?: string;
-  subtextColor?: string;
-  icon: LucideIcon;
-  iconClass: string;
-  trend?: { value: string; positive: boolean };
+  label: string; value: string; subtext?: string; subtextColor?: string;
+  icon: LucideIcon; iconClass: string; trend?: { value: string; positive: boolean };
   size?: "default" | "compact";
 }) {
   const isCompact = size === "compact";
-  
   return (
-    <div className={`flex items-center gap-3 lg:gap-4 ${isCompact ? 'gap-2 lg:gap-3' : ''}`}>
+    <div className={`flex items-center gap-3 lg:gap-4 ${isCompact ? "gap-2 lg:gap-3" : ""}`}>
       <div className={`rounded-xl flex items-center justify-center shrink-0 ${iconClass} ${
-        isCompact ? 'w-9 h-9 lg:w-11 lg:h-11' : 'w-10 h-10 lg:w-11 lg:h-11'
+        isCompact ? "w-9 h-9 lg:w-11 lg:h-11" : "w-10 h-10 lg:w-11 lg:h-11"
       }`}>
         <Icon size={isCompact ? 17 : 19} />
       </div>
       <div className="min-w-0 flex-1">
         <p className={`font-extrabold tracking-tight text-[var(--color-ink)] tabular-nums truncate ${
-          isCompact ? 'text-lg lg:text-2xl' : 'text-xl lg:text-2xl'
-        }`}>
-          {value}
-        </p>
+          isCompact ? "text-lg lg:text-2xl" : "text-xl lg:text-2xl"
+        }`}>{value}</p>
         <p className={`font-bold sentencecase tracking-wider text-[var(--color-ink-muted)] truncate ${
-          isCompact ? 'text-[9px] lg:text-[11px]' : 'text-[10px] lg:text-[11px]'
-        }`}>
-          {label}
-        </p>
+          isCompact ? "text-[9px] lg:text-[11px]" : "text-[10px] lg:text-[11px]"
+        }`}>{label}</p>
         {subtext && (
-          <p className={`mt-0.5 truncate ${
-            isCompact ? 'text-[9px]' : 'text-[10px]'
-          } ${
-            subtextColor ||
-            (trend ? (trend.positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400') : 'text-[var(--color-ink-subtle)]')
-          }`}>
-            {subtext}
-          </p>
+          <p className={`mt-0.5 truncate ${isCompact ? "text-[9px]" : "text-[10px]"} ${
+            subtextColor || (trend ? (trend.positive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400") : "text-[var(--color-ink-subtle)]")
+          }`}>{subtext}</p>
         )}
         {trend && (
-          <div className={`mt-0.5 flex items-center gap-1 ${
-            isCompact ? 'text-[9px]' : 'text-[10px]'
-          } ${trend.positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-            {trend.positive ? (
-              <ArrowUpRight size={12} className="font-bold" />
-            ) : (
-              <ArrowDownRight size={12} className="font-bold" />
-            )}
+          <div className={`mt-0.5 flex items-center gap-1 ${isCompact ? "text-[9px]" : "text-[10px]"} ${
+            trend.positive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+          }`}>
+            {trend.positive ? <ArrowUpRight size={12} className="font-bold" /> : <ArrowDownRight size={12} className="font-bold" />}
             <span className="font-bold">{trend.value}</span>
             <span className="text-[var(--color-ink-subtle)]">vs last month</span>
           </div>
@@ -86,7 +100,6 @@ function StatCard({
 }
 
 export default function DashboardPage() {
-  // ❌ Removed: const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
   const { loading, stats, alerts, vehicles } = useDashboard();
 
@@ -100,13 +113,15 @@ export default function DashboardPage() {
 
   const successfulContracts = stats.completedBookings || 0;
   const appCommission = successfulContracts * 150;
-  const lastMonthRevenue = stats.mtdRevenue * 0.85; 
+
+  const lastMonthRevenue = stats.mtdRevenue * 0.85;
   const monthOverMonthChange = stats.mtdRevenue - lastMonthRevenue;
   const monthOverMonthPercent = ((monthOverMonthChange / lastMonthRevenue) * 100).toFixed(1);
   const isPositiveGrowth = monthOverMonthChange > 0;
 
   return (
     <div className="space-y-6 relative">
+      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
@@ -115,9 +130,7 @@ export default function DashboardPage() {
             </div>
             Dashboard
           </h1>
-          <p className="text-sm text-[var(--color-ink-muted)] mt-1">
-            Real-time overview of your rental business
-          </p>
+          <p className="text-sm text-[var(--color-ink-muted)] mt-1">Real-time overview of your rental business</p>
         </div>
 
         <div className="hidden lg:flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
@@ -129,8 +142,7 @@ export default function DashboardPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                  isActive
-                    ? "bg-[var(--color-primary)] text-white shadow-sm"
+                  isActive ? "bg-[var(--color-primary)] text-white shadow-sm"
                     : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
                 }`}
               >
@@ -144,8 +156,12 @@ export default function DashboardPage() {
 
       {activeTab === "overview" && (
         <div className="space-y-6 animate-in fade-in duration-300">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-            <div className="col-span-2 lg:col-span-1">
+
+          {/* ✅ MONEY GRID */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 mb-8">
+
+            {/* Total Revenue — desktop only */}
+            <div className="hidden lg:block col-span-1">
               <StatCard
                 label="Total Revenue"
                 value={`KES ${(stats.totalRevenue || 0).toLocaleString()}`}
@@ -155,36 +171,62 @@ export default function DashboardPage() {
                 iconClass="bg-gradient-to-br from-emerald-500/20 to-teal-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
               />
             </div>
-            
-            <div className="col-span-1">
+
+            {/* This Month — desktop compact */}
+            <div className="hidden lg:block col-span-1">
               <StatCard
                 label="This Month"
                 value={`KES ${stats.mtdRevenue.toLocaleString()}`}
                 subtext={`Last month: KES ${lastMonthRevenue.toLocaleString()}`}
                 icon={TrendingUp}
                 iconClass="bg-gradient-to-br from-amber-500/20 to-orange-600/20 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                trend={{ 
-                  value: `${isPositiveGrowth ? '+' : ''}${monthOverMonthPercent}%`, 
-                  positive: isPositiveGrowth 
-                }}
+                trend={{ value: `${isPositiveGrowth ? "+" : ""}${monthOverMonthPercent}%`, positive: isPositiveGrowth }}
                 size="compact"
               />
             </div>
-            
+
+            {/* ✅ This Month — MOBILE hero */}
+            <div className="col-span-2 lg:hidden">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
+                  <TrendingUp size={16} />
+                </div>
+                <p className="text-xl font-extrabold tracking-tight text-[var(--color-ink)] tabular-nums whitespace-nowrap">
+                  KES {stats.mtdRevenue.toLocaleString()}
+                </p>
+                <span className={`flex items-center gap-0.5 text-[11px] font-extrabold shrink-0 ${
+                  isPositiveGrowth ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                }`}>
+                  {isPositiveGrowth ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                  {monthOverMonthPercent}%
+                </span>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between gap-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)]">This Month</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <TrendSparkline positive={isPositiveGrowth} />
+                  <span className="text-[9px] font-bold text-[var(--color-ink-subtle)] tabular-nums whitespace-nowrap">
+                    Last: KES {lastMonthRevenue.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ Pending Payments — icon + digits side-by-side + caption */}
             <div className="col-span-1">
-              <StatCard
+              <MiniStat
                 label="Pending Payments"
                 value={`KES ${(stats.pendingPayments || 0).toLocaleString()}`}
                 subtext="Awaiting collection"
                 icon={AlertCircle}
                 iconClass="bg-gradient-to-br from-rose-500/20 to-red-600/20 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                size="compact"
               />
             </div>
 
-            <div className="hidden lg:block col-span-1">
-              <StatCard
-                label="App Commission"
+            {/* ✅ App Commission — icon + digits side-by-side + caption */}
+            <div className="col-span-1">
+              <MiniStat
+                label="App Comm"
                 value={`KES ${appCommission.toLocaleString()}`}
                 subtext={`${successfulContracts} successful contracts`}
                 icon={Wallet}
@@ -193,22 +235,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="lg:hidden mb-8">
-            <StatCard
-              label="App Commission"
-              value={`KES ${appCommission.toLocaleString()}`}
-              subtext={`${successfulContracts} contracts`}
-              icon={Wallet}
-              iconClass="bg-gradient-to-br from-blue-500/20 to-indigo-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20"
-            />
-          </div>
-
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 min-w-0">
               <ActionCenterWidget />
             </div>
 
             <div className="space-y-6 min-w-0">
+              {/* Fleet Health */}
               <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -256,6 +289,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
+              {/* Needs Attention */}
               <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-[11px] font-bold text-[var(--color-ink-muted)] sentencecase tracking-wider">Needs Attention</p>
@@ -313,9 +347,7 @@ export default function DashboardPage() {
             <div className="w-16 h-16 rounded-2xl bg-[var(--color-primary-muted)] flex items-center justify-center mb-4">
               <BarChart3 size={32} className="text-[var(--color-primary-text)]" />
             </div>
-            <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">
-              Reports & Analytics
-            </h3>
+            <h3 className="text-lg font-bold text-[var(--color-ink)] mb-2">Reports & Analytics</h3>
             <p className="text-sm text-[var(--color-ink-muted)] max-w-md">
               Deep dive into your revenue, fleet utilization, and client retention metrics. This module is currently under development.
             </p>
