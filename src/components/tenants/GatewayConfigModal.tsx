@@ -4,7 +4,7 @@
 import { useState } from "react";
 import {
   CreditCard, Smartphone, Building2, DollarSign, X, Loader2,
-  CheckCircle2, AlertTriangle, Eye, EyeOff, Zap, ShieldCheck,
+  CheckCircle2, AlertTriangle, Eye, EyeOff, Zap, ShieldCheck, Hash, Globe, User, Phone, Info,
 } from "lucide-react";
 import type {
   PaymentGatewayConfig,
@@ -16,10 +16,9 @@ import type {
 /**
  * @component GatewayConfigModal
  * @description 
- * A "dumb" (presentational) modal for creating/editing a payment gateway.
- * It does NOT call the API directly. Instead, it delegates all data operations 
- * to the parent via `onSave` / `onTest` callbacks, making it fully reusable 
- * across Super Admin and Tenant contexts.
+ * A "dumb" (presentational) modal for creating/editing a SINGLE payment gateway.
+ * Provider selection happens on the parent page (Available Methods grid); this
+ * modal only shows the configuration form for the gateway it was opened for.
  * 
  * Mobile Optimization: Bottom sheet pattern with internal scrolling on mobile,
  * centered modal on desktop.
@@ -39,9 +38,9 @@ const GATEWAY_META: Record<string, {
 }> = {
   mpesa: {
     icon: Smartphone, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20",
-    title: "M-Pesa Daraja API",
-    description: "Integrate Safaricom's Lipa Na M-Pesa Online (STK Push) for seamless mobile money collections.",
-    requirements: ["Daraja Developer Account", "Production Credentials", "B2C Shortcode"],
+    title: "M-Pesa Payments",
+    description: "Configure manual payment details for clients to pay via Paybill, Till Number, or Pochi la Biashara.",
+    requirements: ["Paybill or Till Number", "Account Reference", "Business Name"],
   },
   airtel_money: {
     icon: Smartphone, color: "text-red-400", bg: "bg-red-500/10 border-red-500/20",
@@ -69,23 +68,20 @@ const GATEWAY_META: Record<string, {
   },
 };
 
-// ✅ Aligned with backend truth (SENSITIVE_FIELDS + required_fields in payment_gateways.py)
-const GATEWAY_FIELDS: Record<string, Array<{ key: string; label: string; placeholder: string; type?: string }>> = {
-  mpesa: [
-    { key: "consumer_key", label: "Consumer Key", placeholder: "Enter Consumer Key" },
-    { key: "consumer_secret", label: "Consumer Secret", placeholder: "Enter Consumer Secret", type: "password" },
-    { key: "passkey", label: "Lipa Na M-Pesa Passkey", placeholder: "Enter Passkey", type: "password" },
-    { key: "shortcode", label: "Business Shortcode", placeholder: "e.g., 174379" },
-  ],
+// ✅ Aligned with backend truth (SENSITIVE_FIELDS + model columns)
+const GATEWAY_FIELDS: Record<string, Array<{ key: string; label: string; placeholder: string; type?: string; icon?: any }>> = {
   airtel_money: [
     { key: "api_key", label: "API Key", placeholder: "Enter API Key", type: "password" },
     { key: "api_secret", label: "API Secret", placeholder: "Enter API Secret", type: "password" },
     { key: "merchant_code", label: "Merchant Code", placeholder: "Enter Merchant Code" },
   ],
   bank: [
-    { key: "bank_name", label: "Bank Name", placeholder: "e.g., Equity Bank" },
-    { key: "account_number", label: "Account Number", placeholder: "Enter Account Number" },
-    { key: "branch_code", label: "Branch Code", placeholder: "Enter Branch Code" },
+    { key: "bank_name", label: "Bank Name", placeholder: "e.g., Equity Bank, KCB", icon: Building2 },
+    { key: "account_name", label: "Account Name", placeholder: "e.g., Rental Garage Ltd", icon: User },
+    { key: "account_number", label: "Account Number", placeholder: "Enter Account Number", icon: Hash },
+    { key: "branch_code", label: "Branch Code (Optional)", placeholder: "e.g., 01 or 123", icon: Hash },
+    { key: "swift_code", label: "SWIFT / BIC Code (Optional)", placeholder: "e.g., EQBLKENX", icon: Globe },
+    { key: "currency", label: "Currency", placeholder: "e.g., KES, USD, EUR", icon: DollarSign },
   ],
   stripe: [
     { key: "publishable_key", label: "Publishable Key", placeholder: "pk_live_..." },
@@ -98,6 +94,31 @@ const GATEWAY_FIELDS: Record<string, Array<{ key: string; label: string; placeho
   ],
 };
 
+// ✅ M-Pesa method-specific fields (aligned with backend model columns)
+type MpesaMethod = "paybill" | "till" | "pochi";
+
+const MPESA_METHODS: { key: MpesaMethod; label: string; description: string }[] = [
+  { key: "paybill", label: "Paybill", description: "Clients pay to your Paybill number with an account reference" },
+  { key: "till", label: "Till Number", description: "Clients pay directly to your Buy Goods Till Number" },
+  { key: "pochi", label: "Pochi la Biashara", description: "Clients send money to your Pochi number" },
+];
+
+const MPESA_METHOD_FIELDS: Record<MpesaMethod, Array<{ key: string; label: string; placeholder: string; icon?: any; type?: string; }>> = {
+  paybill: [
+    { key: "business_shortcode", label: "Paybill Number", placeholder: "e.g., 522522", icon: Hash },
+    { key: "account_number", label: "Account Reference", placeholder: "e.g., RENT123", icon: Hash },
+    { key: "account_name", label: "Account Name", placeholder: "e.g., Rental Garage Ltd", icon: User },
+  ],
+  till: [
+    { key: "till_number", label: "Till Number", placeholder: "e.g., 123456", icon: Hash },
+    { key: "account_name", label: "Business Name", placeholder: "e.g., Rental Garage Ltd", icon: User },
+  ],
+  pochi: [
+    { key: "till_number", label: "Pochi Number", placeholder: "e.g., 0712345678", icon: Phone },
+    { key: "account_name", label: "Account Name", placeholder: "e.g., Rental Garage Ltd", icon: User },
+  ],
+};
+
 export function GatewayConfigModal({
   gatewayType,
   existingConfig,
@@ -107,18 +128,22 @@ export function GatewayConfigModal({
   onSave,
   onTest,
 }: GatewayConfigModalProps) {
-  const [selectedType, setSelectedType] = useState(gatewayType || "mpesa");
   const [environment, setEnvironment] = useState<GatewayEnvironment>(
     (existingConfig?.environment as GatewayEnvironment) || "sandbox"
   );
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  
+  // ✅ M-Pesa method type state (paybill/till/pochi)
+  const [mpesaMethod, setMpesaMethod] = useState<MpesaMethod>(
+    (existingConfig?.method_type as MpesaMethod) || "paybill"
+  );
 
-  // ✅ FIXED: Proper lazy initializer (prevents setState-during-render anti-pattern)
+  // ✅ Proper lazy initializer (prevents setState-during-render anti-pattern)
   const [formData, setFormData] = useState<Record<string, string>>(() => {
     if (!existingConfig) return {};
     const initialData: Record<string, string> = {};
     Object.keys(existingConfig).forEach((key) => {
-      if (!["id", "tenant_id", "type", "is_active", "environment"].includes(key)) {
+      if (!["id", "tenant_id", "type", "is_active", "environment", "method_type"].includes(key)) {
         const val = (existingConfig as any)[key];
         initialData[key] = typeof val === "string" ? val : "";
       }
@@ -134,22 +159,27 @@ export function GatewayConfigModal({
     setShowPasswords((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // ✅ FIXED: In create mode, the in-modal provider selector is now the source of
-  // truth, so tenants can switch providers without closing the modal.
-  // `gatewayType` is only the INITIAL value (passed to useState above).
-  // Edit mode stays locked to the existing config's type.
-  const activeType = existingConfig ? existingConfig.type : selectedType;
+  // ✅ The modal is ALWAYS scoped to a single gateway:
+  // - Edit mode: locked to the existing config's type.
+  // - Create mode: locked to the gatewayType chosen on the parent page.
+  const activeType = existingConfig ? existingConfig.type : (gatewayType || "mpesa");
 
-  // Derived UI config for the active provider (declared early so handlers can use it)
-  const currentFields = GATEWAY_FIELDS[activeType] || [];
+  // ✅ Dynamic fields based on active type and M-Pesa method
+  const currentFields = activeType === "mpesa" 
+    ? MPESA_METHOD_FIELDS[mpesaMethod] 
+    : (GATEWAY_FIELDS[activeType] || []);
   const meta = GATEWAY_META[activeType] || GATEWAY_META.mpesa;
 
   // ✅ SAFETY: Build the payload ONLY from the fields currently displayed for the
   // active provider. This prevents stale values from a previously-selected
-  // provider (e.g., consumer_key) from being sent to the wrong gateway model,
-  // which would crash the backend's ModelClass(**payload) constructor.
+  // provider from being sent to the wrong gateway model.
   const buildPayload = (): PaymentGatewayPayload => {
     const payload: PaymentGatewayPayload = { environment };
+    
+    if (activeType === "mpesa") {
+      payload.method_type = mpesaMethod;
+    }
+    
     currentFields.forEach((field) => {
       const value = formData[field.key];
       if (value !== undefined && value.trim() !== "") {
@@ -173,17 +203,6 @@ export function GatewayConfigModal({
       onClose(); // Only close on success
     } catch {
       // Error is already toasted by the hook; keep modal open for retry
-    }
-  };
-
-  const getIconForType = (type: string) => {
-    switch (type) {
-      case "mpesa": return Smartphone;
-      case "airtel_money": return Smartphone;
-      case "bank": return Building2;
-      case "stripe": return CreditCard;
-      case "paypal": return DollarSign;
-      default: return CreditCard;
     }
   };
 
@@ -229,30 +248,31 @@ export function GatewayConfigModal({
         {/* Body - Scrollable middle region */}
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           
-          {/* Gateway Selector */}
-          {!existingConfig && (
+          {/* ✅ M-Pesa Method Tabs (the ONLY tabs left — they are M-Pesa-specific) */}
+          {activeType === "mpesa" && (
             <div>
               <label className="text-xs font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-3 block">
-                Select Provider
+                Payment Method
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                {Object.keys(GATEWAY_FIELDS).map((type) => {
-                  const TIcon = getIconForType(type);
-                  const isSelected = selectedType === type;
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {MPESA_METHODS.map((method) => {
+                  const isSelected = mpesaMethod === method.key;
                   return (
                     <button
-                      key={type}
+                      key={method.key}
                       type="button"
-                      onClick={() => setSelectedType(type)}
+                      onClick={() => setMpesaMethod(method.key)}
                       className={`
-                        flex flex-col items-center gap-1.5 sm:gap-2 p-2.5 sm:p-3 rounded-xl border text-[10px] font-semibold capitalize transition-all
+                        flex flex-col items-center gap-1.5 p-3 rounded-xl border text-[10px] font-semibold transition-all
                         ${isSelected 
                           ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] ring-1 ring-[var(--color-primary)]" 
                           : "border-[var(--color-surface-border)] text-[var(--color-ink-muted)] hover:border-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-hover)]"}
                       `}
                     >
-                      <TIcon size={16} />
-                      <span className="text-[10px] sm:text-[10px]">{type.replace("_", " ")}</span>
+                      <span className="text-xs font-bold">{method.label}</span>
+                      <span className="text-[9px] text-[var(--color-ink-subtle)] text-center line-clamp-2">
+                        {method.description}
+                      </span>
                     </button>
                   );
                 })}
@@ -260,36 +280,39 @@ export function GatewayConfigModal({
             </div>
           )}
 
-          {/* Environment Toggle */}
-          <div>
-            <label className="text-xs font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-2 block">
-              Environment Mode
-            </label>
-            <div className="flex bg-[var(--color-surface-hover)] rounded-lg p-1 border border-[var(--color-surface-border)]">
-              {(["sandbox", "production"] as const).map((env) => (
-                <button
-                  key={env}
-                  type="button"
-                  onClick={() => setEnvironment(env)}
-                  className={`
-                    flex-1 py-2.5 sm:py-2 px-2 sm:px-3 rounded-md text-xs font-bold capitalize transition-all flex items-center justify-center gap-1.5 sm:gap-2
-                    ${environment === env 
-                      ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-sm ring-1 ring-black/5" 
-                      : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"}
-                  `}
-                >
-                  {env === "production" && <Zap size={12} className={environment === env ? "text-amber-500" : ""} />}
-                  {env}
-                </button>
-              ))}
+          {/* Environment Toggle - Only for API-based gateways */}
+          {activeType !== "mpesa" && (
+            <div>
+              <label className="text-xs font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-2 block">
+                Environment Mode
+              </label>
+              <div className="flex bg-[var(--color-surface-hover)] rounded-lg p-1 border border-[var(--color-surface-border)]">
+                {(["sandbox", "production"] as const).map((env) => (
+                  <button
+                    key={env}
+                    type="button"
+                    onClick={() => setEnvironment(env)}
+                    className={`
+                      flex-1 py-2.5 sm:py-2 px-2 sm:px-3 rounded-md text-xs font-bold capitalize transition-all flex items-center justify-center gap-1.5 sm:gap-2
+                      ${environment === env 
+                        ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-sm ring-1 ring-black/5" 
+                        : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"}
+                    `}
+                  >
+                    {env === "production" && <Zap size={12} className={environment === env ? "text-amber-500" : ""} />}
+                    {env}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Dynamic Grid For Inputs - Single column on mobile */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {currentFields.map((field) => {
               const isPassword = field.type === "password";
               const isVisible = showPasswords[field.key];
+              const FieldIcon = field.icon;
               
               return (
                 <div key={field.key}>
@@ -304,6 +327,11 @@ export function GatewayConfigModal({
                       placeholder={field.placeholder}
                       className="w-full px-3.5 sm:px-4 py-2.5 pr-10 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 focus:border-[var(--color-primary)] transition-all"
                     />
+                    {FieldIcon && (
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none">
+                        <FieldIcon size={16} />
+                      </div>
+                    )}
                     {isPassword && (
                       <button
                         type="button"
@@ -319,25 +347,35 @@ export function GatewayConfigModal({
             })}
           </div>
 
-          {/* Test Connection & Security Note Row - Stack on mobile */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pt-2">
-            <button
-              type="button"
-              onClick={handleTestConnection}
-              disabled={isTesting || isSaving}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 transition-colors disabled:opacity-50"
-            >
-              {isTesting ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-              {isTesting ? "Testing Connection..." : "Test Connection"}
-            </button>
-            
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 flex-1">
-              <AlertTriangle size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
-              <p className="text-[10px] text-amber-600/80 leading-relaxed">
-                Credentials are encrypted at rest. Use Sandbox mode for testing before switching to Production.
+          {/* Footer Note / Test Connection Row */}
+          {activeType === "mpesa" ? (
+            // ✅ Manual M-Pesa: no API to test — show a helpful note instead
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+              <Info size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+              <p className="text-[10px] text-emerald-600/80 leading-relaxed">
+                These details are shown to your clients on invoices with step-by-step payment instructions. No API connection is required.
               </p>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pt-2">
+              <button
+                type="button"
+                onClick={handleTestConnection}
+                disabled={isTesting || isSaving}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 transition-colors disabled:opacity-50"
+              >
+                {isTesting ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                {isTesting ? "Testing Connection..." : "Test Connection"}
+              </button>
+              
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 flex-1">
+                <AlertTriangle size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-600/80 leading-relaxed">
+                  Credentials are encrypted at rest. Use Sandbox mode for testing before switching to Production.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer - Pinned at bottom */}

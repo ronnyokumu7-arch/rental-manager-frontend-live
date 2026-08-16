@@ -25,12 +25,18 @@ export default function PublicInvoicePage() {
   const pd = invoice?.payment_details ?? null;
   const tenantPhone = invoice?.tenant_phone ?? null;
 
-  const hasPaybill = !!pd?.mpesa_paybill;
-  const hasTill = !!pd?.mpesa_till;
-  const hasPochi = !!pd?.mpesa_pochi;
-  const hasSendMoney = !!pd?.mpesa_number || !!tenantPhone; // safe default: profile phone
+  // ✅ M-Pesa logic based on the new `method_type` column
+  const mpesaMethod = pd?.method_type;
+  const hasPaybill = mpesaMethod === "paybill" && !!pd?.business_shortcode;
+  const hasTill = mpesaMethod === "till" && !!pd?.till_number;
+  const hasPochi = mpesaMethod === "pochi" && !!pd?.till_number;
+  
+  // ✅ Fallback (Your code already nailed this!)
+  const hasSendMoney = !!pd?.mpesa_number || !!tenantPhone; 
+  
   const hasAirtel = !!pd?.airtel_number;
-  const hasBank = !!(pd?.bank_name && pd?.bank_account);
+  // ✅ Bank logic based on actual DB columns
+  const hasBank = !!(pd?.bank_name && pd?.account_number);
 
   const availableChannels = useMemo(
     () =>
@@ -272,8 +278,8 @@ export default function PublicInvoicePage() {
                     <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 space-y-1">
                       <p className="font-bold text-emerald-800 mb-2">M-Pesa PayBill Instructions:</p>
                       <p>1. Go to M-Pesa → Lipa na M-Pesa → <span className="font-bold">PayBill</span></p>
-                      <p>2. Business Number: <span className="font-bold">{pd?.mpesa_paybill}</span></p>
-                      <p>3. Account Number: <span className="font-bold">{pd?.mpesa_paybill_account || invoice.invoice_number}</span></p>
+                      <p>2. Business Number: <span className="font-bold">{pd?.business_shortcode}</span></p>
+                      <p>3. Account Number: <span className="font-bold">{pd?.account_number || invoice.invoice_number}</span></p>
                       <p>4. Enter the amount and your M-Pesa PIN, then send.</p>
                     </div>
                   )}
@@ -281,8 +287,16 @@ export default function PublicInvoicePage() {
                     <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 space-y-1">
                       <p className="font-bold text-emerald-800 mb-2">Buy Goods Till Instructions:</p>
                       <p>1. Go to M-Pesa → Lipa na M-Pesa → <span className="font-bold">Buy Goods</span></p>
-                      <p>2. Till Number: <span className="font-bold">{pd?.mpesa_till}</span></p>
+                      <p>2. Till Number: <span className="font-bold">{pd?.till_number}</span></p>
                       <p>3. Enter the amount and your M-Pesa PIN, then send.</p>
+                    </div>
+                  )}
+                  {activeChannel === "pochi" && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 space-y-1">
+                      <p className="font-bold text-emerald-800 mb-2">Pochi la Biashara Instructions:</p>
+                      <p>1. Go to M-Pesa → <span className="font-bold">Pochi la Biashara</span></p>
+                      <p>2. Enter Number: <span className="font-bold">{pd?.till_number}</span></p>
+                      <p>3. Enter the amount and confirm.</p>
                     </div>
                   )}
                   {activeChannel === "pochi" && (
@@ -313,8 +327,10 @@ export default function PublicInvoicePage() {
                     <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg text-xs text-indigo-900 space-y-1">
                       <p className="font-bold text-indigo-800 mb-2">Bank Wire Transfer Details:</p>
                       <p>Bank Name: <span className="font-bold">{pd?.bank_name}</span></p>
-                      <p>Account Name: <span className="font-bold">{pd?.bank_account_name || invoice.tenant_name}</span></p>
-                      <p>Account Number: <span className="font-bold">{pd?.bank_account}</span></p>
+                      <p>Account Name: <span className="font-bold">{pd?.account_name || invoice.tenant_name}</span></p>
+                      <p>Account Number: <span className="font-bold">{pd?.account_number}</span></p>
+                      {pd?.branch_code && <p>Branch Code: <span className="font-bold">{pd?.branch_code}</span></p>}
+                      {pd?.swift_code && <p>SWIFT Code: <span className="font-bold">{pd?.swift_code}</span></p>}
                       <p>Payment Reference: <span className="font-bold">{invoice.invoice_number}</span></p>
                     </div>
                   )}

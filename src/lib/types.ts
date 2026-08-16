@@ -360,6 +360,48 @@ export interface InvoiceUpdate {
   status?: InvoiceStatus;
 }
 
+// ─── Public Invoice Views ────────────────────────────────────────────────────
+export interface PublicPaymentDetails {
+  method_type?: string | null;
+  mpesa_paybill?: string | null;
+  mpesa_paybill_account?: string | null;
+  mpesa_till?: string | null;
+  mpesa_pochi?: string | null;
+  mpesa_number?: string | null;
+  airtel_number?: string | null;
+  
+  bank_name?: string | null;
+  bank_account?: string | null;
+  bank_account_name?: string | null;
+  business_shortcode?: string | null;
+  till_number?: string | null;
+  account_number?: string | null;
+  account_name?: string | null;
+  branch_code?: string | null;
+  swift_code?: string | null;
+}
+
+export interface PublicInvoiceView {
+  id: number;
+  invoice_number: string;
+  tenant_name: string;
+  tenant_logo_url?: string | null;
+  tenant_phone?: string | null;
+  tenant_email?: string | null;
+  client_name: string;
+  client_phone?: string | null;
+  vehicle_name?: string | null;
+  vehicle_description?: string | null;
+  vehicle_plate?: string | null;
+  amount_due: number | string;
+  currency_code: string;
+  status: InvoiceStatus;
+  due_date: string;
+  remaining_balance?: number | string | null;
+  payment_details?: PublicPaymentDetails | null;
+  created_at: string;
+}
+
 // ─── Payments ────────────────────────────────────────────────────────────────
 export type PaymentMethod = "mpesa" | "airtel_money" | "card" | "paypal" | "bank" | "manual";
 export type PaymentStatus = "pending" | "completed" | "failed" | "void";
