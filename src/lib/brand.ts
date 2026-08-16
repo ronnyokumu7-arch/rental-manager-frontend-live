@@ -8,8 +8,8 @@ export const brand = {
     primaryText:   "#3730a3", // Indigo 800
 
     // ── Backgrounds (Light Mode) ──────────────────────────────────────
-    bg:            "#fafafa", // Zinc 50 (App background)
-    surface:       "#ffffff", // Card background
+    bg:            "#F6F6F6", // Zinc 50 (App background)
+    surface:       "#F6F6F6", // Card background
     surfaceHover:  "#f4f4f5", // Zinc 100 (Hover state)
     surfaceBorder: "#e4e4e7", // Zinc 200 (Subtle divider)
     surfaceBorderStrong: "#d4d4d8", // Zinc 300 (Active/Focus)
@@ -18,7 +18,7 @@ export const brand = {
     ink:           "#09090b", // Zinc 950 (Primary text)
     inkMuted:      "#52525b", // Zinc 600 (Secondary text)
     inkSubtle:     "#a1a1aa", // Zinc 400 (Tertiary text)
-    inkInverse:    "#ffffff",
+    inkInverse:    "#F6F6F6",
 
     // ── Semantic Colors (Light Mode) ──────────────────────────────────
     success:       "#10b981", // Emerald 500

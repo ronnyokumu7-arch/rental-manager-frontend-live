@@ -120,7 +120,7 @@ The design system uses a professional, modern navy and blue color scheme:
 | **Accent** | `#64b5f6` | Active menu items, primary buttons |
 | **Accent Light** | `#90caf9` | Hover states on accent elements |
 | **Background** | `#f8f9fc` | Main content area background |
-| **Card** | `#ffffff` | Card backgrounds (light mode) |
+| **Card** | `#F6F6F6` | Card backgrounds (light mode) |
 | **Card Dark** | `#24304a` | Card backgrounds (dark/gradient cards) |
 | **Text** | `#1a1a1a` | Primary text color |
 | **Text Muted** | `#6b7280` | Secondary text, labels |
