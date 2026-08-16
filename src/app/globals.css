@@ -341,8 +341,6 @@ body {
   transition: none !important;
 }
 
-* {
-  transition-property: background-color, border-color, color;
-  transition-duration: 0.15s;
-  transition-timing-function: ease-out;
-}
+/* ✅ FIXED: Removed global * transition that was slowing down the entire app.
+   Transitions are now only applied via Tailwind utility classes (e.g., transition-all)
+   on specific interactive elements like buttons, inputs, and cards. */
