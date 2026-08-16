@@ -226,7 +226,7 @@ export default function DashboardPage() {
             {/* ✅ App Commission — icon + digits side-by-side + caption */}
             <div className="col-span-1">
               <MiniStat
-                label="App Comm"
+                label="App Commission"
                 value={`KES ${appCommission.toLocaleString()}`}
                 subtext={`${successfulContracts} successful contracts`}
                 icon={Wallet}

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { 
   CheckCircle2, UserPlus, Calendar, Clock, ArrowRight,
   Zap, Sparkles, Tag, Loader2, MoreVertical,
-  Play, XCircle, Eye, Car, User, FileText
+  Play, XCircle, Eye, Car, User, FileText, MapPin
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
@@ -19,22 +19,9 @@ import type { Booking } from "@/lib/types";
 type SubTab = "tasks" | "bookings" | "activity";
 
 const HEADER_COPY: Record<SubTab, { title: string; description: string; icon: LucideIcon; iconClassName?: string }> = {
-  tasks: {
-    title: "Active Tasks",
-    description: "What needs your attention today",
-    icon: Zap,
-  },
-  bookings: {
-    title: "Upcoming Bookings",
-    description: "Track latests trips & late returns",
-    icon: Calendar,
-    iconClassName: "scale-y-90",
-  },
-  activity: {
-    title: "Activity Logs",
-    description: "The live pulse of your fleet's latest moves.",
-    icon: Clock,
-  },
+  tasks: { title: "Active Tasks", description: "What needs your attention today", icon: Zap },
+  bookings: { title: "Upcoming Bookings", description: "Track latests trips & late returns", icon: Calendar, iconClassName: "scale-y-90" },
+  activity: { title: "Activity Logs", description: "The live pulse of your fleet's latest moves.", icon: Clock },
 };
 
 const BOOKING_STATUS_META: Record<string, { label: string; badge: string; dot: string }> = {
@@ -51,12 +38,8 @@ const resolveField = (value: any, ...objectKeys: string[]): string => {
   if (!value) return "";
   if (typeof value === "string") return value;
   if (typeof value === "object") {
-    for (const key of objectKeys) {
-      if (value[key]) return String(value[key]);
-    }
-    if (value.make && value.model) {
-      return `${value.make} ${value.model}${value.plate_number ? ` • ${value.plate_number}` : ""}`;
-    }
+    for (const key of objectKeys) if (value[key]) return String(value[key]);
+    if (value.make && value.model) return `${value.make} ${value.model}${value.plate_number ? ` • ${value.plate_number}` : ""}`;
     if (value.full_name) return value.full_name;
     if (value.name) return value.name;
   }
@@ -72,41 +55,38 @@ const rentalDays = (start?: string | null, end?: string | null): number | null =
   return isNaN(d) ? null : Math.max(1, d);
 };
 
+const formatDateFull = (dateStr: string) => {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+};
+
+const formatDateMed = (dateStr: string) => {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+};
+
 const parseTaskTitle = (title: string): { action: string; subject: string | null } => {
   const separators = [' for ', ' with ', ' regarding ', ' on ', ' about '];
-  
   for (const sep of separators) {
     const idx = title.toLowerCase().indexOf(sep.toLowerCase());
-    if (idx !== -1) {
-      return {
-        action: title.substring(0, idx).trim(),
-        subject: title.substring(idx + sep.length).trim()
-      };
-    }
+    if (idx !== -1) return { action: title.substring(0, idx).trim(), subject: title.substring(idx + sep.length).trim() };
   }
-  
   return { action: title, subject: null };
 };
 
 const getSubjectIcon = (subject: string): LucideIcon => {
   const lower = subject.toLowerCase();
-  
-  if (lower.includes('vehicle') || lower.includes('car') || lower.includes('plate') || 
+  if (lower.includes('vehicle') || lower.includes('car') || lower.includes('plate') ||
       lower.includes('toyota') || lower.includes('nissan') || lower.includes('mazda') ||
-      /\b[km][a-z]\d{3}[a-z]\b/i.test(subject)) {
-    return Car;
-  }
-  
+      /\b[km][a-z]\d{3}[a-z]\b/i.test(subject)) return Car;
   if (lower.includes('booking') || lower.includes('rental') || lower.includes('trip') ||
-      lower.includes('reservation') || /^bk-\d+$/i.test(subject)) {
-    return Calendar;
-  }
-  
+      lower.includes('reservation') || /^bk-\d+$/i.test(subject)) return Calendar;
   if (lower.includes('document') || lower.includes('contract') || lower.includes('invoice') ||
-      lower.includes('receipt') || lower.includes('agreement')) {
-    return FileText;
-  }
-  
+      lower.includes('receipt') || lower.includes('agreement')) return FileText;
   return User;
 };
 
@@ -140,9 +120,7 @@ export default function ActionCenterWidget() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchBookings();
-  }, [fetchBookings]);
+  useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
   useEffect(() => {
     const handle = (e: MouseEvent) => {
@@ -172,46 +150,27 @@ export default function ActionCenterWidget() {
     }
   };
 
-  const isOverdue = (dateStr: string) => {
-    if (!dateStr) return false;
-    return new Date(dateStr) < new Date();
-  };
+  const isOverdue = (dateStr: string) => !!dateStr && new Date(dateStr) < new Date();
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "No due date";
     return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  const handleClaimTask = async (rawId: number | string | undefined | null) => {
+  const handleClaimTask = async (rawId: any) => {
     const taskId = Number(rawId);
-    if (!taskId || isNaN(taskId)) {
-      console.error("Attempted to claim task with invalid ID:", rawId);
-      toast.error("Invalid task ID");
-      return;
-    }
-    setUpdatingId(taskId);
-    await handleClaim(taskId);
-    setUpdatingId(null);
+    if (!taskId || isNaN(taskId)) { toast.error("Invalid task ID"); return; }
+    setUpdatingId(taskId); await handleClaim(taskId); setUpdatingId(null);
   };
 
-  const handleCompleteTask = async (rawId: number | string | undefined | null) => {
+  const handleCompleteTask = async (rawId: any) => {
     const taskId = Number(rawId);
-    if (!taskId || isNaN(taskId)) {
-      console.error("Attempted to complete task with invalid ID:", rawId);
-      toast.error("Invalid task ID");
-      return;
-    }
-    setUpdatingId(taskId);
-    await handleComplete(taskId);
-    setUpdatingId(null);
+    if (!taskId || isNaN(taskId)) { toast.error("Invalid task ID"); return; }
+    setUpdatingId(taskId); await handleComplete(taskId); setUpdatingId(null);
   };
 
-  const handleBookingAction = async (
-    id: number,
-    action: "confirm" | "activate" | "complete" | "cancel"
-  ) => {
-    setActingBookingId(id);
-    setOpenBookingMenuId(null);
+  const handleBookingAction = async (id: number, action: "confirm" | "activate" | "complete" | "cancel") => {
+    setActingBookingId(id); setOpenBookingMenuId(null);
     const successMessages = {
       confirm: "Booking confirmed 🎉",
       activate: "Trip started — vehicle is now active",
@@ -232,7 +191,7 @@ export default function ActionCenterWidget() {
   return (
     <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden h-full flex flex-col">
       
-      {/* PREMIUM HEADER */}
+      {/* HEADER */}
       <div className="p-5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -255,22 +214,15 @@ export default function ActionCenterWidget() {
                   key={tab.id}
                   onClick={() => setActiveSubTab(tab.id)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                    activeSubTab === tab.id
-                      ? "bg-[var(--color-primary)] text-white shadow-sm"
+                    activeSubTab === tab.id ? "bg-[var(--color-primary)] text-white shadow-sm"
                       : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
                   }`}
                 >
                   {tab.label}
                   {tab.count > 0 && (
                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      activeSubTab === tab.id 
-                        ? "bg-white/20 text-white" 
-                        : "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]"
-                    } ${
-                      activeSubTab === tab.id
-                        ? "hidden sm:inline"
-                        : "inline"
-                    }`}>
+                      activeSubTab === tab.id ? "bg-white/20 text-white" : "bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]"
+                    } ${activeSubTab === tab.id ? "hidden sm:inline" : "inline"}`}>
                       {tab.count}
                     </span>
                   )}
@@ -281,10 +233,10 @@ export default function ActionCenterWidget() {
         </div>
       </div>
 
-      {/* SCROLLABLE CONTENT AREA */}
+      {/* CONTENT */}
       <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-4 sm:p-5 max-h-80 space-y-2.5 sm:space-y-3">
         
-        {/* TAB 1: RENTALS */}
+        {/* RENTALS */}
         {activeSubTab === "bookings" && (
           <div className="space-y-3 animate-in fade-in duration-200">
             {bookingsLoading ? (
@@ -303,141 +255,137 @@ export default function ActionCenterWidget() {
             ) : (
               bookings.map((booking) => {
                 const meta = BOOKING_STATUS_META[booking.status] || BOOKING_STATUS_META.pending;
-                const clientName =
-                  resolveField(booking.client, "full_name", "name") || "Customer";
+                const clientName = resolveField(booking.client, "full_name", "name") || "Customer";
                 const vehicle = booking.vehicle;
                 const plate = vehicle?.plate_number || null;
-                const vehicleLabel = vehicle
-                  ? `${vehicle.make} ${vehicle.model}`
-                  : "Vehicle";
+                const vehicleLabel = vehicle ? `${vehicle.make} ${vehicle.model}` : "Vehicle";
                 const days = rentalDays(booking.start_date, booking.end_date);
+                const destination = resolveField(booking.destination, "name", "destination");
                 const tripOverdue = booking.status === "active" && isOverdue(booking.end_date);
 
                 return (
-                  <div
-                    key={`booking-${booking.id}`}
-                    className="group relative p-3 sm:p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200"
-                  >
+                  <div key={`booking-${booking.id}`} className="group relative p-3 sm:p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200">
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] border border-[var(--color-primary)]/20 flex items-center justify-center text-[11px] font-extrabold flex-shrink-0">
                         {getInitials(clientName)}
                       </div>
 
                       <div className="flex-1 min-w-0">
+                        {/* Row 1: Name + Status (pill desktop / dot mobile) */}
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-semibold text-[var(--color-ink)] truncate">
-                            {clientName}
-                          </p>
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border flex-shrink-0 ${meta.badge}`}>
+                          <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{clientName}</p>
+                          <span className={`hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border flex-shrink-0 ${meta.badge}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
                             {meta.label}
                           </span>
+                          <span className={`sm:hidden w-2.5 h-2.5 rounded-full flex-shrink-0 ${meta.dot}`} title={meta.label} />
                         </div>
 
-                        {/* ✅ Vehicle + Plate (swapped, no pills) */}
+                        {/* Row 2: Vehicle (+ desktop inline headline) */}
                         <div className="flex items-center gap-2 mt-1 min-w-0">
-                          <span className="text-xs text-[var(--color-ink-muted)] truncate flex items-center gap-1">
-                            <Car size={11} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                          <span className="flex items-center gap-1 text-xs text-[var(--color-ink-muted)] flex-shrink-0">
+                            <Car size={11} className="text-[var(--color-ink-subtle)]" />
                             {vehicleLabel}
                           </span>
                           {plate && (
-                            <span className="text-xs text-[var(--color-ink)] font-mono font-semibold">
-                              {plate}
+                            <span className="text-xs text-[var(--color-ink)] font-mono font-semibold flex-shrink-0">{plate}</span>
+                          )}
+                          {/* Desktop-only inline headline */}
+                          {(days || destination) && (
+                            <span className="hidden sm:flex items-center gap-1.5 min-w-0" title={destination || undefined}>
+                              <MapPin size={11} className="text-[var(--color-primary)] flex-shrink-0" />
+                              {days && (
+                                <span className="text-[11px] font-bold text-[var(--color-ink)] whitespace-nowrap flex-shrink-0">
+                                  {days} {days === 1 ? "day" : "days"}
+                                </span>
+                              )}
+                              {destination && (
+                                <>
+                                  {days && <span className="text-[var(--color-ink-subtle)] flex-shrink-0">·</span>}
+                                  <span className="text-[11px] font-medium text-[var(--color-ink-muted)] truncate min-w-0">{destination}</span>
+                                </>
+                              )}
                             </span>
                           )}
                         </div>
 
-                        {/* ✅ Dates + Days (no pills) */}
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-subtle)]">
-                          <span className="flex items-center gap-1">
-                            <Calendar size={11} />
-                            {formatDate(booking.start_date)}
-                            <ArrowRight size={10} className="opacity-60" />
-                            {formatDate(booking.end_date)}
+                        {/* ✅ Mobile-only headline row (below vehicle) */}
+                        {(days || destination) && (
+                          <div className="flex sm:hidden items-center gap-1.5 mt-1 min-w-0" title={destination || undefined}>
+                            <MapPin size={11} className="text-[var(--color-primary)] flex-shrink-0" />
+                            {days && (
+                              <span className="text-[11px] font-bold text-[var(--color-ink)] whitespace-nowrap flex-shrink-0">
+                                {days} {days === 1 ? "day" : "days"}
+                              </span>
+                            )}
+                            {destination && (
+                              <>
+                                {days && <span className="text-[var(--color-ink-subtle)] flex-shrink-0">·</span>}
+                                <span className="text-[11px] font-medium text-[var(--color-ink-muted)] truncate min-w-0">{destination}</span>
+                              </>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Row 3: Dates + Price */}
+                        <div className="flex items-center justify-between gap-2 mt-2 min-w-0">
+                          <span className="flex sm:hidden items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-subtle)] min-w-0">
+                            <Calendar size={11} className="flex-shrink-0" />
+                            <span className="truncate">{formatDateMed(booking.start_date)} - {formatDateMed(booking.end_date)}</span>
                           </span>
-                          {days && (
-                            <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">
-                              {days} {days === 1 ? "DAY" : "DAYS"}
-                            </span>
-                          )}
+                          <span className="hidden sm:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-subtle)] min-w-0">
+                            <Calendar size={11} className="flex-shrink-0" />
+                            <span className="truncate">{formatDateFull(booking.start_date)} to {formatDateFull(booking.end_date)}</span>
+                          </span>
                           {tripOverdue && (
-                            <span className="text-[10px] font-extrabold text-rose-600 dark:text-rose-400">
-                              OVERDUE
-                            </span>
+                            <span className="text-[10px] font-extrabold text-rose-600 dark:text-rose-400 flex-shrink-0">OVERDUE</span>
                           )}
-                          <span className="ml-auto text-xs font-extrabold normal-case tracking-normal text-[var(--color-ink)] tabular-nums">
+                          <span className="ml-auto text-xs font-extrabold normal-case tracking-normal text-[var(--color-ink)] tabular-nums flex-shrink-0">
                             {booking.currency_code || "KES"} {Number(booking.total_amount).toLocaleString()}
                           </span>
                         </div>
                       </div>
 
+                      {/* Kebab menu */}
                       <div className="relative flex-shrink-0 -mr-1 -mt-1" data-booking-menu>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenBookingMenuId(openBookingMenuId === booking.id ? null : booking.id);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); setOpenBookingMenuId(openBookingMenuId === booking.id ? null : booking.id); }}
                           className="p-2 rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all active:scale-95"
                           aria-label="Booking actions"
                         >
-                          {actingBookingId === booking.id ? (
-                            <Loader2 size={16} className="animate-spin" />
-                          ) : (
-                            <MoreVertical size={16} />
-                          )}
+                          {actingBookingId === booking.id ? <Loader2 size={16} className="animate-spin" /> : <MoreVertical size={16} />}
                         </button>
 
                         {openBookingMenuId === booking.id && (
                           <div className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-lg shadow-black/5 z-20 overflow-hidden animate-in fade-in slide-up duration-150">
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenBookingMenuId(null);
-                                router.push(`/dashboard/bookings/${booking.id}`);
-                              }}
+                              onClick={(e) => { e.stopPropagation(); setOpenBookingMenuId(null); router.push(`/dashboard/bookings/${booking.id}`); }}
                               className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
                             >
-                              <Eye size={14} />
-                              View Booking
+                              <Eye size={14} /> View Booking
                             </button>
-
                             {booking.status === "pending" && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleBookingAction(booking.id, "confirm"); }}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors border-t border-[var(--color-surface-border)]"
-                              >
-                                <CheckCircle2 size={14} />
-                                Confirm Booking
+                              <button onClick={(e) => { e.stopPropagation(); handleBookingAction(booking.id, "confirm"); }}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors border-t border-[var(--color-surface-border)]">
+                                <CheckCircle2 size={14} /> Confirm Booking
                               </button>
                             )}
-
                             {booking.status === "confirmed" && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleBookingAction(booking.id, "activate"); }}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                              >
-                                <Play size={14} />
-                                Start Trip
+                              <button onClick={(e) => { e.stopPropagation(); handleBookingAction(booking.id, "activate"); }}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors border-t border-[var(--color-surface-border)]">
+                                <Play size={14} /> Start Trip
                               </button>
                             )}
-
                             {booking.status === "active" && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleBookingAction(booking.id, "complete"); }}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                              >
-                                <CheckCircle2 size={14} />
-                                End Trip
+                              <button onClick={(e) => { e.stopPropagation(); handleBookingAction(booking.id, "complete"); }}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors border-t border-[var(--color-surface-border)]">
+                                <CheckCircle2 size={14} /> End Trip
                               </button>
                             )}
-
                             {(booking.status === "pending" || booking.status === "confirmed") && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleBookingAction(booking.id, "cancel"); }}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors border-t border-[var(--color-surface-border)]"
-                              >
-                                <XCircle size={14} />
-                                Cancel Booking
+                              <button onClick={(e) => { e.stopPropagation(); handleBookingAction(booking.id, "cancel"); }}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors border-t border-[var(--color-surface-border)]">
+                                <XCircle size={14} /> Cancel Booking
                               </button>
                             )}
                           </div>
@@ -451,7 +399,7 @@ export default function ActionCenterWidget() {
           </div>
         )}
 
-        {/* TAB 2: ACTIVITY */}
+        {/* ACTIVITY */}
         {activeSubTab === "activity" && (
           <div className="space-y-3 animate-in fade-in duration-200">
             {activityLoading ? (
@@ -469,10 +417,7 @@ export default function ActionCenterWidget() {
               </div>
             ) : (
               activities.map((activity: any) => (
-                <div
-                  key={`activity-${activity.id}`}
-                  className="p-3 sm:p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200 flex items-start gap-3"
-                >
+                <div key={`activity-${activity.id}`} className="p-3 sm:p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200 flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center flex-shrink-0 text-[var(--color-primary)] mt-0.5">
                     <Clock size={14} />
                   </div>
@@ -481,9 +426,7 @@ export default function ActionCenterWidget() {
                       {activity.title || activity.description || activity.action}
                     </p>
                     {activity.timestamp && (
-                      <p className="text-[10px] text-[var(--color-ink-muted)] mt-1 font-medium">
-                        {formatDate(activity.timestamp)}
-                      </p>
+                      <p className="text-[10px] text-[var(--color-ink-muted)] mt-1 font-medium">{formatDate(activity.timestamp)}</p>
                     )}
                   </div>
                 </div>
@@ -492,7 +435,7 @@ export default function ActionCenterWidget() {
           </div>
         )}
 
-        {/* TAB 3: TASKS */}
+        {/* TASKS */}
         {activeSubTab === "tasks" && (
           <div className="space-y-3 animate-in fade-in duration-200">
             {tasksLoading ? (
@@ -513,51 +456,33 @@ export default function ActionCenterWidget() {
                 const overdue = task.due_date ? isOverdue(task.due_date) : false;
                 const safeTaskId = (task as any).id ?? (task as any).task_id;
                 const hasActions = task.status !== "completed";
-                
                 const { action, subject } = parseTaskTitle(task.title);
                 const SubjectIcon = subject ? getSubjectIcon(subject) : null;
 
                 return (
-                  <div 
-                    key={`task-${safeTaskId}`} 
-                    className="group relative p-3 sm:p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200"
-                  >
+                  <div key={`task-${safeTaskId}`} className="group relative p-3 sm:p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200">
                     <div className="flex items-start gap-3 sm:gap-4">
                       <div className={`mt-1.5 flex-shrink-0 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--color-surface)] ${getPriorityDotColor(task.priority)}`} />
-                      
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold leading-tight text-[var(--color-ink)]">
-                          {action}
-                        </p>
-                        
+                        <p className="text-sm font-semibold leading-tight text-[var(--color-ink)]">{action}</p>
                         {subject && SubjectIcon && (
                           <div className="flex items-center gap-1.5 mt-1 mb-2">
                             <SubjectIcon size={12} className="text-[var(--color-ink-muted)] flex-shrink-0" />
-                            <span className="text-xs text-[var(--color-ink-muted)] truncate">
-                              {subject}
-                            </span>
+                            <span className="text-xs text-[var(--color-ink-muted)] truncate">{subject}</span>
                           </div>
                         )}
-                        
                         {task.description && (
-                          <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed mb-2 sm:mb-2.5 line-clamp-2">
-                            {task.description}
-                          </p>
+                          <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed mb-2 sm:mb-2.5 line-clamp-2">{task.description}</p>
                         )}
                         <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-subtle)]">
                           {task.category && (
-                            <span className="flex items-center gap-1">
-                              <Tag size={11} />
-                              <span className="capitalize">{task.category}</span>
-                            </span>
+                            <span className="flex items-center gap-1"><Tag size={11} /><span className="capitalize">{task.category}</span></span>
                           )}
                           {task.due_date && (
                             <span className={`flex items-center gap-1 ${overdue ? "text-rose-600 dark:text-rose-400 font-bold" : ""}`}>
                               <Calendar size={11} />
                               {formatDate(task.due_date)}
-                              {overdue && (
-                                <span className="ml-1 px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[9px] font-extrabold">OVERDUE</span>
-                              )}
+                              {overdue && <span className="ml-1 px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[9px] font-extrabold">OVERDUE</span>}
                             </span>
                           )}
                         </div>
@@ -566,46 +491,24 @@ export default function ActionCenterWidget() {
                       {hasActions && (
                         <div className="relative flex-shrink-0 -mr-1 -mt-1" data-task-menu>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuId(openMenuId === safeTaskId ? null : safeTaskId);
-                            }}
+                            onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === safeTaskId ? null : safeTaskId); }}
                             className="p-2 rounded-lg text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-all active:scale-95"
                             aria-label="Task actions"
                           >
-                            {updatingId === safeTaskId ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <MoreVertical size={16} />
-                            )}
+                            {updatingId === safeTaskId ? <Loader2 size={16} className="animate-spin" /> : <MoreVertical size={16} />}
                           </button>
-
                           {openMenuId === safeTaskId && (
                             <div className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-lg shadow-black/5 z-20 overflow-hidden animate-in fade-in slide-up duration-150">
                               {task.status === "unassigned" && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenMenuId(null);
-                                    handleClaimTask(safeTaskId);
-                                  }}
-                                  className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
-                                >
-                                  <UserPlus size={14} />
-                                  Claim Task
+                                <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handleClaimTask(safeTaskId); }}
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">
+                                  <UserPlus size={14} /> Claim Task
                                 </button>
                               )}
                               {task.status !== "unassigned" && task.status !== "completed" && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOpenMenuId(null);
-                                    handleCompleteTask(safeTaskId);
-                                  }}
-                                  className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                                >
-                                  <CheckCircle2 size={14} />
-                                  Mark Complete
+                                <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handleCompleteTask(safeTaskId); }}
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+                                  <CheckCircle2 size={14} /> Mark Complete
                                 </button>
                               )}
                             </div>
