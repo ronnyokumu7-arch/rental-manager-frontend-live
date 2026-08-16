@@ -1,46 +1,57 @@
-import { confirmAction } from "@/lib/utils/confirmAction";
 // src/components/tenants/PaymentGatewaysSection.tsx
-import { useState, useEffect } from 'react';
-import { 
-  CreditCard, Smartphone, Building2, DollarSign, Plus, 
-  CheckCircle2, XCircle, Loader2, Edit3, Trash2 
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import { tenantsApi } from '@/lib/api/tenants';
-import type { PaymentGatewayConfig } from '@/lib/api/tenants';
-import { GatewayConfigModal } from './GatewayConfigModal'; // ✅ Import the real modal
+"use client";
 
+import { useState } from "react";
+import {
+  CreditCard, Smartphone, Building2, DollarSign, Plus,
+  CheckCircle2, XCircle, Loader2, Edit3, Trash2,
+} from "lucide-react";
+import type {
+  PaymentGatewayConfig,
+  PaymentGatewayPayload,
+  GatewayType,
+} from "@/lib/types";
+import { confirmAction } from "@/lib/utils/confirmAction";
+import { GatewayConfigModal } from "./GatewayConfigModal";
+
+/**
+ * @component PaymentGatewaysSection
+ * @description 
+ * A "dumb" (presentational) section that lists configured payment gateways,
+ * allows adding/editing/deleting them, and hosts the GatewayConfigModal.
+ * 
+ * It does NOT fetch data or call the API directly. All data and mutations are 
+ * provided by the parent via props (typically wired through usePaymentGateways).
+ * This makes it fully reusable across Super Admin and Tenant contexts.
+ */
 interface PaymentGatewaysSectionProps {
-  tenantId: number | string;
+  gateways: PaymentGatewayConfig[];
+  isLoading: boolean;
+  isSaving: boolean;
+  isTesting: boolean;
+  isDeleting: boolean;
+  onSave: (payload: PaymentGatewayPayload, gatewayType: GatewayType | string, configId?: number) => Promise<void>;
+  onTest: (payload: PaymentGatewayPayload, gatewayType: GatewayType | string) => Promise<void>;
+  onDelete: (gatewayType: GatewayType | string, configId: number) => Promise<void>;
   onUpdated?: () => void;
 }
 
-export function PaymentGatewaysSection({ tenantId, onUpdated }: PaymentGatewaysSectionProps) {
-  const [gateways, setGateways] = useState<PaymentGatewayConfig[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // ✅ Modal State Management
+export function PaymentGatewaysSection({
+  gateways,
+  isLoading,
+  isSaving,
+  isTesting,
+  isDeleting,
+  onSave,
+  onTest,
+  onDelete,
+  onUpdated,
+}: PaymentGatewaysSectionProps) {
+  // ✅ Modal State Management (Pure UI state stays inside the component)
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [selectedGateway, setSelectedGateway] = useState<PaymentGatewayConfig | null>(null);
   const [selectedTypeToAdd, setSelectedTypeToAdd] = useState<string | undefined>(undefined);
 
-  const fetchGateways = async () => {
-    setIsLoading(true);
-    try {
-      const response = await tenantsApi.getPaymentGateways(tenantId);
-      setGateways(response.gateways || []);
-    } catch (error: any) {
-      toast.error(error?.response?.data?.detail || 'Failed to load payment gateways');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchGateways();
-  }, [tenantId]);
-
-  // ✅ Hooked Buttons
   const handleAddGateway = (gatewayType: string) => {
     setSelectedGateway(null);
     setSelectedTypeToAdd(gatewayType);
@@ -53,55 +64,59 @@ export function PaymentGatewaysSection({ tenantId, onUpdated }: PaymentGatewaysS
     setIsConfigModalOpen(true);
   };
 
-  const handleDeleteGateway = async (_gatewayType: string, configId: number) => {
-    if (!confirmAction('Are you sure you want to delete this payment gateway configuration? This action cannot be undone.')) return;
+  // ✅ Wraps the parent's onSave so we can notify onUpdated only on success
+  const handleSave = async (payload: PaymentGatewayPayload, gatewayType: GatewayType | string) => {
+    // ✅ Pass the config ID when editing so the parent knows whether to CREATE or UPDATE.
+    // This prevents accidentally updating the wrong config (e.g., multiple bank accounts).
+    await onSave(payload, gatewayType, selectedGateway?.id); // Throws on error → modal stays open
+    onUpdated?.();
+  };
+
+  // ✅ FIXED: Real delete via the parent's onDelete callback (no more fake optimistic delete)
+  const handleDeleteGateway = async (gateway: PaymentGatewayConfig) => {
+    if (!confirmAction("Are you sure you want to delete this payment gateway configuration? This action cannot be undone.")) return;
     
     try {
-      // TODO: Replace with actual delete endpoint when backend is ready
-      // await tenantsApi.deletePaymentGateway(tenantId, gatewayType, configId);
-      
-      // Optimistic update for now
-      setGateways(prev => prev.filter(g => g.id !== configId));
-      toast.success('Gateway configuration deleted');
+      await onDelete(gateway.type, gateway.id);
       onUpdated?.();
-    } catch (error: any) {
-      toast.error(error?.response?.data?.detail || 'Failed to delete gateway');
-      fetchGateways(); // Revert optimistic update on error
+    } catch {
+      // Error is already toasted by the hook
     }
   };
 
   const getGatewayIcon = (type: string) => {
     switch (type) {
-      case 'mpesa': return Smartphone;
-      case 'airtel_money': return Smartphone;
-      case 'bank': return Building2;
-      case 'stripe': return CreditCard;
-      case 'paypal': return DollarSign;
+      case "mpesa": return Smartphone;
+      case "airtel_money": return Smartphone;
+      case "bank": return Building2;
+      case "stripe": return CreditCard;
+      case "paypal": return DollarSign;
       default: return CreditCard;
     }
   };
 
   const getGatewayColor = (type: string) => {
     switch (type) {
-      case 'mpesa': return 'bg-green-500/10 text-green-700 border-green-200';
-      case 'airtel_money': return 'bg-red-500/10 text-red-700 border-red-200';
-      case 'bank': return 'bg-blue-500/10 text-blue-700 border-blue-200';
-      case 'stripe': return 'bg-purple-500/10 text-purple-700 border-purple-200';
-      case 'paypal': return 'bg-indigo-500/10 text-indigo-700 border-indigo-200';
-      default: return 'bg-slate-500/10 text-slate-700 border-slate-200';
+      case "mpesa": return "bg-green-500/10 text-green-700 border-green-200";
+      case "airtel_money": return "bg-red-500/10 text-red-700 border-red-200";
+      case "bank": return "bg-blue-500/10 text-blue-700 border-blue-200";
+      case "stripe": return "bg-purple-500/10 text-purple-700 border-purple-200";
+      case "paypal": return "bg-indigo-500/10 text-indigo-700 border-indigo-200";
+      default: return "bg-slate-500/10 text-slate-700 border-slate-200";
     }
   };
 
-  const availableGateways = [
-    { type: 'mpesa', label: 'M-Pesa', description: 'Mobile money' },
-    { type: 'airtel_money', label: 'Airtel Money', description: 'Mobile wallet' },
-    { type: 'bank', label: 'Bank Transfer', description: 'Direct bank' },
-    { type: 'stripe', label: 'Stripe', description: 'Cards' },
-    { type: 'paypal', label: 'PayPal', description: 'Digital wallet' },
+  // ✅ Explicitly typed so `type` is GatewayType, not a loose string
+  const availableGateways: { type: GatewayType; label: string; description: string }[] = [
+    { type: "mpesa", label: "M-Pesa", description: "Mobile money" },
+    { type: "airtel_money", label: "Airtel Money", description: "Mobile wallet" },
+    { type: "bank", label: "Bank Transfer", description: "Direct bank" },
+    { type: "stripe", label: "Stripe", description: "Cards" },
+    { type: "paypal", label: "PayPal", description: "Digital wallet" },
   ];
 
-  const configuredTypes = gateways.map(g => g.type);
-  const unconfiguredGateways = availableGateways.filter(g => !configuredTypes.includes(g.type));
+  const configuredTypes = gateways.map((g) => g.type);
+  const unconfiguredGateways = availableGateways.filter((g) => !configuredTypes.includes(g.type));
 
   return (
     <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden h-full flex flex-col">
@@ -148,7 +163,7 @@ export function PaymentGatewaysSection({ tenantId, onUpdated }: PaymentGatewaysS
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-[var(--color-ink)] capitalize">
-                        {gateway.type.replace('_', ' ')}
+                        {gateway.type.replace("_", " ")}
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {gateway.is_active ? (
@@ -170,17 +185,19 @@ export function PaymentGatewaysSection({ tenantId, onUpdated }: PaymentGatewaysS
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => handleEditGateway(gateway)}
-                      className="p-1.5 rounded-md text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                      disabled={isSaving || isDeleting}
+                      className="p-1.5 rounded-md text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-colors disabled:opacity-50"
                       title="Edit configuration"
                     >
                       <Edit3 size={14} />
                     </button>
                     <button
-                      onClick={() => handleDeleteGateway(gateway.type, gateway.id)}
-                      className="p-1.5 rounded-md text-rose-600 hover:bg-rose-50 transition-colors"
+                      onClick={() => handleDeleteGateway(gateway)}
+                      disabled={isDeleting}
+                      className="p-1.5 rounded-md text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50"
                       title="Delete configuration"
                     >
-                      <Trash2 size={14} />
+                      {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                     </button>
                   </div>
                 </div>
@@ -189,7 +206,7 @@ export function PaymentGatewaysSection({ tenantId, onUpdated }: PaymentGatewaysS
           </div>
         )}
 
-        {/* Available Gateways - Horizontal Scroll / Dense Grid */}
+        {/* Available Gateways */}
         {unconfiguredGateways.length > 0 && (
           <div className="pt-3 border-t border-[var(--color-surface-border)]">
             <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-2.5">
@@ -220,21 +237,20 @@ export function PaymentGatewaysSection({ tenantId, onUpdated }: PaymentGatewaysS
         )}
       </div>
 
-      {/* ✅ REAL MODAL INTEGRATION */}
+      {/* ✅ REAL MODAL INTEGRATION (Fully decoupled) */}
       {isConfigModalOpen && (
         <GatewayConfigModal
-          tenantId={tenantId}
           gatewayType={selectedTypeToAdd}
           existingConfig={selectedGateway}
+          isSaving={isSaving}
+          isTesting={isTesting}
           onClose={() => {
             setIsConfigModalOpen(false);
             setSelectedGateway(null);
             setSelectedTypeToAdd(undefined);
           }}
-          onSuccess={() => {
-            fetchGateways();
-            onUpdated?.();
-          }}
+          onSave={handleSave}
+          onTest={onTest}
         />
       )}
     </div>

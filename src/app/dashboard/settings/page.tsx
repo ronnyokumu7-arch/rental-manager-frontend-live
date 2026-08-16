@@ -13,6 +13,7 @@ import AppearanceSettings from "@/components/settings/AppearanceSettings";
 import TeamRolesSettings from "@/components/settings/TeamRolesSettings";
 import UserManagementSettings from "@/components/settings/UserManagementSettings";
 import BillingSubscriptionSettings from "@/components/settings/BillingSubscriptionSettings";
+import PaymentMethodsSettings from "@/components/settings/PaymentMethodsSettings"; // ✅ NEW IMPORT
 
 type TabId = "general" | "team" | "financials" | "system" | "advanced";
 
@@ -182,6 +183,8 @@ export default function SettingsPage() {
             <UserManagementSettings />
           ) : activeModule.id === "billing" ? (
             <BillingSubscriptionSettings />
+          ) : activeModule.id === "payments" ? ( // ✅ NEW: Payment Methods Integration
+            <PaymentMethodsSettings />
           ) : (
             <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl shadow-[var(--shadow-card)] p-8 min-h-[400px] flex flex-col items-center justify-center text-center">
               <div className={`w-16 h-16 rounded-2xl ${getThemeClasses(activeModule.theme).iconBg} flex items-center justify-center mb-4`}>

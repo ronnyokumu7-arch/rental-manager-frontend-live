@@ -5,6 +5,10 @@ import type {
   Tenant,
   CreateTenantPayload,
   UpdateTenantPayload,
+  // ✅ NEW: Imported strict Payment Gateway types
+  PaymentGatewayConfig,
+  PaymentGatewayPayload,
+  GatewayType,
 } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -33,16 +37,8 @@ export interface SendResetLinkPayload {
 }
 
 // ---------------------------------------------------------------------------
-// Payment Gateway Interfaces
+// Tenant List Response
 // ---------------------------------------------------------------------------
-export interface PaymentGatewayConfig {
-  id: number;
-  tenant_id: number;
-  type: string;
-  is_active: boolean;
-  [key: string]: any; // Masked credentials and other dynamic fields
-}
-
 export interface TenantListResponse {
   data?: Tenant[];
   items?: Tenant[];
@@ -179,7 +175,7 @@ export const tenantsApi = {
   },
 
   // ---------------------------------------------------------------------------
-  // 💳 Payment Gateway Endpoints
+  // 💳 Payment Gateway Endpoints (Strictly Typed)
   // ---------------------------------------------------------------------------
 
   /**
@@ -189,7 +185,7 @@ export const tenantsApi = {
   getPaymentGateways: async (
     id: number | string
   ): Promise<{ gateways: PaymentGatewayConfig[] }> => {
-    return apiClient.get(`/tenants/${id}/payment-gateways`).then((r) => r.data);
+    return apiClient.get<{ gateways: PaymentGatewayConfig[] }>(`/tenants/${id}/payment-gateways`).then((r) => r.data);
   },
 
   /**
@@ -198,23 +194,26 @@ export const tenantsApi = {
    */
   createPaymentGateway: async (
     id: number | string,
-    gatewayType: string,
-    payload: Record<string, any>
+    gatewayType: GatewayType | string,
+    payload: PaymentGatewayPayload
   ): Promise<PaymentGatewayConfig> => {
-    return apiClient.post(`/tenants/${id}/payment-gateways/${gatewayType}`, payload).then((r) => r.data);
+    return apiClient.post<PaymentGatewayConfig>(`/tenants/${id}/payment-gateways/${gatewayType}`, payload).then((r) => r.data);
   },
 
   /**
    * PATCH /tenants/{tenant_id}/payment-gateways/{gateway_type}/{config_id}
    * Updates an existing gateway configuration.
+   * ⚠️ CRITICAL: The payload MUST NOT contain masked credentials (e.g., "****1234"),
+   * or the backend will overwrite the real secrets with the masked strings.
+   * The reusable hook is responsible for filtering these out.
    */
   updatePaymentGateway: async (
     id: number | string,
-    gatewayType: string,
+    gatewayType: GatewayType | string,
     configId: number,
-    payload: Record<string, any>
+    payload: PaymentGatewayPayload
   ): Promise<PaymentGatewayConfig> => {
-    return apiClient.patch(`/tenants/${id}/payment-gateways/${gatewayType}/${configId}`, payload).then((r) => r.data);
+    return apiClient.patch<PaymentGatewayConfig>(`/tenants/${id}/payment-gateways/${gatewayType}/${configId}`, payload).then((r) => r.data);
   },
 
   /**
@@ -223,14 +222,28 @@ export const tenantsApi = {
    */
   testPaymentGateway: async (
     id: number | string,
-    gatewayType: string,
-    payload: Record<string, any>
+    gatewayType: GatewayType | string,
+    payload: PaymentGatewayPayload
   ): Promise<{ gateway_type: string; status: string; message: string }> => {
     return apiClient.post(`/tenants/${id}/payment-gateways/${gatewayType}/test`, payload).then((r) => r.data);
   },
 
+  /**
+   * DELETE /tenants/{tenant_id}/payment-gateways/{gateway_type}/{config_id}
+   * Deletes a gateway configuration.
+   * ⚠️ NOTE: Ensure the backend DELETE endpoint is implemented in payment_gateways.py,
+   * otherwise this will return a 404/405 network error.
+   */
+  deletePaymentGateway: async (
+    id: number | string,
+    gatewayType: GatewayType | string,
+    configId: number
+  ): Promise<void> => {
+    return apiClient.delete(`/tenants/${id}/payment-gateways/${gatewayType}/${configId}`).then((r) => r.data);
+  },
+
   // ---------------------------------------------------------------------------
-  //  Agency Health Endpoints
+  // 📊 Agency Health Endpoints
   // ---------------------------------------------------------------------------
 
   /**

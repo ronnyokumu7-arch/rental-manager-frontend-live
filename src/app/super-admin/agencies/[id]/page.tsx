@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useTenantProfile } from '@/hooks/useTenantProfile';
+import { usePaymentGateways } from '@/hooks/usePaymentGateways'; // ✅ NEW: Import the hook
 import { TenantProfileTabs } from '@/components/tenants/TenantProfileTabs';
 import { BusinessIdentitySection } from '@/components/tenants/BusinessIdentitySection';
 import { AdminSnapshotSection } from '@/components/tenants/AdminSnapshotSection';
@@ -17,6 +18,7 @@ import { RevenueVelocitySparkline } from '@/components/tenants/health/RevenueVel
 import { PaymentReliabilityStreak } from '@/components/tenants/health/PaymentReliabilityStreak';
 import { SupportTicketTrend } from '@/components/tenants/health/SupportTicketTrend';
 import { useAgencyHealth } from '@/hooks/useAgencyHealth';
+import type { PaymentGatewayPayload, GatewayType } from '@/lib/types'; // ✅ NEW: Import types
 
 export default function AgencyProfilePage() {
   const params = useParams();
@@ -24,6 +26,33 @@ export default function AgencyProfilePage() {
 
   const { tenant, isLoading, error, activeTab, setActiveTab, refetch } = useTenantProfile(agencyId);
   const { data: healthData, isLoading: isHealthLoading } = useAgencyHealth(agencyId);
+  
+  // ✅ NEW: Initialize the payment gateways hook for this specific agency
+  const {
+    gateways,
+    isLoading: isGatewaysLoading,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    isTesting,
+    createGateway,
+    updateGateway,
+    deleteGateway,
+    testGateway,
+  } = usePaymentGateways(agencyId);
+
+  // ✅ NEW: Resolve Create vs Update for the Super Admin context
+  const handleSave = async (
+    payload: PaymentGatewayPayload,
+    gatewayType: GatewayType | string,
+    configId?: number
+  ) => {
+    if (configId) {
+      await updateGateway({ gatewayType, configId, payload });
+    } else {
+      await createGateway({ gatewayType, payload });
+    }
+  };
   
   const [isChangeEmailModalOpen, setIsChangeEmailModalOpen] = useState(false);
 
@@ -90,9 +119,21 @@ export default function AgencyProfilePage() {
             <div className="lg:col-span-5 sticky top-24">
               <SubscriptionStatusCard tenant={tenant} onUpdated={refetch} />
             </div>
-            {/* ✅ Right Column: Wider (7 cols) - Payment Gateways */}
+            {/* ✅ Right Column: Wider (7 cols) - Payment Gateways (WIRED TO HOOK) */}
             <div className="lg:col-span-7">
-              <PaymentGatewaysSection tenantId={tenant.id} onUpdated={refetch} />
+              <PaymentGatewaysSection
+                gateways={gateways}
+                isLoading={isGatewaysLoading}
+                isSaving={isCreating || isUpdating}
+                isTesting={isTesting}
+                isDeleting={isDeleting}
+                onSave={handleSave}
+                onTest={async (payload, gatewayType) => {
+          await testGateway({ gatewayType, payload });
+        }}
+                onDelete={(gatewayType, configId) => deleteGateway({ gatewayType, configId })}
+                onUpdated={refetch}
+              />
             </div>
           </UnifiedGrid>
         )}

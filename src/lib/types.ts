@@ -581,6 +581,29 @@ export interface UpdateTenantPayload {
   payment_metadata?: Record<string, any>;
 }
 
+// ─── Payment Gateways ────────────────────────────────────────────────────────
+// Note: "stripe" is used for the gateway type, while "card" might be used 
+// for the actual transaction method in the Payment model.
+export type GatewayType = "mpesa" | "airtel_money" | "bank" | "stripe" | "paypal";
+export type GatewayEnvironment = "sandbox" | "production";
+
+export interface PaymentGatewayConfig {
+  id: number;
+  tenant_id: number;
+  type: GatewayType;
+  is_active: boolean;
+  environment: GatewayEnvironment;
+  // Dynamic masked credentials (e.g., consumer_key: "****1234")
+  [key: string]: any; 
+}
+
+export interface PaymentGatewayPayload {
+  environment?: GatewayEnvironment;
+  is_active?: boolean;
+  // Dynamic credentials to send to the backend (e.g., consumer_key, secret_key)
+  [key: string]: any; 
+}
+
 // ─── Agency Health Dashboard Types ───────────────────────────────────────────
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type TrendDirection = 'up' | 'down' | 'stable';

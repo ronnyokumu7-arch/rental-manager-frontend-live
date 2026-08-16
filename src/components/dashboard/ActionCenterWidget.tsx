@@ -20,7 +20,7 @@ type SubTab = "tasks" | "bookings" | "activity";
 
 const HEADER_COPY: Record<SubTab, { title: string; description: string; icon: LucideIcon; iconClassName?: string }> = {
   tasks: { title: "Active Tasks", description: "What needs your attention today", icon: Zap },
-  bookings: { title: "Upcoming Bookings", description: "Track latests trips & late returns", icon: Calendar, iconClassName: "scale-y-90" },
+  bookings: { title: "Upcoming Bookings", description: "Track latest trips & late returns", icon: Calendar, iconClassName: "scale-y-90" },
   activity: { title: "Activity Logs", description: "The live pulse of your fleet's latest moves.", icon: Clock },
 };
 
@@ -262,6 +262,7 @@ export default function ActionCenterWidget() {
                 const days = rentalDays(booking.start_date, booking.end_date);
                 const destination = resolveField(booking.destination, "name", "destination");
                 const tripOverdue = booking.status === "active" && isOverdue(booking.end_date);
+                const isActive = booking.status === "active";
 
                 return (
                   <div key={`booking-${booking.id}`} className="group relative p-3 sm:p-4 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-sm)] transition-all duration-200">
@@ -271,18 +272,25 @@ export default function ActionCenterWidget() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        {/* Row 1: Name + Status (pill desktop / dot mobile) */}
+                        {/* Row 1: Name + Status */}
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{clientName}</p>
+                          {/* Desktop pill */}
                           <span className={`hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider border flex-shrink-0 ${meta.badge}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
                             {meta.label}
                           </span>
-                          <span className={`sm:hidden w-2.5 h-2.5 rounded-full flex-shrink-0 ${meta.dot}`} title={meta.label} />
+                          {/* ✅ Mobile dot with pulse for active */}
+                          <span className="sm:hidden relative flex-shrink-0 w-2.5 h-2.5" title={meta.label}>
+                            {isActive && (
+                              <span className={`absolute inset-0 rounded-full ${meta.dot} animate-ping opacity-60`} />
+                            )}
+                            <span className={`relative block w-2.5 h-2.5 rounded-full ${meta.dot} ${isActive ? "animate-pulse" : ""}`} />
+                          </span>
                         </div>
 
-                        {/* Row 2: Vehicle (+ desktop inline headline) */}
-                        <div className="flex items-center gap-2 mt-1 min-w-0">
+                        {/* Desktop: Vehicle + headline on one line */}
+                        <div className="hidden sm:flex items-center gap-2 mt-1 min-w-0">
                           <span className="flex items-center gap-1 text-xs text-[var(--color-ink-muted)] flex-shrink-0">
                             <Car size={11} className="text-[var(--color-ink-subtle)]" />
                             {vehicleLabel}
@@ -290,9 +298,8 @@ export default function ActionCenterWidget() {
                           {plate && (
                             <span className="text-xs text-[var(--color-ink)] font-mono font-semibold flex-shrink-0">{plate}</span>
                           )}
-                          {/* Desktop-only inline headline */}
                           {(days || destination) && (
-                            <span className="hidden sm:flex items-center gap-1.5 min-w-0" title={destination || undefined}>
+                            <span className="flex items-center gap-1.5 min-w-0" title={destination || undefined}>
                               <MapPin size={11} className="text-[var(--color-primary)] flex-shrink-0" />
                               {days && (
                                 <span className="text-[11px] font-bold text-[var(--color-ink)] whitespace-nowrap flex-shrink-0">
@@ -309,31 +316,35 @@ export default function ActionCenterWidget() {
                           )}
                         </div>
 
-                        {/* ✅ Mobile-only headline row (below vehicle) */}
+                        {/* Mobile: Vehicle line */}
+                        <p className="sm:hidden mt-1 text-xs text-[var(--color-ink-muted)] leading-snug">
+                          <Car size={11} className="inline-block align-[-1.5px] mr-1 text-[var(--color-ink-subtle)]" />
+                          {vehicleLabel}
+                          {plate && (
+                            <>
+                              <span className="mx-1 text-[var(--color-ink-subtle)]">·</span>
+                              <span className="font-mono font-semibold text-[var(--color-ink)]">{plate}</span>
+                            </>
+                          )}
+                        </p>
+
+                        {/* Mobile: Trip headline */}
                         {(days || destination) && (
-                          <div className="flex sm:hidden items-center gap-1.5 mt-1 min-w-0" title={destination || undefined}>
-                            <MapPin size={11} className="text-[var(--color-primary)] flex-shrink-0" />
+                          <p className="sm:hidden mt-1 text-[11px] text-[var(--color-ink-muted)] leading-snug">
+                            <MapPin size={11} className="inline-block align-[-1.5px] mr-1 text-[var(--color-primary)]" />
                             {days && (
-                              <span className="text-[11px] font-bold text-[var(--color-ink)] whitespace-nowrap flex-shrink-0">
+                              <span className="font-bold text-[var(--color-ink)]">
                                 {days} {days === 1 ? "day" : "days"}
                               </span>
                             )}
-                            {destination && (
-                              <>
-                                {days && <span className="text-[var(--color-ink-subtle)] flex-shrink-0">·</span>}
-                                <span className="text-[11px] font-medium text-[var(--color-ink-muted)] truncate min-w-0">{destination}</span>
-                              </>
-                            )}
-                          </div>
+                            {days && destination && <span className="mx-1 text-[var(--color-ink-subtle)]">·</span>}
+                            {destination && <span>{destination}</span>}
+                          </p>
                         )}
 
-                        {/* Row 3: Dates + Price */}
-                        <div className="flex items-center justify-between gap-2 mt-2 min-w-0">
-                          <span className="flex sm:hidden items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-subtle)] min-w-0">
-                            <Calendar size={11} className="flex-shrink-0" />
-                            <span className="truncate">{formatDateMed(booking.start_date)} - {formatDateMed(booking.end_date)}</span>
-                          </span>
-                          <span className="hidden sm:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-subtle)] min-w-0">
+                        {/* Desktop dates + price */}
+                        <div className="hidden sm:flex items-center justify-between gap-2 mt-2 min-w-0">
+                          <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-subtle)] min-w-0">
                             <Calendar size={11} className="flex-shrink-0" />
                             <span className="truncate">{formatDateFull(booking.start_date)} to {formatDateFull(booking.end_date)}</span>
                           </span>
@@ -358,6 +369,19 @@ export default function ActionCenterWidget() {
 
                         {openBookingMenuId === booking.id && (
                           <div className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-lg shadow-black/5 z-20 overflow-hidden animate-in fade-in slide-up duration-150">
+                            {/* ✅ Mobile-only status top bar */}
+                            <div className="sm:hidden flex items-center gap-2 px-3.5 py-2.5 bg-[var(--color-surface-hover)]/60 border-b border-[var(--color-surface-border)]">
+                              <span className="relative flex w-2 h-2">
+                                {isActive && (
+                                  <span className={`absolute inset-0 rounded-full ${meta.dot} animate-ping opacity-60`} />
+                                )}
+                                <span className={`relative w-2 h-2 rounded-full ${meta.dot}`} />
+                              </span>
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--color-ink-muted)]">
+                                {meta.label}
+                              </span>
+                            </div>
+
                             <button
                               onClick={(e) => { e.stopPropagation(); setOpenBookingMenuId(null); router.push(`/dashboard/bookings/${booking.id}`); }}
                               className="w-full flex items-center gap-2.5 px-3.5 py-3 text-xs font-bold text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors"
@@ -391,6 +415,20 @@ export default function ActionCenterWidget() {
                           </div>
                         )}
                       </div>
+                    </div>
+
+                    {/* Mobile: Receipt-style total bar */}
+                    <div className="sm:hidden mt-2.5 pt-2.5 border-t border-[var(--color-surface-border)]/50 flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-subtle)] min-w-0">
+                        <Calendar size={11} className="flex-shrink-0" />
+                        <span className="truncate">{formatDateMed(booking.start_date)} – {formatDateMed(booking.end_date)}</span>
+                      </span>
+                      {tripOverdue && (
+                        <span className="text-[10px] font-extrabold text-rose-600 dark:text-rose-400 flex-shrink-0">OVERDUE</span>
+                      )}
+                      <span className="text-sm font-extrabold text-[var(--color-ink)] tabular-nums flex-shrink-0">
+                        {booking.currency_code || "KES"} {Number(booking.total_amount).toLocaleString()}
+                      </span>
                     </div>
                   </div>
                 );
