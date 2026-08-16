@@ -8,8 +8,11 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useDashboard } from "@/hooks/useDashboard";
+import { useCommission } from "@/hooks/useCommission";
 import ActionCenterWidget from "@/components/dashboard/ActionCenterWidget";
 import FleetCalendar from "@/components/calendar/FleetCalendar";
+import SoftLockBanner from "@/components/dashboard/SoftLockBanner";
+import Link from "next/link";
 
 const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -102,6 +105,7 @@ function StatCard({
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const { loading, stats, alerts, vehicles } = useDashboard();
+  const { summary: commission } = useCommission();
 
   if (loading) {
     return (
@@ -110,9 +114,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const successfulContracts = stats.completedBookings || 0;
-  const appCommission = successfulContracts * 150;
 
   const lastMonthRevenue = stats.mtdRevenue * 0.85;
   const monthOverMonthChange = stats.mtdRevenue - lastMonthRevenue;
@@ -156,6 +157,14 @@ export default function DashboardPage() {
 
       {activeTab === "overview" && (
         <div className="space-y-6 animate-in fade-in duration-300">
+
+          {/* ✅ SOFT-LOCK BANNER */}
+          {commission && (
+            <SoftLockBanner
+              outstandingBalance={commission.outstanding_balance}
+              daysUntilLock={commission.days_until_lock}
+            />
+          )}
 
           {/* ✅ MONEY GRID */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 mb-8">
@@ -223,15 +232,29 @@ export default function DashboardPage() {
               />
             </div>
 
-            {/* ✅ App Commission — icon + digits side-by-side + caption */}
+            {/* ✅ Platform Commission — REAL-TIME from ledger */}
             <div className="col-span-1">
               <MiniStat
-                label="App Commission"
-                value={`KES ${appCommission.toLocaleString()}`}
-                subtext={`${successfulContracts} successful contracts`}
+                label="Service Commission"
+                value={`KES ${commission ? parseFloat(commission.today_total).toLocaleString() : "—"}`}
+                subtext={
+                  commission
+                    ? `From ${commission.today_count} trip${commission.today_count !== 1 ? "s" : ""} today`
+                    : "Loading..."
+                }
                 icon={Wallet}
                 iconClass="bg-gradient-to-br from-blue-500/20 to-indigo-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/20"
               />
+              {/* ✅ OUTSTANDING BALANCE TAG */}
+              {commission && parseFloat(commission.outstanding_balance) > 0 && (
+                <Link
+                  href="/commission/pay"
+                  className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-[9px] font-bold hover:shadow-sm transition-all"
+                >
+                  KES {parseFloat(commission.outstanding_balance).toLocaleString()} unpaid
+                  <ArrowUpRight size={10} className="rotate-45" />
+                </Link>
+              )}
             </div>
           </div>
 

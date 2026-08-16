@@ -36,7 +36,7 @@ export default function PublicInvoicePage() {
   
   const hasAirtel = !!pd?.airtel_number;
   // ✅ Bank logic based on actual DB columns
-  const hasBank = !!(pd?.bank_name && pd?.account_number);
+  const hasBank = !!(pd?.bank_name && pd?.bank_account_number);
 
   const availableChannels = useMemo(
     () =>
@@ -328,7 +328,7 @@ export default function PublicInvoicePage() {
                       <p className="font-bold text-indigo-800 mb-2">Bank Wire Transfer Details:</p>
                       <p>Bank Name: <span className="font-bold">{pd?.bank_name}</span></p>
                       <p>Account Name: <span className="font-bold">{pd?.account_name || invoice.tenant_name}</span></p>
-                      <p>Account Number: <span className="font-bold">{pd?.account_number}</span></p>
+                      <p>Account Number: <span className="font-bold">{pd?.bank_account_number}</span></p>
                       {pd?.branch_code && <p>Branch Code: <span className="font-bold">{pd?.branch_code}</span></p>}
                       {pd?.swift_code && <p>SWIFT Code: <span className="font-bold">{pd?.swift_code}</span></p>}
                       <p>Payment Reference: <span className="font-bold">{invoice.invoice_number}</span></p>

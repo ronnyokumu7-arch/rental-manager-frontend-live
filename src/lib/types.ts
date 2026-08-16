@@ -373,6 +373,7 @@ export interface PublicPaymentDetails {
   bank_name?: string | null;
   bank_account?: string | null;
   bank_account_name?: string | null;
+  bank_account_number?: string | null;
   business_shortcode?: string | null;
   till_number?: string | null;
   account_number?: string | null;
