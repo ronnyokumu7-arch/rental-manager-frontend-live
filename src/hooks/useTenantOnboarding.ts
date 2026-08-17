@@ -7,17 +7,15 @@ import type { CreateTenantPayload } from "@/lib/types";
 
 export interface OnboardingFormData {
   name: string;
-  company_email: string; // Maps to Tenant.email
+  company_email: string;
   is_corporate: boolean;
   business_location: string;
   phone_number: string;
   kra_pin: string;
   currency: string;
   time_zone: string;
-  subscription_plan: "Starter" | "Professional" | "Enterprise";
-  billing_cycle: "monthly" | "annual";
   admin_name: string;
-  admin_email: string; // Maps to User.email
+  admin_email: string;
   admin_phone: string;
   admin_password: string;
 }
@@ -31,8 +29,6 @@ const INITIAL_FORM_DATA: OnboardingFormData = {
   kra_pin: "",
   currency: "KES",
   time_zone: "Africa/Nairobi",
-  subscription_plan: "Professional",
-  billing_cycle: "annual",
   admin_name: "",
   admin_email: "",
   admin_phone: "",
@@ -73,12 +69,6 @@ export const useTenantOnboarding = () => {
         }
         return true;
       case 3:
-        if (!formData.subscription_plan) {
-          toast.error("Please select a subscription tier");
-          return false;
-        }
-        return true;
-      case 4:
         if (!formData.admin_name.trim() || !formData.admin_email.trim()) {
           toast.error("Please fill in the primary administrator details");
           return false;
@@ -99,7 +89,7 @@ export const useTenantOnboarding = () => {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(4, prev + 1));
+      setCurrentStep((prev) => Math.min(3, prev + 1));
     }
   };
 
@@ -108,23 +98,22 @@ export const useTenantOnboarding = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(4)) return;
+    if (!validateStep(3)) return;
     setIsSubmitting(true);
     try {
-      // ✅ Mapped exactly to Backend TenantCreate Schema
       const payload: CreateTenantPayload = {
         name: formData.name.trim(),
-        email: formData.company_email.trim(), // ✅ SENDS COMPANY EMAIL AS TENANT.EMAIL
+        email: formData.company_email.trim(),
         password: formData.admin_password.trim(),
         
-        // Admin Details (for User creation)
+        // Admin Details
         admin_name: formData.admin_name?.trim() || undefined,
-        admin_email: formData.admin_email.trim(), // ✅ SENDS ADMIN EMAIL SEPARATELY
+        admin_email: formData.admin_email.trim(),
         admin_phone: formData.admin_phone?.trim() || formData.phone_number?.trim() || undefined,
         
         // Optional Fields
         phone_number: formData.phone_number?.trim() || undefined,
-        plan: formData.subscription_plan?.toLowerCase().trim() || "free_trial",
+        plan: "pay_as_you_go", // ✅ PAYG is now the default for all new tenants
         business_location: formData.business_location?.trim() || undefined,
         kra_pin: formData.kra_pin?.toUpperCase().trim() || undefined,
         
@@ -132,21 +121,19 @@ export const useTenantOnboarding = () => {
         currency: formData.currency?.trim() || "KES",
         time_zone: formData.time_zone?.trim() || "Africa/Nairobi",
         is_corporate: formData.is_corporate ?? false,
-        billing_cycle: formData.billing_cycle?.trim() || "monthly",
+        billing_cycle: "monthly", // Default (not used for PAYG, but required by backend)
       };
 
       await tenantsApi.create(payload);
       toast.success("Tenant environment provisioned successfully!");
       router.push("/super-admin/agencies");
     } catch (error: any) {
-      // ✅ FIX: Prevent "Objects are not valid as React child" by parsing Pydantic errors
       const detail = error.response?.data?.detail;
       let errorMessage = "Failed to provision tenant.";
       
       if (typeof detail === 'string') {
         errorMessage = detail;
       } else if (Array.isArray(detail)) {
-        // Join all validation errors into one readable message
         errorMessage = detail.map((err: any) => err.msg).join(', ');
       } else if (detail && typeof detail === 'object') {
         errorMessage = detail.msg || JSON.stringify(detail);

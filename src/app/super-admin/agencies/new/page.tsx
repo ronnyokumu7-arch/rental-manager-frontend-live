@@ -7,14 +7,12 @@ import { useTenantOnboarding } from "@/hooks/useTenantOnboarding";
 import WizardStepper from "@/components/tenants/wizard/WizardStepper";
 import StepOrganization from "@/components/tenants/wizard/StepOrganization";
 import StepCompliance from "@/components/tenants/wizard/StepCompliance";
-import StepSubscription from "@/components/tenants/wizard/StepSubscription";
 import StepAdmin from "@/components/tenants/wizard/StepAdmin";
 
 const STEPS = [
   { id: 1, label: "Organization" },
   { id: 2, label: "Tax & Locale" },
-  { id: 3, label: "Subscription" },
-  { id: 4, label: "Admin Account" },
+  { id: 3, label: "Admin Account" }, // ✅ Subscription step removed
 ];
 
 export default function NewTenantWizardPage() {
@@ -42,7 +40,7 @@ export default function NewTenantWizardPage() {
           <ArrowLeft size={16} /> Back to Directory
         </button>
         <span className="text-xs font-mono font-semibold px-3 py-1 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
-          Onboarding Engine v2.4
+          Onboarding Engine v2.5
         </span>
       </div>
 
@@ -81,9 +79,6 @@ export default function NewTenantWizardPage() {
           <StepCompliance formData={formData} updateField={updateField} />
         )}
         {currentStep === 3 && (
-          <StepSubscription formData={formData} updateField={updateField} />
-        )}
-        {currentStep === 4 && (
           <StepAdmin 
             formData={formData} 
             updateField={updateField} 
@@ -103,7 +98,7 @@ export default function NewTenantWizardPage() {
             <ArrowLeft size={14} /> Back
           </button>
 
-          {currentStep < 4 ? (
+          {currentStep < 3 ? (
             <button
               type="button"
               onClick={handleNext}
