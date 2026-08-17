@@ -1,20 +1,15 @@
+// src/app/super-admin/settings/page.tsx
 "use client";
 
 import { useState } from "react";
 import {
-  Building2, ShieldCheck, Palette, Bell, CreditCard, Settings,
-  ChevronRight, ChevronLeft, Puzzle, Database, Key, Users,
-  Globe, Lock, Zap, BarChart3, UserCheck, Receipt, Landmark,
-  Shield, HardDrive, Activity, Webhook,
+  Building2, ShieldCheck, Palette, Bell, Settings,
+  ChevronRight, ChevronLeft, Globe, Lock, Users,
+  Wallet, Landmark, Activity,
 } from "lucide-react";
+import PlatformCommissionSettings from "@/components/admin/PlatformCommissionSettings";
 
-import BusinessProfileSettings from "@/components/settings/BusinessProfileSettings";
-import AppearanceSettings from "@/components/settings/AppearanceSettings";
-import TeamRolesSettings from "@/components/settings/TeamRolesSettings";
-import UsersPage from "@/app/dashboard/users/page";
-import BillingSubscriptionSettings from "@/components/settings/BillingSubscriptionSettings";
-
-type TabId = "general" | "team" | "financials" | "system" | "advanced";
+type TabId = "platform" | "revenue" | "access";
 
 interface SettingModule {
   id: string;
@@ -27,36 +22,25 @@ interface SettingModule {
 }
 
 const TABS = [
-  { id: "general", label: "General", icon: Settings },
-  { id: "team", label: "Team & Access", icon: Users },
-  { id: "financials", label: "Financials", icon: Landmark },
-  { id: "system", label: "System", icon: Zap },
-  { id: "advanced", label: "Advanced", icon: Shield },
+  { id: "platform", label: "Platform", icon: Globe },
+  { id: "revenue", label: "Revenue", icon: Landmark },
+  { id: "access", label: "Access & Audit", icon: ShieldCheck },
 ];
 
 const SETTINGS_MODULES: SettingModule[] = [
-  // General
-  { id: "business", title: "Business Profile", description: "Manage your agency details, logo, and official contact information.", icon: Building2, theme: "blue", tab: "general" },
-  { id: "appearance", title: "Appearance", description: "Customize dashboard themes, regional formats, and display preferences.", icon: Palette, theme: "purple", tab: "general" },
-  { id: "notifications", title: "Notifications", description: "Control email alerts, booking reminders, and system warnings.", icon: Bell, theme: "amber", tab: "general" },
-  { id: "regional", title: "Regional Settings", description: "Set timezone, currency, date formats, and language preferences.", icon: Globe, theme: "emerald", tab: "general" },
-  // Team
-  { id: "roles", title: "Team & Roles", description: "Configure staff access, job titles, and granular permission matrices.", icon: ShieldCheck, theme: "emerald", tab: "team" },
-  { id: "users", title: "User Management", description: "Invite, activate, suspend, and manage team member accounts.", icon: UserCheck, theme: "blue", tab: "team" },
-  { id: "auth", title: "Authentication", description: "Configure 2FA, session timeouts, and password policies.", icon: Lock, theme: "rose", tab: "team" },
-  // Financials
-  { id: "billing", title: "Billing & Subscription", description: "Manage your subscription plan, payment methods, and invoices.", icon: CreditCard, theme: "rose", tab: "financials" },
-  { id: "invoices", title: "Invoice Settings", description: "Configure invoice templates, tax rates, and payment terms.", icon: Receipt, theme: "blue", tab: "financials", badge: "New" },
-  { id: "payments", title: "Payment Methods", description: "Add and manage accepted payment methods and gateways.", icon: Landmark, theme: "emerald", tab: "financials" },
-  // System
-  { id: "integrations", title: "Integrations", description: "Connect external APIs, webhooks, and third-party services.", icon: Puzzle, theme: "slate", tab: "system" },
-  { id: "webhooks", title: "Webhooks", description: "Manage webhook endpoints and event subscriptions.", icon: Webhook, theme: "purple", tab: "system", badge: "Beta" },
-  { id: "api-keys", title: "API Keys", description: "Generate and manage API keys for external integrations.", icon: Key, theme: "amber", tab: "system" },
-  { id: "audit", title: "Audit Logs", description: "View system activity, user actions, and security events.", icon: Activity, theme: "blue", tab: "system" },
-  // Advanced
-  { id: "data", title: "Data Management", description: "Export, import, and manage your rental data and records.", icon: Database, theme: "blue", tab: "advanced" },
-  { id: "backup", title: "Backup & Recovery", description: "Configure automatic backups and disaster recovery settings.", icon: HardDrive, theme: "emerald", tab: "advanced" },
-  { id: "health", title: "System Health", description: "Monitor system performance, uptime, and resource usage.", icon: BarChart3, theme: "purple", tab: "advanced" },
+  // ── Platform ──────────────────────────────────────────────
+  { id: "platform-profile", title: "Platform Profile", description: "Platform name, logo, and official contact information shown to all tenants.", icon: Building2, theme: "blue", tab: "platform" },
+  { id: "appearance", title: "Appearance", description: "Global branding defaults and display preferences for the whole platform.", icon: Palette, theme: "purple", tab: "platform" },
+  { id: "notifications", title: "Notifications", description: "Platform email templates: welcome, suspension, and grace-period warnings.", icon: Bell, theme: "amber", tab: "platform" },
+
+  // ── Revenue ───────────────────────────────────────────────
+  { id: "commission", title: "Commission Settings", description: "PAYG commission amount, grace period, and the M-Pesa Paybill tenants pay to.", icon: Wallet, theme: "emerald", tab: "revenue", badge: "Live" },
+  { id: "payment-methods", title: "Platform Payment Methods", description: "Bank accounts and channels used to receive tenant payments.", icon: Landmark, theme: "blue", tab: "revenue" },
+
+  // ── Access & Audit ────────────────────────────────────────
+  { id: "super-admins", title: "Super Admin Users", description: "Invite, suspend, and revoke platform operator accounts.", icon: Users, theme: "blue", tab: "access" },
+  { id: "authentication", title: "Authentication", description: "2FA and session policies for platform operators.", icon: Lock, theme: "rose", tab: "access" },
+  { id: "audit", title: "Audit Logs", description: "Platform-wide activity trail: verifications, setting changes, logins.", icon: Activity, theme: "amber", tab: "access" },
 ];
 
 const getThemeClasses = (theme: string) => {
@@ -71,8 +55,8 @@ const getThemeClasses = (theme: string) => {
   return themes[theme] || themes.blue;
 };
 
-export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("general");
+export default function SuperAdminSettingsPage() {
+  const [activeTab, setActiveTab] = useState<TabId>("platform");
   const [activeModule, setActiveModule] = useState<SettingModule | null>(null);
 
   const filteredModules = SETTINGS_MODULES.filter((m) => m.tab === activeTab);
@@ -82,7 +66,6 @@ export default function SettingsPage() {
       {/* Premium Header & Tab Switcher */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-center gap-4">
-          {/* Back Button (Only shows when inside a module) */}
           {activeModule && (
             <button
               onClick={() => setActiveModule(null)}
@@ -99,15 +82,16 @@ export default function SettingsPage() {
                   <Settings size={20} />
                 </div>
               )}
-              {activeModule ? activeModule.title : "Settings"}
+              {activeModule ? activeModule.title : "Platform Settings"}
             </h1>
             <p className="text-sm text-[var(--color-ink-muted)] mt-1">
-              {activeModule ? activeModule.description : "Manage your agency configuration and system preferences"}
+              {activeModule
+                ? activeModule.description
+                : "Configure how the platform operates, earns, and who controls it"}
             </p>
           </div>
         </div>
 
-        {/* Unified Tab Switcher (Hidden when inside a module) */}
         {!activeModule && (
           <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
             {TABS.map((tab) => {
@@ -152,16 +136,16 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-semibold text-[var(--color-ink)] truncate">{module.title}</h3>
                     {module.badge && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--color-primary-muted)] text-[var(--color-primary-text)]">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--color-success-bg)] text-[var(--color-success-text)]">
                         {module.badge}
                       </span>
                     )}
                   </div>
                   <p className="text-sm text-[var(--color-ink-muted)] mt-0.5 line-clamp-2">{module.description}</p>
                 </div>
-                <ChevronRight 
-                  size={18} 
-                  className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all duration-200 flex-shrink-0" 
+                <ChevronRight
+                  size={18}
+                  className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all duration-200 flex-shrink-0"
                 />
               </div>
             );
@@ -170,18 +154,9 @@ export default function SettingsPage() {
       ) : (
         // ── THE WORKSPACE: Individual Module View ──
         <div className="animate-in slide-in-from-right-4 fade-in duration-300">
-          
-          {/* ✅ DYNAMIC ROUTING: Render specific module components, or fallback placeholder */}
-          {activeModule.id === "business" ? (
-            <BusinessProfileSettings />
-          ) : activeModule.id === "appearance" ? (
-            <AppearanceSettings />
-          ) : activeModule.id === "roles" ? (
-            <TeamRolesSettings />
-          ) : activeModule.id === "users" ? (
-            <UsersPage />
-          ) : activeModule.id === "billing" ? (
-            <BillingSubscriptionSettings />
+          {/* ✅ DYNAMIC ROUTING: Commission Settings wired in step 7; others placeholder */}
+          {activeModule.id === "commission" ? (
+            <PlatformCommissionSettings />
           ) : (
             <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl shadow-[var(--shadow-card)] p-8 min-h-[400px] flex flex-col items-center justify-center text-center">
               <div className={`w-16 h-16 rounded-2xl ${getThemeClasses(activeModule.theme).iconBg} flex items-center justify-center mb-4`}>
