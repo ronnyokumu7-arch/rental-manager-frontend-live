@@ -1,3 +1,4 @@
+// src/hooks/settings/useBusinessSettings.ts
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
@@ -51,7 +52,8 @@ function fileToDataUrl(file: File, maxDim = 512): Promise<string> {
 }
 
 export function useBusinessSettings() {
-  const { refresh } = useAuth();
+  // ✅ FIXED: pull refreshTenant (light) in addition to refresh (heavy token rotation)
+  const { refresh, refreshTenant } = useAuth();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -175,7 +177,7 @@ export function useBusinessSettings() {
       setLogoPreview(dataUrl);
       setIsLogoDirty(true);
     } catch (error) {
-      console.error("Failed to process logo:", error); // ✅ FIXED: Use the error variable
+      console.error("Failed to process logo:", error);
       toast.error("Could not process that image");
     }
   };
@@ -210,6 +212,9 @@ export function useBusinessSettings() {
       setLogoPreview(updatedProfile.logo_url || null);
       setIsLogoDirty(false);
 
+      // ✅ FIXED: Refresh tenant context so topbar + contract preview reflect the new company name instantly
+      await refreshTenant();
+
       toast.success("Company profile updated successfully");
     } catch (error: any) {
       console.error("Failed to update company settings:", error);
@@ -240,6 +245,8 @@ export function useBusinessSettings() {
         phone_number: updatedUser.phone_number || "",
       });
 
+      // ✅ Kept as full token rotation: admin name/email lives inside the JWT user object,
+      //    so a full /auth/refresh is needed to refresh topbar greeting + user context.
       await refresh();
       toast.success("Administrator details updated successfully");
     } catch (error: any) {

@@ -27,6 +27,7 @@ interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
+  refreshTenant: () => Promise<void>;  // ✅ NEW
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -236,8 +237,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [rotateTokens]);
 
+  /**
+   * ✅ NEW: Refresh tenant data only (no token rotation).
+   * Call this after Settings / BusinessProfile PATCH so topbar + contract
+   * preview pick up the new company name without a full page reload.
+   */
+  const refreshTenant = useCallback(async () => {
+    if (!state.user?.tenant_id) return;
+    const tenant = await fetchTenant(state.user.tenant_id);
+    if (tenant) {
+      setState((s) => ({ ...s, tenant }));
+    }
+  }, [state.user?.tenant_id]);
+
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refresh }}>
+    <AuthContext.Provider value={{ ...state, login, logout, refresh, refreshTenant }}>
       {children}
     </AuthContext.Provider>
   );
