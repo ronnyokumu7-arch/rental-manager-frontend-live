@@ -1,9 +1,9 @@
-// src/components/clients/NewClientForm.tsx
+// src/components/client/NewClientForm.tsx
 "use client";
 
 import { 
   User, Shield, CheckCircle, Mail, CreditCard, 
-  Upload, Camera, FileText, Car, Loader2, Users, Calendar
+  Upload, Camera, FileText, Car, Loader2, Users, Calendar, Info
 } from "lucide-react";
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
@@ -24,7 +24,13 @@ interface NewClientFormProps {
   setDlFrontFile: (f: File | null) => void;
   updateField: (field: string, value: string) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
-  mode?: "create" | "edit"; // ✅ NEW: Controls button text and behavior
+  mode?: "create" | "edit" | "public_intake";
+  tenantBranding?: {
+    name: string;
+    logo?: string;
+    phone?: string;
+    email?: string;
+  };
 }
 
 // ✅ BULLETPROOF LOCAL DATE FORMATTER (Fixes timezone offset bug)
@@ -46,14 +52,20 @@ export default function NewClientForm({
   idBackFile, setIdBackFile,
   dlFrontFile, setDlFrontFile,
   updateField, handleSubmit,
-  mode = "create" // ✅ Default to create mode
+  mode = "create",
+  tenantBranding
 }: NewClientFormProps) {
   
   const docCount = [idFrontFile, idBackFile, dlFrontFile].filter(Boolean).length;
+  const totalDocsRequired = mode === "public_intake" ? 4 : 3;
+  const totalDocsUploaded = docCount + (avatarFile ? 1 : 0);
+  const isPublicIntake = mode === "public_intake";
+  const idType = formData.id_type || "national_id";
+  const idNumberRequired = !!idType;
 
   const DocUploadSlot = ({
-    label, icon: Icon, file, setFile
-  }: { label: string; icon: any; file: File | null; setFile: (f: File | null) => void }) => (
+    label, icon: Icon, file, setFile, required = false
+  }: { label: string; icon: any; file: File | null; setFile: (f: File | null) => void; required?: boolean }) => (
     <label className="group relative flex flex-col items-center justify-center p-3 rounded-lg border-2 border-dashed border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-primary)]/5 transition-all cursor-pointer">
       <input type="file" accept="image/*" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
       {file ? (
@@ -68,7 +80,9 @@ export default function NewClientForm({
           <div className="w-7 h-7 rounded-full bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] group-hover:text-[var(--color-primary)] flex items-center justify-center mb-1">
             <Icon size={12} />
           </div>
-          <p className="text-[9px] font-semibold text-[var(--color-ink-muted)] group-hover:text-[var(--color-ink)]">{label}</p>
+          <p className="text-[9px] font-semibold text-[var(--color-ink-muted)] group-hover:text-[var(--color-ink)]">
+            {label} {required && <span className="text-[var(--color-danger)]">*</span>}
+          </p>
         </>
       )}
     </label>
@@ -79,7 +93,26 @@ export default function NewClientForm({
       
       {/* LEFT COLUMN: Identity + Compliance */}
       <div className="space-y-3">
-        
+
+        {/* ✅ PUBLIC INTAKE: Tenant Branding Header */}
+        {isPublicIntake && tenantBranding && (
+          <div className="bg-gradient-to-br from-[var(--color-primary)]/10 to-[var(--color-primary)]/5 rounded-xl border border-[var(--color-primary)]/20 p-4 mb-4">
+            <div className="flex items-center gap-3">
+              {tenantBranding.logo ? (
+                <img src={tenantBranding.logo} alt={tenantBranding.name} className="w-12 h-12 rounded-lg object-contain" />
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-[var(--color-primary)]/20 text-[var(--color-primary)] flex items-center justify-center">
+                  <Car size={24} />
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-bold text-[var(--color-ink-muted)] uppercase tracking-wider">You've been invited by</p>
+                <p className="text-lg font-extrabold text-[var(--color-ink)]">{tenantBranding.name}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Section 1: Identity */}
         <section className={sectionClass}>
           <div className="flex items-start justify-between mb-3">
@@ -90,6 +123,7 @@ export default function NewClientForm({
               <h3 className="text-sm font-bold text-[var(--color-ink)]">Client Identity</h3>
             </div>
             
+            {/* ✅ Avatar upload (always visible) */}
             <label className="relative group cursor-pointer">
               <div className="w-12 h-12 rounded-full bg-[var(--color-surface-hover)] border-2 border-dashed border-[var(--color-surface-border)] group-hover:border-[var(--color-primary)] flex items-center justify-center overflow-hidden transition-all">
                 {avatarFile ? (
@@ -132,11 +166,58 @@ export default function NewClientForm({
                 required
               />
             </div>
+
+            {/* ✅ IDENTITY SLOT: Type selector + Number input */}
             <div className="sm:col-span-2">
-              <label className={labelClass}>National ID Number</label>
+              <label className={labelClass}>Identity Document <span className="text-[var(--color-danger)]">*</span></label>
+              
+              {/* Type Selector (Radio buttons) */}
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <label className={`flex items-center gap-2 p-2.5 rounded-lg border-2 cursor-pointer transition-all ${
+                  idType === "national_id"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                    : "border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/50"
+                }`}>
+                  <input
+                    type="radio"
+                    name="id_type"
+                    value="national_id"
+                    checked={idType === "national_id"}
+                    onChange={(e) => updateField("id_type", e.target.value)}
+                    className="sr-only"
+                  />
+                  <CreditCard size={14} className="text-[var(--color-ink-muted)]" />
+                  <span className="text-xs font-semibold text-[var(--color-ink)]">National ID</span>
+                </label>
+                <label className={`flex items-center gap-2 p-2.5 rounded-lg border-2 cursor-pointer transition-all ${
+                  idType === "passport"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                    : "border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/50"
+                }`}>
+                  <input
+                    type="radio"
+                    name="id_type"
+                    value="passport"
+                    checked={idType === "passport"}
+                    onChange={(e) => updateField("id_type", e.target.value)}
+                    className="sr-only"
+                  />
+                  <FileText size={14} className="text-[var(--color-ink-muted)]" />
+                  <span className="text-xs font-semibold text-[var(--color-ink)]">Passport</span>
+                </label>
+              </div>
+
+              {/* Number Input (required when type is selected) */}
               <div className="relative">
                 <CreditCard size={12} className="absolute left-2.5 top-2.5 text-[var(--color-ink-subtle)]" />
-                <input type="text" value={formData.id_number} onChange={(e) => updateField("id_number", e.target.value)} placeholder="ID Number" className={`${inputClass} pl-8`} />
+                <input
+                  type="text"
+                  value={formData.id_number || ""}
+                  onChange={(e) => updateField("id_number", e.target.value)}
+                  placeholder={idType === "national_id" ? "National ID Number" : "Passport Number"}
+                  className={`${inputClass} pl-8`}
+                  required={idNumberRequired}
+                />
               </div>
             </div>
           </div>
@@ -200,12 +281,33 @@ export default function NewClientForm({
             />
           </div>
 
+          {/* ✅ Document uploads (always visible, required fields marked for public mode) */}
           <div>
-            <label className={labelClass}>Required Documents ({docCount}/3 uploaded)</label>
+            <label className={labelClass}>
+              Documents ({totalDocsUploaded}/{totalDocsRequired} uploaded)
+              {isPublicIntake && <span className="ml-1 text-amber-600">· ID Front & DL Front required</span>}
+            </label>
             <div className="grid grid-cols-3 gap-2">
-              <DocUploadSlot label="ID Front" icon={FileText} file={idFrontFile} setFile={setIdFrontFile} />
-              <DocUploadSlot label="ID Back" icon={FileText} file={idBackFile} setFile={setIdBackFile} />
-              <DocUploadSlot label="DL Front" icon={Car} file={dlFrontFile} setFile={setDlFrontFile} />
+              <DocUploadSlot 
+                label="ID Front" 
+                icon={FileText} 
+                file={idFrontFile} 
+                setFile={setIdFrontFile} 
+                required={isPublicIntake}
+              />
+              <DocUploadSlot 
+                label="ID Back" 
+                icon={FileText} 
+                file={idBackFile} 
+                setFile={setIdBackFile} 
+              />
+              <DocUploadSlot 
+                label="DL Front" 
+                icon={Car} 
+                file={dlFrontFile} 
+                setFile={setDlFrontFile} 
+                required={isPublicIntake}
+              />
             </div>
           </div>
         </section>
@@ -272,14 +374,16 @@ export default function NewClientForm({
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[var(--color-ink-muted)]">ID Number</span>
+              <span className="text-[var(--color-ink-muted)]">
+                {idType === "passport" ? "Passport" : "National ID"}
+              </span>
               <span className="font-semibold text-[var(--color-ink)]">
                 {formData.id_number || "—"}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--color-ink-muted)]">Documents</span>
-              <span className="font-semibold text-[var(--color-ink)]">{docCount}/3</span>
+              <span className="font-semibold text-[var(--color-ink)]">{totalDocsUploaded}/{totalDocsRequired}</span>
             </div>
           </div>
         </div>
@@ -294,20 +398,32 @@ export default function NewClientForm({
             {loading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                {mode === "edit" ? "Updating..." : "Creating..."}
+                {mode === "edit" ? "Updating..." : mode === "public_intake" ? "Submitting..." : "Creating..."}
               </>
             ) : (
               <>
                 <CheckCircle size={16} />
-                {mode === "edit" ? "Update Client" : "Add Client"}
+                {mode === "edit" ? "Update Client" : mode === "public_intake" ? "Submit for Review" : "Add Client"}
               </>
             )}
           </button>
           <p className="text-[10px] text-center text-[var(--color-ink-muted)] mt-2">
             {mode === "edit" 
               ? "Changes will be saved instantly" 
-              : "Client will be created and ready for bookings"}
+              : mode === "public_intake"
+                ? "Your details will be reviewed by the agency before activation"
+                : "Client will be created and ready for bookings"}
           </p>
+
+          {/* ✅ PUBLIC INTAKE: Notice about pending status */}
+          {isPublicIntake && (
+            <div className="mt-3 p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/20 flex items-start gap-2">
+              <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-blue-700 leading-relaxed">
+                After submission, your profile will be in <span className="font-bold">pending review</span> status. The agency will verify your details and activate your account before you can book.
+              </p>
+            </div>
+          )}
         </div>
 
       </aside>

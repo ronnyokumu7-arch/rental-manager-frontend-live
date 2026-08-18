@@ -6,7 +6,6 @@ import { useState, useMemo } from "react";
 import {
   Users,
   Building2,
-  Plus,
   Mail,
   Phone,
   User as UserIcon,
@@ -16,10 +15,12 @@ import {
   ShieldAlert,
   Loader2,
   Search,
+  ArrowRight,
 } from "lucide-react";
 import { useClientsList } from "@/hooks/clients/useClientsList";
 import FilterDropdown from "@/components/ui/FilterDropdown";
 import DataTable, { RowAction } from "@/components/ui/DataTable";
+import AddClientButton from "@/components/client/AddClientButton";
 import CardGrid from "@/components/ui/CardGrid";
 import type { Client } from "@/lib/types";
 
@@ -46,6 +47,7 @@ export default function ClientsPage() {
     filteredClients,
     paginatedClients,
     totalPages,
+    pendingClients,
     handleVerify,
     handleSuspend,
     handleReactivate,
@@ -201,16 +203,39 @@ export default function ClientsPage() {
                 />
               </div>
 
-              {/* New Client CTA */}
-              <button
-                onClick={() => router.push("/dashboard/clients/new")}
-                className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm flex-shrink-0"
-              >
-                <Plus size={14} strokeWidth={2.5} />
-                New Client
-              </button>
+              {/* Add Client Dropdown */}
+              <AddClientButton />
             </div>
           </div>
+
+          {/* ✅ PENDING REVIEW BANNERS */}
+          {!loading && pendingClients > 0 && statusFilter !== "pending" && (
+            <button
+              type="button"
+              onClick={() => setStatusFilter("pending")}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-500/10 border-b border-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-500/15 transition-colors text-sm font-semibold"
+            >
+              <ShieldAlert size={16} />
+              {pendingClients} {pendingClients === 1 ? "client" : "clients"} awaiting your review
+              <ArrowRight size={14} className="opacity-70" />
+            </button>
+          )}
+
+          {!loading && statusFilter === "pending" && (
+            <div className="w-full flex items-center justify-between px-4 py-3 bg-blue-500/10 border-b border-blue-500/20 text-blue-700 dark:text-blue-400 text-sm font-semibold">
+              <span className="flex items-center gap-2">
+                <Filter size={14} />
+                Viewing {filteredClients.length} pending {filteredClients.length === 1 ? "client" : "clients"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setStatusFilter(null)}
+                className="text-xs font-bold px-2 py-1 rounded-md bg-blue-500/20 hover:bg-blue-500/30 transition-colors"
+              >
+                Clear Filter
+              </button>
+            </div>
+          )}
 
           {/* ✅ Loading State */}
           {loading ? (

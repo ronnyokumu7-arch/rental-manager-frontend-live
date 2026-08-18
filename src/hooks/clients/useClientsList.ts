@@ -1,3 +1,5 @@
+//src/hooks/clients/useClientsList.ts
+
 "use client";
 import { confirmAction } from "@/lib/utils/confirmAction";
 
@@ -68,6 +70,7 @@ export function useClientsList() {
   const totalClients = clients.length;
   const activeClients = clients.filter((c) => c.status === "active").length;
   const suspendedClients = clients.filter((c) => c.status === "suspended").length;
+  const pendingClients = clients.filter((c) => c.status === "pending").length;
 
   // ✅ FIXED: Call the dedicated activate endpoint, not the generic update
   // (ClientUpdate schema silently ignores 'status' field by design)
@@ -164,6 +167,7 @@ export function useClientsList() {
     totalClients,
     activeClients,
     suspendedClients,
+    pendingClients,
     actionLoadingId,
     openDropdownId,
     setOpenDropdownId,
