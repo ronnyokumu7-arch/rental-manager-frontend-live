@@ -16,19 +16,22 @@ import {
   Loader2,
   Search,
   ArrowRight,
+  Link2, // ✅ NEW: Icon for Invites tab
 } from "lucide-react";
 import { useClientsList } from "@/hooks/clients/useClientsList";
 import FilterDropdown from "@/components/ui/FilterDropdown";
 import DataTable, { RowAction } from "@/components/ui/DataTable";
 import AddClientButton from "@/components/client/AddClientButton";
+import ClientInvitesPanel from "@/components/client/ClientInvitesPanel"; // ✅ NEW: Invites management panel
 import CardGrid from "@/components/ui/CardGrid";
 import type { Client } from "@/lib/types";
 
-type ClientSegment = "individual" | "corporate";
+type ClientSegment = "individual" | "corporate" | "invites"; // ✅ UPDATED: Added "invites"
 
 const TABS = [
   { id: "individual", label: "Individual", icon: UserIcon },
   { id: "corporate", label: "Corporate", icon: Building2 },
+  { id: "invites", label: "Invites", icon: Link2 }, // ✅ NEW: Invites tab
 ];
 
 export default function ClientsPage() {
@@ -73,10 +76,18 @@ export default function ClientsPage() {
         icon: <UserIcon size={20} />,
       };
     }
+    if (activeTab === "corporate") {
+      return {
+        title: "Corporate Clients",
+        description: "Oversee commercial agency relationships, corporate profiles, and company contracts.",
+        icon: <Building2 size={20} />,
+      };
+    }
+    // ✅ NEW: Invites tab info
     return {
-      title: "Corporate Clients",
-      description: "Oversee commercial agency relationships, corporate profiles, and company contracts.",
-      icon: <Building2 size={20} />,
+      title: "Client Invites",
+      description: "Generate single-use onboarding links and manage pending invitations.",
+      icon: <Link2 size={20} />,
     };
   }, [activeTab]);
 
@@ -109,6 +120,51 @@ export default function ClientsPage() {
       onClick: () => handleArchive(client.id),
     },
     ].filter((action) => !!action.label) as RowAction<Client>[];
+
+  // ✅ NEW: Invites tab render
+  if (activeTab === "invites") {
+    return (
+      <div className="space-y-6">
+        {/* Header & Tabs */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
+              <div className="w-9 h-9 sm:w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)] flex-shrink-0">
+                {currentTabInfo.icon}
+              </div>
+              <span>{currentTabInfo.title}</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-[var(--color-ink-muted)] mt-1">
+              {currentTabInfo.description}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] shadow-sm self-start sm:self-auto">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as ClientSegment)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                    isActive
+                      ? "bg-[var(--color-primary)] text-white shadow-sm"
+                      : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
+                  }`}
+                >
+                  <Icon size={14} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ✅ Invites Panel */}
+        <ClientInvitesPanel />
+      </div>
+    );
+  }
 
   if (activeTab === "individual") {
     return (

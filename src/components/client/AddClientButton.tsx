@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, UserPlus, Link2, ChevronDown } from "lucide-react";
+import { UserPlus, Link2, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AddClientModal from "./AddClientModal";
 
@@ -34,18 +34,18 @@ export default function AddClientButton() {
   };
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative w-full sm:w-auto" ref={menuRef}>
       <button
         onClick={() => setMenuOpen(!menuOpen)}
-        className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm"
+        className="w-full sm:w-auto h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm"
       >
-        <Plus size={14} strokeWidth={2.5} />
+        <UserPlus size={14} strokeWidth={2.5} />
         Add Client
         <ChevronDown size={14} className={`transition-transform ${menuOpen ? "rotate-180" : ""}`} />
       </button>
 
       {menuOpen && (
-        <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-lg z-40 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 top-full mt-2 w-full sm:w-56 bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-lg z-40 animate-in fade-in zoom-in-95 duration-150">
           <button
             onClick={handleAddManually}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors first:rounded-t-xl"

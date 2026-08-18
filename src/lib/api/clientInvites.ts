@@ -7,6 +7,8 @@ export interface ClientInvite {
   token: string;
   status: "pending" | "accepted" | "revoked";
   expires_at: string;
+  expected_name: string | null;   // ✅ who we're expecting (optional)
+  expected_phone: string | null;  // ✅ who we're expecting (optional)
   accepted_client_id: number | null;
   created_at: string;
   is_expired: boolean;
@@ -15,8 +17,12 @@ export interface ClientInvite {
 
 export const clientInvitesApi = {
   /** Generate a single-use onboarding link */
-  create: (ttlDays: number = 7) =>
-    apiClient.post<ClientInvite>("/clients/invites", { ttl_days: ttlDays }),
+  create: (ttlDays: number = 7, expectedName?: string, expectedPhone?: string) =>
+    apiClient.post<ClientInvite>("/clients/invites", {
+      ttl_days: ttlDays,
+      expected_name: expectedName || null,
+      expected_phone: expectedPhone || null,
+    }),
 
   /** List this tenant's invites (newest first) */
   list: (limit: number = 50) =>

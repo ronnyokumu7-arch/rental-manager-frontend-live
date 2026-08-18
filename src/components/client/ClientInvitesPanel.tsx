@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  UserPlus, Link2, Copy, Check, Mail, X, Loader2, Clock, Ban, MessageCircle,
+  UserPlus, Link2, Copy, Check, Mail, X, Loader2, Clock, Ban, MessageCircle, User, Phone,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { clientInvitesApi, ClientInvite } from "@/lib/api/clientInvites";
@@ -150,15 +150,45 @@ export default function ClientInvitesPanel() {
                 className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-lg bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)]"
               >
                 <div className="flex-1 min-w-0">
+                  {/* ✅ PRIMARY LINE: Expected client name (if present) + Status chip */}
                   <div className="flex items-center gap-2">
-                    <Link2 size={12} className="text-[var(--color-ink-subtle)] shrink-0" />
-                    <span className="text-[11px] font-mono text-[var(--color-ink)] truncate">
-                      ...{inv.token.slice(-8)}
-                    </span>
+                    {inv.expected_name ? (
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <User size={12} className="text-[var(--color-primary)] shrink-0" />
+                        <span className="text-xs font-bold text-[var(--color-ink)] truncate">
+                          {inv.expected_name}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Link2 size={12} className="text-[var(--color-ink-subtle)] shrink-0" />
+                        <span className="text-[11px] font-mono text-[var(--color-ink)] truncate">
+                          ...{inv.token.slice(-8)}
+                        </span>
+                      </div>
+                    )}
                     <span className={`px-1.5 py-0.5 rounded-full border text-[9px] font-bold ${chip.cls}`}>
                       {chip.label}
                     </span>
                   </div>
+
+                  {/* ✅ SECONDARY LINE: Phone + Link tail (if name was shown) */}
+                  <div className="mt-1 flex items-center gap-3 text-[10px] text-[var(--color-ink-subtle)]">
+                    {inv.expected_phone && (
+                      <div className="flex items-center gap-1">
+                        <Phone size={9} />
+                        <span>{inv.expected_phone}</span>
+                      </div>
+                    )}
+                    {inv.expected_name && (
+                      <div className="flex items-center gap-1">
+                        <Link2 size={9} />
+                        <span className="font-mono">...{inv.token.slice(-8)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ✅ TERTIARY LINE: Expires/Created dates */}
                   <p className="text-[9px] text-[var(--color-ink-subtle)] mt-1 flex items-center gap-1">
                     <Clock size={9} />
                     Expires {new Date(inv.expires_at).toLocaleDateString()} ·
