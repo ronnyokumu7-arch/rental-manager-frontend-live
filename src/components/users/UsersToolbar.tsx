@@ -1,8 +1,9 @@
 // src/components/users/UsersToolbar.tsx
 "use client";
 
-import { Search, Shield, Briefcase, Plus, Filter } from "lucide-react";
+import { Search, Shield, Briefcase, Filter } from "lucide-react";
 import FilterDropdown from "@/components/ui/FilterDropdown";
+import AddUserButton from "@/components/users/AddUserButton";
 import type { CategoryMode } from "@/hooks/users/useUsersList";
 
 interface UsersToolbarProps {
@@ -16,7 +17,7 @@ interface UsersToolbarProps {
   totalUsers: number;
   activeUsers: number;
   inactiveUsers: number;
-  onAddMember: () => void;
+  onQuickAdd: () => void;
 }
 
 export default function UsersToolbar({
@@ -30,7 +31,7 @@ export default function UsersToolbar({
   totalUsers,
   activeUsers,
   inactiveUsers,
-  onAddMember,
+  onQuickAdd,
 }: UsersToolbarProps) {
   return (
     <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
@@ -86,7 +87,7 @@ export default function UsersToolbar({
         </div>
       </div>
 
-      {/* RIGHT SIDE: Search + Premium Filter + Invite Button */}
+      {/* RIGHT SIDE: Search + Premium Filter + Add Member Dropdown */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
         <div className="flex items-center gap-2 flex-1 sm:w-80">
           {/* Search Input */}
@@ -125,15 +126,8 @@ export default function UsersToolbar({
           )}
         </div>
 
-        {/* Invite Button */}
-        <button
-          type="button"
-          onClick={onAddMember}
-          className="h-9 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm flex-shrink-0 cursor-pointer touch-manipulation active:scale-[0.98]"
-        >
-          <Plus size={14} strokeWidth={2.5} />
-          Invite Users
-        </button>
+        {/* Unified Add Member Dropdown Button */}
+        <AddUserButton onQuickAdd={onQuickAdd} />
       </div>
     </div>
   );

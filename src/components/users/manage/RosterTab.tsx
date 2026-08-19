@@ -18,11 +18,6 @@ const QuickInviteModal = dynamic(() => import("@/components/users/QuickInviteMod
   loading: () => null,
 });
 
-const AddMemberChoiceModal = dynamic(() => import("@/components/users/AddMemberChoiceModal"), {
-  ssr: false,
-  loading: () => null,
-});
-
 interface ApiError {
   response?: {
     data?: {
@@ -85,11 +80,9 @@ export default function RosterTab() {
   }, [isMobile, paginatedUsers, users, search, departmentFilter]);
 
   // Local Interaction State
-  const [showAddChoice, setShowAddChoice] = useState(false);
   const [showQuickInvite, setShowQuickInvite] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
@@ -102,44 +95,40 @@ export default function RosterTab() {
   }, [users]);
 
   // Action Handlers
-  const handleQuickInviteSubmit = useCallback(async (data: { department: string; job_title: string }) => {
+  const handleQuickAddSubmit = useCallback(async (data: { 
+    full_name: string; 
+    email: string; 
+    phone_number?: string;
+    department: string; 
+    job_title: string;
+    password: string;
+  }) => {
     setInviteLoading(true);
     try {
-      const tempId = Date.now().toString(36) + Math.random().toString(36).substring(2);
       const payload = {
-        full_name: "Pending User",
-        email: `pending-${tempId}@pending.setup`,
+        full_name: data.full_name.trim(),
+        email: data.email.trim(),
+        phone_number: data.phone_number?.trim() || undefined,
         department: data.department,
         job_title: data.job_title,
+        password: data.password,
         role: "tenant_staff" as const,
         is_active: true,
       };
       
       const newUser = await usersApi.create(payload);
-      const link = `${window.location.origin}/invite?token=${newUser.invite_token}`;
-      setInviteLink(link);
       updateUserLocally(newUser);
-      toast.success("Invite link generated successfully!");
+      setSuccessMessage(`Account created! Credentials emailed to ${data.email}`);
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Failed to create invite"));
+      toast.error(getErrorMessage(error, "Failed to create account"));
     } finally {
       setInviteLoading(false);
     }
   }, [updateUserLocally]);
 
-  const handleCopyInviteLink = useCallback(() => {
-    if (inviteLink) {
-      navigator.clipboard.writeText(inviteLink);
-      setCopied(true);
-      toast.success("Link copied! Ready to share.");
-      setTimeout(() => setCopied(false), 2000);
-    }
-  }, [inviteLink]);
-
   const handleCloseInviteModal = useCallback(() => {
     setShowQuickInvite(false);
-    setInviteLink(null);
-    setCopied(false);
+    setSuccessMessage(null);
   }, []);
 
   const handleSuspend = useCallback(async (userToSuspend: User) => {
@@ -241,7 +230,7 @@ export default function RosterTab() {
         totalUsers={totalUsers}
         activeUsers={activeUsers}
         inactiveUsers={inactiveUsers}
-        onAddMember={() => setShowAddChoice(true)}
+        onQuickAdd={() => setShowQuickInvite(true)}
       />
 
       <UsersTable
@@ -263,21 +252,13 @@ export default function RosterTab() {
         currentUserRole={user?.role || "tenant_staff"}
       />
 
-      {/* Lazy Loaded Modals */}
-      <AddMemberChoiceModal 
-        isOpen={showAddChoice} 
-        onClose={() => setShowAddChoice(false)} 
-        onInvite={() => setShowQuickInvite(true)} 
-      />
-      
+      {/* Lazy Loaded Modal */}
       <QuickInviteModal
         isOpen={showQuickInvite}
         onClose={handleCloseInviteModal}
-        onSubmit={handleQuickInviteSubmit}
+        onSubmit={handleQuickAddSubmit}
         loading={inviteLoading}
-        inviteLink={inviteLink}
-        copied={copied}
-        onCopy={handleCopyInviteLink}
+        successMessage={successMessage}
       />
     </div>
   );

@@ -21,16 +21,29 @@ export default function SecureLightbox({ url, title = "Document", onClose }: Sec
     let cancelled = false;
     setSignedUrl(null);
     setFailed(false);
+    
     fetchSignedUrl(url).then((u) => {
       if (cancelled) return;
-      u ? setSignedUrl(u) : setFailed(true);
+      
+      // ✅ FIXED: Replaced ternary expression with standard if/else statement
+      // to satisfy the `@typescript-eslint/no-unused-expressions` rule.
+      if (u) {
+        setSignedUrl(u);
+      } else {
+        setFailed(true);
+      }
     });
+    
     return () => { cancelled = true; };
   }, [url]);
 
   // Esc key closes
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    // ✅ FIXED: Replaced short-circuit expression with standard if statement
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    
     if (url) window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [url, onClose]);
