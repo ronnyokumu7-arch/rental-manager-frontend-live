@@ -16,7 +16,7 @@ export default function ClientProfilePage() {
   
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
-  const [_clientData, setClientData] = useState<Client | null>(null);
+  const [clientData, setClientData] = useState<Client | null>(null); // ✅ RENAMED from _clientData
   
   // File states for uploads
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -100,9 +100,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       next_of_kin_phone: formData.next_of_kin_phone || null,
     };
 
-    // ✅ FIXED: Use .update() with correct signature
     await clientsApi.update(clientId, payload);
-    toast.success("Client updated successfully!");
 
     // Handle file uploads if new files are selected
     const uploadPromises = [];
@@ -113,10 +111,19 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     if (uploadPromises.length > 0) {
       await Promise.all(uploadPromises);
-      toast.success("Documents uploaded successfully!");
     }
 
-    router.refresh();
+    // ✅ REFRESH: Reload client data so avatar/docs update in the preview
+    const refreshedData = await clientsApi.get(clientId);
+    setClientData(refreshedData);
+    
+    // Clear file states since they're now uploaded
+    setAvatarFile(null);
+    setIdFrontFile(null);
+    setIdBackFile(null);
+    setDlFrontFile(null);
+
+    toast.success("Client updated successfully!");
   } catch (error: any) {
     toast.error(error.response?.data?.detail || "Failed to update client");
   } finally {
@@ -160,6 +167,11 @@ const handleSubmit = async (e: React.FormEvent) => {
         setDlFrontFile={setDlFrontFile}
         updateField={updateField}
         handleSubmit={handleSubmit}
+        // ✅ NEW: Pass existing document URLs (thumbnails will render)
+        existingAvatar={clientData?.avatar_image || null}
+        existingIdFront={clientData?.id_image_front || null}
+        existingIdBack={clientData?.id_image_back || null}
+        existingDlFront={clientData?.dl_image_front || null}
       />
     </div>
   );

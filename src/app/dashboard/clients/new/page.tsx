@@ -109,6 +109,11 @@ export default function NewClientPage() {
         setDlFrontFile={setDlFrontFile}
         updateField={updateField}
         handleSubmit={handleSubmit}
+        // ✅ No existing documents for new clients
+        existingAvatar={null}
+        existingIdFront={null}
+        existingIdBack={null}
+        existingDlFront={null}
       />
     </div>
   );

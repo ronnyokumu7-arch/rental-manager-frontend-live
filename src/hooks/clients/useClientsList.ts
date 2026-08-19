@@ -4,6 +4,7 @@
 import { confirmAction } from "@/lib/utils/confirmAction";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { clientsApi } from "@/lib/api/clients";
 import type { Client } from "@/lib/types";
 import toast from "react-hot-toast";
@@ -19,6 +20,7 @@ export function useClientsList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  const pathname = usePathname(); // ✅ NEW: Track route changes
 
   const pageSize = 7;
 
@@ -34,9 +36,40 @@ export function useClientsList() {
     }
   }, [view]);
 
+  // Initial fetch + fetch when view changes
   useEffect(() => {
     fetchClients();
   }, [fetchClients]);
+
+  // ✅ BULLETPROOF: Refetch on route change to clients page
+  useEffect(() => {
+    if (pathname === "/dashboard/clients") {
+      fetchClients();
+    }
+  }, [pathname, fetchClients]);
+
+  // ✅ BACKUP: Refetch when window regains focus or becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && pathname === "/dashboard/clients") {
+        fetchClients();
+      }
+    };
+    
+    const handleFocus = () => {
+      if (pathname === "/dashboard/clients") {
+        fetchClients();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+    
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [pathname, fetchClients]);
 
   const filteredClients = useMemo(() => {
     let result = clients;

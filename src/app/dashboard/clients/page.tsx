@@ -23,6 +23,7 @@ import FilterDropdown from "@/components/ui/FilterDropdown";
 import DataTable, { RowAction } from "@/components/ui/DataTable";
 import AddClientButton from "@/components/client/AddClientButton";
 import ClientInvitesPanel from "@/components/client/ClientInvitesPanel"; // ✅ NEW: Invites management panel
+import SecureImage from "@/components/ui/SecureImage"; // ✅ NEW
 import CardGrid from "@/components/ui/CardGrid";
 import type { Client } from "@/lib/types";
 
@@ -328,10 +329,15 @@ renderCardHeader={({ item }) => {
     <div className="flex items-center justify-between gap-3 min-w-0 w-full">
       {/* Left: Avatar + Name + Email */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
-          <UserIcon size={18} />
-        </div>
+{/* Avatar */}
+<div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0 overflow-hidden">
+  <SecureImage
+    src={item.avatar_image}
+    alt={item.full_name}
+    className="w-full h-full object-cover"
+    fallback={<UserIcon size={18} />}
+  />
+</div>
         
         {/* Name + Email */}
         <div className="min-w-0 flex-1">
@@ -480,9 +486,14 @@ renderCardHeader={({ item }) => {
                         const client = row.original;
                         return (
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] shrink-0">
-                              <UserIcon size={16} />
-                            </div>
+<div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] shrink-0 overflow-hidden">
+  <SecureImage
+    src={client.avatar_image}
+    alt={client.full_name}
+    className="w-full h-full object-cover"
+    fallback={<UserIcon size={16} />}
+  />
+</div>
                             <div className="min-w-0 flex flex-col">
                               <div className="flex items-center gap-1 min-w-0">
                                 <button

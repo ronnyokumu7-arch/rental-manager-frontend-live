@@ -1,15 +1,18 @@
 // src/components/client/NewClientForm.tsx
 "use client";
 
+import { useState } from "react";
 import { 
   User, Shield, CheckCircle, Mail, CreditCard, 
-  Upload, Camera, FileText, Car, Loader2, Users, Calendar, Info
+  Upload, Camera, FileText, Car, Loader2, Users, Calendar, Info, Eye
 } from "lucide-react";
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import AddressAutocomplete from '@/components/ui/AddressAutocomplete';
+import SecureImage from "@/components/ui/SecureImage";
+import SecureLightbox from "@/components/ui/SecureLightbox";
 
 interface NewClientFormProps {
   loading: boolean;
@@ -31,6 +34,11 @@ interface NewClientFormProps {
     phone?: string;
     email?: string;
   };
+  // ✅ Existing document URLs (for edit mode)
+  existingAvatar?: string | null;
+  existingIdFront?: string | null;
+  existingIdBack?: string | null;
+  existingDlFront?: string | null;
 }
 
 // ✅ BULLETPROOF LOCAL DATE FORMATTER (Fixes timezone offset bug)
@@ -53,7 +61,11 @@ export default function NewClientForm({
   dlFrontFile, setDlFrontFile,
   updateField, handleSubmit,
   mode = "create",
-  tenantBranding
+  tenantBranding,
+  existingAvatar,
+  existingIdFront,
+  existingIdBack,
+  existingDlFront,
 }: NewClientFormProps) {
   
   const docCount = [idFrontFile, idBackFile, dlFrontFile].filter(Boolean).length;
@@ -63,32 +75,73 @@ export default function NewClientForm({
   const idType = formData.id_type || "national_id";
   const idNumberRequired = !!idType;
 
+  // ✅ NEW: In-app lightbox state (replaces window.open)
+  const [lightbox, setLightbox] = useState<{ url: string; title: string } | null>(null);
+
+  const openLightbox = (url: string, title: string) => {
+    setLightbox({ url, title });
+  };
+
   const DocUploadSlot = ({
-    label, icon: Icon, file, setFile, required = false
-  }: { label: string; icon: any; file: File | null; setFile: (f: File | null) => void; required?: boolean }) => (
-    <label className="group relative flex flex-col items-center justify-center p-3 rounded-lg border-2 border-dashed border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-primary)]/5 transition-all cursor-pointer">
-      <input type="file" accept="image/*" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-      {file ? (
-        <>
-          <div className="w-7 h-7 rounded-full bg-[var(--color-success-bg)] text-[var(--color-success-text)] flex items-center justify-center mb-1">
-            <CheckCircle size={12} />
-          </div>
-          <p className="text-[9px] font-bold text-[var(--color-ink)] truncate max-w-[70px]">{file.name}</p>
-        </>
-      ) : (
-        <>
-          <div className="w-7 h-7 rounded-full bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] group-hover:text-[var(--color-primary)] flex items-center justify-center mb-1">
-            <Icon size={12} />
-          </div>
-          <p className="text-[9px] font-semibold text-[var(--color-ink-muted)] group-hover:text-[var(--color-ink)]">
-            {label} {required && <span className="text-[var(--color-danger)]">*</span>}
-          </p>
-        </>
-      )}
-    </label>
-  );
+    label, icon: Icon, file, setFile, required = false, existingUrl,
+  }: { 
+    label: string; 
+    icon: any; 
+    file: File | null; 
+    setFile: (f: File | null) => void; 
+    required?: boolean;
+    existingUrl?: string | null;
+  }) => {
+    // Priority: new file > existing URL > empty slot
+    const hasNewFile = !!file;
+    const hasExisting = !!existingUrl && !hasNewFile;
+    
+    return (
+      <div className="flex flex-col gap-1">
+        <label className="group relative flex flex-col items-center justify-center p-3 rounded-lg border-2 border-dashed border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-primary)]/5 transition-all cursor-pointer">
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          
+          {hasNewFile ? (
+            // New file selected
+            <>
+              <div className="w-7 h-7 rounded-full bg-[var(--color-success-bg)] text-[var(--color-success-text)] flex items-center justify-center mb-1">
+                <CheckCircle size={12} />
+              </div>
+              <p className="text-[9px] font-bold text-[var(--color-ink)] truncate max-w-[70px]">{file.name}</p>
+            </>
+          ) : (
+            // Empty slot or existing (both show the same icon layout)
+            <>
+              <div className="w-7 h-7 rounded-full bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] group-hover:text-[var(--color-primary)] flex items-center justify-center mb-1">
+                <Icon size={12} />
+              </div>
+              <p className="text-[9px] font-semibold text-[var(--color-ink-muted)] group-hover:text-[var(--color-ink)]">
+                {label} {required && <span className="text-[var(--color-danger)]">*</span>}
+              </p>
+            </>
+          )}
+        </label>
+        
+        {/* ✅ View button → opens in-app lightbox */}
+        {hasExisting && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              openLightbox(existingUrl!, label);
+            }}
+            className="flex items-center justify-center gap-1 py-1 rounded-md bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-[9px] font-semibold hover:bg-[var(--color-primary)]/20 transition-colors"
+          >
+            <Eye size={10} />
+            View
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="max-w-6xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
       
       {/* LEFT COLUMN: Identity + Compliance */}
@@ -123,20 +176,44 @@ export default function NewClientForm({
               <h3 className="text-sm font-bold text-[var(--color-ink)]">Client Identity</h3>
             </div>
             
-            {/* ✅ Avatar upload (always visible) */}
-            <label className="relative group cursor-pointer">
-              <div className="w-12 h-12 rounded-full bg-[var(--color-surface-hover)] border-2 border-dashed border-[var(--color-surface-border)] group-hover:border-[var(--color-primary)] flex items-center justify-center overflow-hidden transition-all">
-                {avatarFile ? (
-                  <img src={URL.createObjectURL(avatarFile)} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <Camera size={14} className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] transition-colors" />
-                )}
-              </div>
-              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => setAvatarFile(e.target.files?.[0] || null)} />
-              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center shadow-lg border-2 border-[var(--color-surface)]">
-                <Upload size={8} />
-              </div>
-            </label>
+            {/* ✅ Avatar upload with existing URL support */}
+            <div className="flex flex-col items-center gap-1">
+              <label className="relative group cursor-pointer">
+                <div className="w-12 h-12 rounded-full bg-[var(--color-surface-hover)] border-2 border-dashed border-[var(--color-surface-border)] group-hover:border-[var(--color-primary)] flex items-center justify-center overflow-hidden transition-all">
+                  {avatarFile ? (
+                    <img src={URL.createObjectURL(avatarFile)} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : existingAvatar ? (
+                    <SecureImage
+                      src={existingAvatar}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                      fallback={<Camera size={14} className="text-[var(--color-ink-subtle)]" />}
+                    />
+                  ) : (
+                    <Camera size={14} className="text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] transition-colors" />
+                  )}
+                </div>
+                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => setAvatarFile(e.target.files?.[0] || null)} />
+                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center shadow-lg border-2 border-[var(--color-surface)]">
+                  <Upload size={8} />
+                </div>
+              </label>
+              
+              {/* ✅ View button → opens in-app lightbox */}
+              {existingAvatar && !avatarFile && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openLightbox(existingAvatar!, "Avatar");
+                  }}
+                  className="flex items-center justify-center gap-1 px-2 py-0.5 rounded-md bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-[8px] font-semibold hover:bg-[var(--color-primary)]/20 transition-colors"
+                >
+                  <Eye size={9} />
+                  View
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -281,7 +358,7 @@ export default function NewClientForm({
             />
           </div>
 
-          {/* ✅ Document uploads (always visible, required fields marked for public mode) */}
+          {/* ✅ Document uploads with existing URL support */}
           <div>
             <label className={labelClass}>
               Documents ({totalDocsUploaded}/{totalDocsRequired} uploaded)
@@ -294,12 +371,14 @@ export default function NewClientForm({
                 file={idFrontFile} 
                 setFile={setIdFrontFile} 
                 required={isPublicIntake}
+                existingUrl={existingIdFront}
               />
               <DocUploadSlot 
                 label="ID Back" 
                 icon={FileText} 
                 file={idBackFile} 
                 setFile={setIdBackFile} 
+                existingUrl={existingIdBack}
               />
               <DocUploadSlot 
                 label="DL Front" 
@@ -307,6 +386,7 @@ export default function NewClientForm({
                 file={dlFrontFile} 
                 setFile={setDlFrontFile} 
                 required={isPublicIntake}
+                existingUrl={existingDlFront}
               />
             </div>
           </div>
@@ -351,6 +431,17 @@ export default function NewClientForm({
           <div className="flex items-start gap-3 mb-3">
             {avatarFile ? (
               <img src={URL.createObjectURL(avatarFile)} alt="Preview" className="w-12 h-12 rounded-full object-cover" />
+            ) : existingAvatar ? (
+              <SecureImage
+                src={existingAvatar}
+                alt="Preview"
+                className="w-12 h-12 rounded-full object-cover"
+                fallback={
+                  <div className="w-12 h-12 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center">
+                    <User size={20} />
+                  </div>
+                }
+              />
             ) : (
               <div className="w-12 h-12 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center">
                 <User size={20} />
@@ -428,5 +519,13 @@ export default function NewClientForm({
 
       </aside>
     </form>
+
+    {/* ✅ IN-APP DOCUMENT LIGHTBOX */}
+    <SecureLightbox
+      url={lightbox?.url ?? null}
+      title={lightbox?.title ?? "Document"}
+      onClose={() => setLightbox(null)}
+    />
+    </>
   );
 }
