@@ -18,6 +18,11 @@ const QuickInviteModal = dynamic(() => import("@/components/users/QuickInviteMod
   loading: () => null,
 });
 
+const InviteUserModal = dynamic(() => import("@/components/users/InviteUserModal"), {
+  ssr: false,
+  loading: () => null,
+});
+
 interface ApiError {
   response?: {
     data?: {
@@ -79,11 +84,16 @@ export default function RosterTab() {
     });
   }, [isMobile, paginatedUsers, users, search, departmentFilter]);
 
-  // Local Interaction State
-  const [showQuickInvite, setShowQuickInvite] = useState(false);
+  // Local Interaction State — Add Manually flow
+  const [showAddManually, setShowAddManually] = useState(false);
+  const [addManuallyLoading, setAddManuallyLoading] = useState(false);
+  const [addManuallySuccess, setAddManuallySuccess] = useState<string | null>(null);
+
+  // Local Interaction State — Invite User flow
+  const [showInvite, setShowInvite] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
 
@@ -94,16 +104,17 @@ export default function RosterTab() {
     return Array.from(depts).sort().map((d) => ({ value: d, label: d }));
   }, [users]);
 
-  // Action Handlers
-  const handleQuickAddSubmit = useCallback(async (data: { 
+  // ─── ADD MANUALLY (admin fills everything → account ready immediately) ─────
+  const handleAddManuallySubmit = useCallback(async (data: { 
     full_name: string; 
     email: string; 
     phone_number?: string;
+    role: "tenant_admin" | "tenant_staff";
     department: string; 
     job_title: string;
     password: string;
   }) => {
-    setInviteLoading(true);
+    setAddManuallyLoading(true);
     try {
       const payload = {
         full_name: data.full_name.trim(),
@@ -112,25 +123,56 @@ export default function RosterTab() {
         department: data.department,
         job_title: data.job_title,
         password: data.password,
-        role: "tenant_staff" as const,
+        role: data.role,  // ✅ Now respects the Admin/Staff choice from the modal
         is_active: true,
       };
       
       const newUser = await usersApi.create(payload);
       updateUserLocally(newUser);
-      setSuccessMessage(`Account created! Credentials emailed to ${data.email}`);
+      setAddManuallySuccess(`Account created! Credentials emailed to ${data.email}`);
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to create account"));
     } finally {
-      setInviteLoading(false);
+      setAddManuallyLoading(false);
     }
   }, [updateUserLocally]);
 
-  const handleCloseInviteModal = useCallback(() => {
-    setShowQuickInvite(false);
-    setSuccessMessage(null);
+  const handleCloseAddManually = useCallback(() => {
+    setShowAddManually(false);
+    setAddManuallySuccess(null);
   }, []);
 
+  // ─── INVITE USER (name + phone + locked role → user completes onboarding) ──
+  const handleInviteSubmit = useCallback(async (data: { 
+    full_name: string; 
+    phone_number?: string;
+    role: "tenant_admin" | "tenant_staff";
+    department: string;
+    job_title: string;
+  }) => {
+    setInviteLoading(true);
+    try {
+      const result = await usersApi.createInvite({
+        full_name: data.full_name.trim(),
+        phone_number: data.phone_number?.trim() || undefined,
+        role: data.role,
+        department: data.department,
+        job_title: data.job_title,
+      });
+      setInviteLink(result.invite_link);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to generate invite link"));
+    } finally {
+      setInviteLoading(false);
+    }
+  }, []);
+
+  const handleCloseInvite = useCallback(() => {
+    setShowInvite(false);
+    setInviteLink(null);
+  }, []);
+
+  // ─── Row Action Handlers (unchanged) ─────────────────────────────────────
   const handleSuspend = useCallback(async (userToSuspend: User) => {
     setActionLoadingId(userToSuspend.id);
     try {
@@ -230,7 +272,8 @@ export default function RosterTab() {
         totalUsers={totalUsers}
         activeUsers={activeUsers}
         inactiveUsers={inactiveUsers}
-        onQuickAdd={() => setShowQuickInvite(true)}
+        onQuickAdd={() => setShowAddManually(true)}
+        onInvite={() => setShowInvite(true)}
       />
 
       <UsersTable
@@ -252,13 +295,22 @@ export default function RosterTab() {
         currentUserRole={user?.role || "tenant_staff"}
       />
 
-      {/* Lazy Loaded Modal */}
+      {/* Add Manually Modal (admin fills everything) */}
       <QuickInviteModal
-        isOpen={showQuickInvite}
-        onClose={handleCloseInviteModal}
-        onSubmit={handleQuickAddSubmit}
+        isOpen={showAddManually}
+        onClose={handleCloseAddManually}
+        onSubmit={handleAddManuallySubmit}
+        loading={addManuallyLoading}
+        successMessage={addManuallySuccess}
+      />
+
+      {/* Invite User Modal (name + phone → shareable link) */}
+      <InviteUserModal
+        isOpen={showInvite}
+        onClose={handleCloseInvite}
+        onSubmit={handleInviteSubmit}
         loading={inviteLoading}
-        successMessage={successMessage}
+        inviteLink={inviteLink}
       />
     </div>
   );

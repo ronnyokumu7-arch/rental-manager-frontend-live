@@ -299,6 +299,7 @@ export interface PublicContractView {
   booking_number?: string | null;
   tenant_name: string;
   client_name: string;
+  id_number: string;
   vehicle_make: string;
   vehicle_model: string;
   vehicle_plate: string;
@@ -524,16 +525,19 @@ export type SubscriptionStatus =
 export type PaymentMethodType = "mpesa" | "airtel_money" | "card" | "paypal" | "bank";
 
 export interface TenantProfile {
-  id: number;
-  tenant_id: number;
+  id?: number;
+  tenant_id?: number;
   company_name: string;
+  business_location: string;
   address?: string | null;
   phone?: string | null;
   email?: string | null;
   website?: string | null;
   tax_number?: string | null;
   logo_url?: string | null;
-  contract_prefix: string;
+  kra_pin?: string | null;
+  contract_terms?: string | null;
+  contract_prefix?: string;
   contract_footer?: string | null;
 }
 

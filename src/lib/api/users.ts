@@ -41,6 +41,21 @@ export interface UserCreatePayload {
   dl_image_url?: string | null;
 }
 
+// ✅ NEW: Invite flow — admin provides only name + phone (+ optional role details)
+export interface UserInviteCreatePayload {
+  full_name: string;
+  phone_number?: string | null;
+  role: "super_admin" | "tenant_admin" | "tenant_staff";
+  department?: string | null;
+  job_title?: string | null;
+}
+
+// ✅ NEW: Invite response — includes the shareable link
+export interface UserInviteResponse extends User {
+  invite_token: string;
+  invite_link: string;
+}
+
 export interface UserUpdatePayload {
   full_name?: string;
   email?: string;
@@ -105,6 +120,10 @@ export interface TeamMember {
 export const usersApi = {
   create: (data: UserCreatePayload) =>
     apiClient.post<User>("/users/", data).then((r) => r.data),
+
+  // ✅ NEW: Generate a shareable invite link (user completes their own onboarding)
+  createInvite: (data: UserInviteCreatePayload) =>
+    apiClient.post<UserInviteResponse>("/users/invite", data).then((r) => r.data),
 
   list: (params?: { tenant_id?: number; role?: string; is_active?: boolean; is_suspended?: boolean; page?: number; page_size?: number }) =>
     apiClient.get<PaginatedResponse<User>>("/users/", { params }).then((r) => r.data.items),

@@ -1,12 +1,15 @@
 // src/components/users/QuickInviteModal.tsx
 import { useState, useEffect } from "react";
-import { UserPlus, Loader2, Check, Copy, Mail, MessageSquare, Phone } from "lucide-react";
+import { UserPlus, Loader2, Check, Copy, Mail, MessageSquare, Phone, Shield, Briefcase } from "lucide-react";
 
+const ADMIN_TITLES = ["Director", "Manager", "HR"];
 const STAFF_DEPARTMENTS: Record<string, string[]> = {
   "Fleet & Operations": ["Fleet Manager", "Dispatcher", "Driver"],
   "Finance": ["Accountant", "Cashier"],
   "Sales & Contracts": ["Sales Agent", "Contracts Officer"],
 };
+
+type RoleType = "admin" | "staff" | null;
 
 interface QuickInviteModalProps {
   isOpen: boolean;
@@ -15,6 +18,7 @@ interface QuickInviteModalProps {
     full_name: string; 
     email: string; 
     phone_number?: string;
+    role: "tenant_admin" | "tenant_staff";
     department: string; 
     job_title: string;
     password: string;
@@ -26,12 +30,13 @@ interface QuickInviteModalProps {
 export default function QuickInviteModal({ 
   isOpen, onClose, onSubmit, loading, successMessage 
 }: QuickInviteModalProps) {
+  const [roleType, setRoleType] = useState<RoleType>(null);
+  const [department, setDepartment] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [formData, setFormData] = useState({ 
     full_name: "", 
     email: "", 
     phone_number: "",
-    department: "", 
-    job_title: "",
     password: ""
   });
   const [copied, setCopied] = useState(false);
@@ -39,12 +44,13 @@ export default function QuickInviteModal({
   // Reset form when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
+      setRoleType(null);
+      setDepartment("");
+      setJobTitle("");
       setFormData({ 
         full_name: "", 
         email: "", 
         phone_number: "",
-        department: "", 
-        job_title: "",
         password: ""
       });
       setCopied(false);
@@ -55,8 +61,25 @@ export default function QuickInviteModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    if (!roleType || !jobTitle) return;
+    
+    await onSubmit({
+      full_name: formData.full_name,
+      email: formData.email,
+      phone_number: formData.phone_number.trim() || undefined,
+      role: roleType === "admin" ? "tenant_admin" : "tenant_staff",
+      department: roleType === "admin" ? "Executive" : department,
+      job_title: jobTitle,
+      password: formData.password,
+    });
   };
+
+  const isFormValid = 
+    roleType &&
+    jobTitle &&
+    formData.full_name.trim() &&
+    formData.email.trim() &&
+    formData.password.length >= 8;
 
   const handleCopyCredentials = () => {
     const credentials = `Email: ${formData.email}\nPassword: ${formData.password}`;
@@ -83,101 +106,165 @@ export default function QuickInviteModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
         {!successMessage ? (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {/* Header */}
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
                 <UserPlus size={20} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-[var(--color-ink)]">Quick Add Member</h3>
-                <p className="text-xs text-[var(--color-ink-muted)]">Create an account and email their credentials.</p>
+                <h3 className="text-lg font-bold text-[var(--color-ink)]">Add Member Manually</h3>
+                <p className="text-xs text-[var(--color-ink-muted)]">Create an account and share their credentials.</p>
               </div>
             </div>
-            
-            <div className="space-y-3">
-              {/* Name & Email */}
-              <div>
-                <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Full Name <span className="text-[var(--color-danger)]">*</span></label>
-                <input 
-                  type="text"
-                  required 
-                  className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
-                  value={formData.full_name} 
-                  onChange={e => setFormData({...formData, full_name: e.target.value})}
-                  placeholder="e.g. Jane Doe"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Email Address <span className="text-[var(--color-danger)]">*</span></label>
-                <input 
-                  type="email"
-                  required 
-                  className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
-                  value={formData.email} 
-                  onChange={e => setFormData({...formData, email: e.target.value})}
-                  placeholder="jane@company.com"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Phone Number</label>
-                <input 
-                  type="tel"
-                  className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
-                  value={formData.phone_number} 
-                  onChange={e => setFormData({...formData, phone_number: e.target.value})}
-                  placeholder="+254 7..."
-                />
-              </div>
 
-              {/* Department & Job Title */}
-              <div>
-                <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Department <span className="text-[var(--color-danger)]">*</span></label>
-                <select 
-                  required 
-                  className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all appearance-none"
-                  value={formData.department} 
-                  onChange={e => setFormData({...formData, department: e.target.value, job_title: ""})}
+            {/* STEP 1: Access Level Selection */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] mb-2">
+                Access Level <span className="text-[var(--color-danger)]">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => { setRoleType("admin"); setDepartment(""); setJobTitle(""); }}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${
+                    roleType === "admin" 
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5" 
+                      : "border-[var(--color-surface-border)] bg-[var(--color-surface-hover)] hover:border-[var(--color-surface-border-strong)]"
+                  }`}
                 >
-                  <option value="">Select Department...</option>
-                  {Object.keys(STAFF_DEPARTMENTS).map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
+                  <Shield className={`mb-1.5 ${roleType === "admin" ? "text-[var(--color-primary)]" : "text-[var(--color-ink-subtle)]"}`} size={18} />
+                  <p className="text-sm font-bold text-[var(--color-ink)]">Admin</p>
+                  <p className="text-[10px] text-[var(--color-ink-muted)] mt-0.5">Leadership & management</p>
+                </button>
+                
+                <button 
+                  type="button" 
+                  onClick={() => { setRoleType("staff"); setDepartment(""); setJobTitle(""); }}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${
+                    roleType === "staff" 
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5" 
+                      : "border-[var(--color-surface-border)] bg-[var(--color-surface-hover)] hover:border-[var(--color-surface-border-strong)]"
+                  }`}
+                >
+                  <Briefcase className={`mb-1.5 ${roleType === "staff" ? "text-[var(--color-primary)]" : "text-[var(--color-ink-subtle)]"}`} size={18} />
+                  <p className="text-sm font-bold text-[var(--color-ink)]">Operational Staff</p>
+                  <p className="text-[10px] text-[var(--color-ink-muted)] mt-0.5">Day-to-day operations</p>
+                </button>
               </div>
+            </div>
+
+            {/* Conditional Role Fields */}
+            {roleType === "admin" && (
               <div>
-                <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Job Title <span className="text-[var(--color-danger)]">*</span></label>
+                <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Admin Title <span className="text-[var(--color-danger)]">*</span></label>
                 <select 
-                  required 
-                  disabled={!formData.department} 
-                  className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
-                  value={formData.job_title} 
-                  onChange={e => setFormData({...formData, job_title: e.target.value})}
+                  required
+                  className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all appearance-none"
+                  value={jobTitle} 
+                  onChange={e => setJobTitle(e.target.value)}
                 >
-                  <option value="">{formData.department ? "Select Title..." : "Select Dept First"}</option>
-                  {formData.department && STAFF_DEPARTMENTS[formData.department]?.map((title) => (
+                  <option value="">Select Title...</option>
+                  {ADMIN_TITLES.map((title) => (
                     <option key={title} value={title}>{title}</option>
                   ))}
                 </select>
               </div>
+            )}
 
-              {/* Password */}
-              <div>
-                <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Temporary Password <span className="text-[var(--color-danger)]">*</span></label>
-                <input 
-                  type="password"
-                  required 
-                  minLength={8}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
-                  value={formData.password} 
-                  onChange={e => setFormData({...formData, password: e.target.value})}
-                  placeholder="Min 8 characters"
-                />
+            {roleType === "staff" && (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Department <span className="text-[var(--color-danger)]">*</span></label>
+                  <select 
+                    required 
+                    className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all appearance-none"
+                    value={department} 
+                    onChange={e => { setDepartment(e.target.value); setJobTitle(""); }}
+                  >
+                    <option value="">Select Dept...</option>
+                    {Object.keys(STAFF_DEPARTMENTS).map((dept) => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Job Title <span className="text-[var(--color-danger)]">*</span></label>
+                  <select 
+                    required 
+                    disabled={!department} 
+                    className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    value={jobTitle} 
+                    onChange={e => setJobTitle(e.target.value)}
+                  >
+                    <option value="">{department ? "Select Title..." : "Dept first"}</option>
+                    {department && STAFF_DEPARTMENTS[department]?.map((title) => (
+                      <option key={title} value={title}>{title}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="flex gap-3 pt-4">
+            {/* Identity Fields (show after role selected) */}
+            {roleType && (
+              <>
+                <div className="border-t border-[var(--color-surface-border)] pt-3">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] mb-2">Identity & Contact</label>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Full Name <span className="text-[var(--color-danger)]">*</span></label>
+                      <input 
+                        type="text"
+                        required 
+                        className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
+                        value={formData.full_name} 
+                        onChange={e => setFormData({...formData, full_name: e.target.value})}
+                        placeholder="e.g. Jane Doe"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Email Address <span className="text-[var(--color-danger)]">*</span></label>
+                      <input 
+                        type="email"
+                        required 
+                        className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
+                        value={formData.email} 
+                        onChange={e => setFormData({...formData, email: e.target.value})}
+                        placeholder="jane@company.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Phone Number</label>
+                      <input 
+                        type="tel"
+                        className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
+                        value={formData.phone_number} 
+                        onChange={e => setFormData({...formData, phone_number: e.target.value})}
+                        placeholder="+254 7..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--color-ink-muted)] mb-1">Temporary Password <span className="text-[var(--color-danger)]">*</span></label>
+                      <input 
+                        type="password"
+                        required 
+                        minLength={8}
+                        className="w-full px-3 py-2.5 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-all"
+                        value={formData.password} 
+                        onChange={e => setFormData({...formData, password: e.target.value})}
+                        placeholder="Min 8 characters"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-2">
               <button 
                 type="button" 
                 onClick={onClose} 
@@ -187,7 +274,7 @@ export default function QuickInviteModal({
               </button>
               <button 
                 type="submit" 
-                disabled={loading || !formData.full_name || !formData.email || !formData.department || !formData.job_title || !formData.password} 
+                disabled={loading || !isFormValid} 
                 className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}

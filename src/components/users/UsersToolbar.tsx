@@ -18,6 +18,7 @@ interface UsersToolbarProps {
   activeUsers: number;
   inactiveUsers: number;
   onQuickAdd: () => void;
+  onInvite: () => void;
 }
 
 export default function UsersToolbar({
@@ -32,6 +33,7 @@ export default function UsersToolbar({
   activeUsers,
   inactiveUsers,
   onQuickAdd,
+  onInvite,
 }: UsersToolbarProps) {
   return (
     <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
@@ -127,7 +129,7 @@ export default function UsersToolbar({
         </div>
 
         {/* Unified Add Member Dropdown Button */}
-        <AddUserButton onQuickAdd={onQuickAdd} />
+        <AddUserButton onQuickAdd={onQuickAdd} onInvite={onInvite} />
       </div>
     </div>
   );

@@ -2,15 +2,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { UserPlus, Zap, ChevronDown } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { UserPlus, Link2, ChevronDown } from "lucide-react";
 
 interface AddUserButtonProps {
   onQuickAdd: () => void;
+  onInvite: () => void;
 }
 
-export default function AddUserButton({ onQuickAdd }: AddUserButtonProps) {
-  const router = useRouter();
+export default function AddUserButton({ onQuickAdd, onInvite }: AddUserButtonProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -27,12 +26,12 @@ export default function AddUserButton({ onQuickAdd }: AddUserButtonProps) {
 
   const handleAddManually = () => {
     setMenuOpen(false);
-    router.push("/dashboard/users/new");
+    onQuickAdd();
   };
 
-  const handleQuickAdd = () => {
+  const handleInvite = () => {
     setMenuOpen(false);
-    onQuickAdd();
+    onInvite();
   };
 
   return (
@@ -58,22 +57,22 @@ export default function AddUserButton({ onQuickAdd }: AddUserButtonProps) {
             <div className="text-left">
               <div className="text-sm">Add Manually</div>
               <div className="text-[10px] text-[var(--color-ink-muted)] font-normal">
-                Full onboarding wizard
+                You provide all details & password
               </div>
             </div>
           </button>
           <div className="border-t border-[var(--color-surface-border)]" />
           <button
-            onClick={handleQuickAdd}
+            onClick={handleInvite}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors last:rounded-b-xl"
           >
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
-              <Zap size={16} />
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+              <Link2 size={16} />
             </div>
             <div className="text-left">
-              <div className="text-sm">Quick Add</div>
+              <div className="text-sm">Invite User</div>
               <div className="text-[10px] text-[var(--color-ink-muted)] font-normal">
-                Create account with password
+                Send link — they complete their setup
               </div>
             </div>
           </button>
