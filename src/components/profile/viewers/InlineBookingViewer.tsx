@@ -1,4 +1,3 @@
-// src/components/profile/viewers/InlineBookingViewer.tsx
 "use client";
 
 import { Banknote } from "lucide-react";
@@ -64,7 +63,7 @@ export default function InlineBookingViewer({ booking, task, onRefresh }: Inline
       {task && <TaskContextBar task={task} />}
       
       {/* 3. TRIP DETAILS + CONTRACT TRACKER */}
-      <div className="px-6 py-5">
+      <div className="px-3.5 sm:px-6 py-3.5 sm:py-5">
         <BookingTripDetails 
           isEditing={isEditing}
           formData={formData}
@@ -73,24 +72,25 @@ export default function InlineBookingViewer({ booking, task, onRefresh }: Inline
         />
       </div>
       
-      {/* 4. TOTAL AMOUNT FOOTER - Premium Token Styling */}
-      <div className="px-6 pb-6 mt-auto">
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--color-surface-hover)]/30 border border-[var(--color-surface-border)]">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-sm">
-              <Banknote size={22} />
+      {/* 4. TOTAL AMOUNT FOOTER */}
+      <div className="px-3.5 sm:px-6 pb-3.5 sm:pb-6 mt-auto">
+        <div className="flex items-center justify-between p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[var(--color-surface-hover)]/30 border border-[var(--color-surface-border)]">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-xs shrink-0">
+              <Banknote size={18} className="sm:w-[22px] sm:h-[22px] shrink-0" />
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-0.5">Total Amount</p>
-              <p className="text-xl font-bold text-[var(--color-ink)] leading-tight">
+            <div className="min-w-0">
+              <p className="text-[9px] sm:text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-0.5 truncate">
+                Total Amount
+              </p>
+              <p className="text-base sm:text-xl font-bold text-[var(--color-ink)] leading-tight truncate">
                 KES {Number(formData.total_amount).toLocaleString()}
               </p>
             </div>
           </div>
           
-          {/* Optional: Add payment status badge here later */}
           {contract?.status === 'signed' && (
-            <span className="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10">
+            <span className="hidden sm:inline-flex px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 shrink-0">
               Paid & Signed
             </span>
           )}

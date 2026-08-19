@@ -1,4 +1,3 @@
-// src/components/profile/UserPersonalInfoCard.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -56,7 +55,6 @@ export default function UserPersonalInfoCard({
     
     if (!trimmedName || !trimmedEmail) return;
     
-    // ✅ Payload strictly matches UserUpdatePayload
     const payload: UserUpdatePayload = {
       full_name: trimmedName,
       email: trimmedEmail,
@@ -65,8 +63,6 @@ export default function UserPersonalInfoCard({
       job_title: formData.job_title.trim() || null,
     };
     
-    // ✅ SECURITY: Reset verification status if contact info changes
-    // This ensures the system only trusts verified contacts.
     const originalEmail = user.email || "";
     const originalPhone = user.phone_number || "";
 
@@ -103,37 +99,35 @@ export default function UserPersonalInfoCard({
   const initials = getInitials(user.full_name);
   const isSuperAdmin = user.role === "super_admin";
 
-  const labelClass = "text-[9px] font-mono font-bold text-[var(--color-ink-muted)] uppercase tracking-widest mb-1 block";
+  const labelClass = "text-[9px] font-mono font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-0.5 block";
   const valueClass = "text-xs font-mono font-bold text-[var(--color-ink)] truncate";
   const emptyClass = "text-xs font-mono text-[var(--color-ink-subtle)] italic truncate";
   
-  const inputBase = "w-full bg-[var(--color-surface)] text-xs font-mono font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] px-2.5 py-1.5 rounded-lg border border-[var(--color-surface-border)] focus:outline-none focus:border-[var(--color-primary)] transition-colors";
-  const fieldRow = "flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-[var(--color-surface-hover)]/20 border border-[var(--color-surface-border)]/50 transition-all duration-200";
+  const inputBase = "w-full min-h-[38px] sm:min-h-0 bg-[var(--color-surface)] text-sm sm:text-xs font-mono font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-subtle)] px-2.5 py-1.5 rounded-lg border border-[var(--color-surface-border)] focus:outline-none focus:border-[var(--color-primary)] transition-colors";
+  const fieldRow = "min-h-[36px] sm:min-h-0 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface-hover)]/20 border border-[var(--color-surface-border)]/50 transition-all duration-200";
 
   return (
-    <SectionCard className="!p-0 overflow-hidden shadow-2xs border-[var(--color-surface-border)] rounded-xl">
+    <SectionCard className="!p-0 overflow-hidden shadow-2xs border-[var(--color-surface-border)] rounded-xl h-auto">
       
-      {/* Sleek Identity Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/10">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/10">
         
-        <div className="flex items-center gap-3">
-          {/* Compact Avatar Anchor */}
+        <div className="flex items-center gap-2.5 min-w-0">
           <div className="relative group shrink-0">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-xs">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[11px] sm:text-xs font-bold text-white shadow-xs">
               {initials}
             </div>
             <div className="absolute inset-0 rounded-lg bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
-              <Camera size={14} className="text-white" />
+              <Camera size={12} className="text-white sm:w-3.5 sm:h-3.5" />
             </div>
           </div>
 
-          {/* Identity Summary */}
-          <div className="min-w-0">
-            <h3 className="text-xs font-bold text-[var(--color-ink)] uppercase tracking-wider flex items-center gap-1.5">
-              <span>Personal Information</span>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-xs font-bold text-[var(--color-ink)] uppercase tracking-wider truncate">
+              Personal Information
             </h3>
-            <p className="text-[10px] font-mono text-[var(--color-ink-muted)]">
-              Manage identity, contact info, and organizational position.
+            <p className="text-[9px] sm:text-[10px] font-mono text-[var(--color-ink-muted)] leading-tight truncate">
+              Manage identity & contact info
             </p>
           </div>
         </div>
@@ -141,25 +135,25 @@ export default function UserPersonalInfoCard({
         {/* Action Controls */}
         {!isSelfView && (
           isEditing ? (
-            <div className="flex items-center gap-1.5 w-full sm:w-auto animate-in fade-in duration-150">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={handleCancel}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-mono font-bold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                className="min-h-[32px] sm:min-h-0 flex items-center justify-center gap-1 px-2.5 py-1 rounded-md text-xs sm:text-[10px] font-mono font-bold text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] transition-colors"
               >
-                <X size={11} /> Cancel
+                <X size={12} /> Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={!formData.full_name.trim() || !formData.email.trim()}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1 rounded-md text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="min-h-[32px] sm:min-h-0 flex items-center justify-center gap-1 px-3 py-1 rounded-md text-xs sm:text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors disabled:opacity-50"
               >
-                <Save size={11} /> Save
+                <Save size={12} /> Save
               </button>
             </div>
           ) : (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-mono font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 transition-all active:scale-95"
+              className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-md text-xs sm:text-[10px] font-mono font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 transition-all active:scale-95 min-h-[32px] sm:min-h-0"
             >
               <Pencil size={11} /> Edit
             </button>
@@ -167,8 +161,8 @@ export default function UserPersonalInfoCard({
         )}
       </div>
 
-      {/* Dense Grid Content */}
-      <div className="p-3.5 grid grid-cols-1 md:grid-cols-2 gap-3">
+      {/* Grid Content */}
+      <div className="p-3 sm:p-3.5 grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
         
         {/* Full Name */}
         <div>
@@ -280,7 +274,7 @@ export default function UserPersonalInfoCard({
                 )}
               </select>
               {isSuperAdmin && (
-                <ShieldAlert size={14} className="text-amber-500 shrink-0" />
+                <ShieldAlert size={15} className="text-amber-500 shrink-0" />
               )}
             </div>
           ) : (

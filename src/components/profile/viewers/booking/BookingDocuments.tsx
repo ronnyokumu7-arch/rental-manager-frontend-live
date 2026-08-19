@@ -1,7 +1,7 @@
-// src/components/profile/viewers/booking/BookingDocuments.tsx
 "use client";
 
-import { FileText, FileSignature, CheckCircle, Clock, AlertCircle, Eye, Link, Download } from "lucide-react";
+import type { ComponentType } from "react";
+import { FileText, FileSignature, CheckCircle, Clock, AlertCircle, Eye, Link, Download, type LucideProps } from "lucide-react";
 
 interface BookingDocumentsProps {
   contractStatus: string;
@@ -14,7 +14,16 @@ interface BookingDocumentsProps {
   onDownloadInvoice: () => void;
 }
 
-// ✅ Simple, safe status config matching your existing patterns
+interface DocumentTileProps {
+  title: string;
+  status: string;
+  onView: () => void;
+  onCopy: () => void;
+  onDownload: () => void;
+  Icon: ComponentType<LucideProps>;
+}
+
+// ✅ Simple, safe status config matching existing patterns
 const getStatusConfig = (status: string) => {
   const s = status?.toLowerCase();
   if (s === "signed" || s === "generated") {
@@ -26,35 +35,50 @@ const getStatusConfig = (status: string) => {
   return { label: "Not Available", color: "text-[var(--color-ink-subtle)]", bg: "bg-[var(--color-surface-hover)] border-[var(--color-surface-border)]", icon: AlertCircle };
 };
 
-function DocumentTile({ title, status, onView, onCopy, onDownload, Icon }: any) {
+function DocumentTile({ title, status, onView, onCopy, onDownload, Icon }: DocumentTileProps) {
   const config = getStatusConfig(status);
   const isReady = status?.toLowerCase() === "signed" || status?.toLowerCase() === "generated";
 
   return (
-    <div className={`relative group rounded-2xl border p-5 transition-all ${isReady ? 'border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30 hover:border-[var(--color-primary)]/30' : 'border-dashed border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/10'}`}>
-      <div className="flex items-start gap-4 mb-4">
-        <div className={`p-3 rounded-xl border ${config.bg}`}>
-          <Icon size={20} className={config.color} />
+    <div className={`relative group rounded-xl sm:rounded-2xl border p-3.5 sm:p-5 transition-all ${isReady ? 'border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30 hover:border-[var(--color-primary)]/30' : 'border-dashed border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/10'}`}>
+      <div className="flex items-center sm:items-start gap-3 sm:gap-4 mb-3 sm:mb-4 min-w-0">
+        <div className={`p-2.5 sm:p-3 rounded-lg sm:rounded-xl border shrink-0 ${config.bg}`}>
+          <Icon size={18} className={`sm:w-5 sm:h-5 ${config.color}`} />
         </div>
-        <div>
-          <h5 className="text-sm font-bold text-[var(--color-ink)]">{title}</h5>
-          <div className={`inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border ${config.bg} ${config.color}`}>
-            <config.icon size={10} />
-            {config.label}
+        <div className="min-w-0 flex-1">
+          <h5 className="text-xs sm:text-sm font-bold text-[var(--color-ink)] truncate">{title}</h5>
+          <div className={`inline-flex items-center gap-1 sm:gap-1.5 mt-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[8px] sm:text-[9px] font-bold uppercase tracking-wider border ${config.bg} ${config.color}`}>
+            <config.icon size={10} className="shrink-0" />
+            <span>{config.label}</span>
           </div>
         </div>
       </div>
 
       {isReady && (
-        <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[var(--color-surface-border)]/50">
-          <button onClick={onView} className="flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/10 transition-all">
-            <Eye size={14} /> View
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-2.5 sm:pt-3 border-t border-[var(--color-surface-border)]/50">
+          <button 
+            type="button"
+            onClick={onView} 
+            className="flex items-center justify-center gap-1 py-1.5 sm:py-2 px-1 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)] bg-[var(--color-primary)]/5 hover:bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/10 active:scale-95 transition-all"
+          >
+            <Eye size={12} className="sm:w-3.5 sm:h-3.5 shrink-0" /> 
+            <span className="truncate">View</span>
           </button>
-          <button onClick={onCopy} className="flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] border border-transparent hover:border-[var(--color-surface-border)] transition-all">
-            <Link size={14} /> Copy
+          <button 
+            type="button"
+            onClick={onCopy} 
+            className="flex items-center justify-center gap-1 py-1.5 sm:py-2 px-1 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] border border-transparent hover:border-[var(--color-surface-border)] active:scale-95 transition-all"
+          >
+            <Link size={12} className="sm:w-3.5 sm:h-3.5 shrink-0" /> 
+            <span className="truncate">Copy</span>
           </button>
-          <button onClick={onDownload} className="flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] border border-transparent hover:border-[var(--color-surface-border)] transition-all">
-            <Download size={14} /> Download
+          <button 
+            type="button"
+            onClick={onDownload} 
+            className="flex items-center justify-center gap-1 py-1.5 sm:py-2 px-1 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-hover)] border border-transparent hover:border-[var(--color-surface-border)] active:scale-95 transition-all"
+          >
+            <Download size={12} className="sm:w-3.5 sm:h-3.5 shrink-0" /> 
+            <span className="truncate">Save</span>
           </button>
         </div>
       )}
@@ -68,9 +92,9 @@ export default function BookingDocuments({
   onViewInvoice, onCopyInvoiceLink, onDownloadInvoice
 }: BookingDocumentsProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <h4 className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-widest">Trip Documents</h4>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <DocumentTile 
           title="Rental Contract" 
           status={contractStatus} 

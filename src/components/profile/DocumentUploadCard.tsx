@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Upload, User, CreditCard, Car, CheckCircle2 } from "lucide-react";
 import SectionCard from "@/components/ui/SectionCard";
 import type { Client } from "@/lib/types";
@@ -37,10 +38,10 @@ export default function DocumentUploadCard({
     icon: React.ElementType; 
     hasFile: boolean; 
   }) => (
-    <label className={`relative flex items-center justify-between p-2.5 rounded-lg border transition-all duration-150 cursor-pointer group ${
+    <label className={`relative flex items-center justify-between min-h-[48px] sm:min-h-0 p-3 sm:p-2.5 rounded-lg border transition-all duration-150 cursor-pointer active:scale-[0.99] select-none group ${
       hasFile 
-        ? "border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10" 
-        : "border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30 hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/5"
+        ? "border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 active:bg-emerald-500/15" 
+        : "border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30 hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/5 active:bg-[var(--color-primary)]/10"
     }`}>
       <input
         type="file"
@@ -51,12 +52,12 @@ export default function DocumentUploadCard({
       
       {/* Left side: Icon + Text */}
       <div className="flex items-center gap-2.5 min-w-0">
-        <div className={`p-1.5 rounded-md transition-colors shrink-0 ${
+        <div className={`p-2 sm:p-1.5 rounded-md transition-colors shrink-0 ${
           hasFile
             ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
             : "bg-[var(--color-surface)] text-[var(--color-ink-subtle)] border border-[var(--color-surface-border)] group-hover:text-[var(--color-primary)] group-hover:border-[var(--color-primary)]/20"
         }`}>
-          <Icon size={14} />
+          <Icon size={16} className="sm:w-3.5 sm:h-3.5" />
         </div>
         
         <div className="min-w-0">
@@ -76,10 +77,10 @@ export default function DocumentUploadCard({
       {/* Right side: Action / Indicator */}
       <div className="shrink-0 ml-2">
         {hasFile ? (
-          <CheckCircle2 size={15} className="text-emerald-500" />
+          <CheckCircle2 size={16} className="text-emerald-500 sm:w-3.5 sm:h-3.5" />
         ) : (
-          <div className="p-1 rounded-md text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] group-hover:bg-[var(--color-surface)] transition-all">
-            <Upload size={13} />
+          <div className="p-1.5 sm:p-1 rounded-md text-[var(--color-ink-subtle)] group-hover:text-[var(--color-primary)] group-hover:bg-[var(--color-surface)] transition-all">
+            <Upload size={14} className="sm:w-3.5 sm:h-3.5" />
           </div>
         )}
       </div>
@@ -89,20 +90,20 @@ export default function DocumentUploadCard({
   return (
     <SectionCard className="!p-0 overflow-hidden shadow-2xs border-[var(--color-surface-border)] rounded-xl">
       {/* Compact Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/20">
-        <div className="flex items-center gap-2">
-          <Upload size={14} className="text-[var(--color-primary)]" />
-          <h3 className="text-xs font-bold text-[var(--color-ink)] uppercase tracking-wider">
+      <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/20">
+        <div className="flex items-center gap-2 min-w-0">
+          <Upload size={14} className="text-[var(--color-primary)] shrink-0" />
+          <h3 className="text-xs font-bold text-[var(--color-ink)] uppercase tracking-wider truncate">
             Document Verification
           </h3>
         </div>
-        <span className="text-[10px] font-mono text-[var(--color-ink-muted)]">
+        <span className="text-[10px] font-mono text-[var(--color-ink-muted)] shrink-0 ml-2">
           PDF or Image format
         </span>
       </div>
 
       {/* Compact Grid */}
-      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-2">
         <UploadSlot 
           type="avatar" 
           label="Avatar Photo" 

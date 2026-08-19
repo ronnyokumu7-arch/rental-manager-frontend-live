@@ -1,4 +1,3 @@
-// src/components/profile/viewers/booking/DocumentCard.tsx
 "use client";
 
 import { FileText, CheckCircle2, AlertCircle, Eye, Link, Download, Clock } from "lucide-react";
@@ -19,7 +18,7 @@ const getStatusConfig = (status: string) => {
       return { 
         label: 'Ready',
         color: 'text-emerald-600 dark:text-emerald-400',
-        bg: 'bg-emerald-500/5 border-emerald-500/10',
+        bg: 'bg-emerald-500/10 border-emerald-500/20',
         icon: CheckCircle2 
       };
     case 'pending':
@@ -27,7 +26,7 @@ const getStatusConfig = (status: string) => {
       return { 
         label: 'Pending',
         color: 'text-amber-600 dark:text-amber-400',
-        bg: 'bg-amber-500/5 border-amber-500/10',
+        bg: 'bg-amber-500/10 border-amber-500/20',
         icon: Clock 
       };
     default:
@@ -53,55 +52,58 @@ export default function DocumentCard({
 
   return (
     <div 
-      className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col ${
+      className={`group relative rounded-xl sm:rounded-2xl border transition-all duration-200 p-2.5 sm:p-3.5 flex flex-row items-center justify-between gap-3 ${
         isAvailable 
-          ? 'border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/30 hover:border-[var(--color-surface-border)]/80 hover:shadow-sm cursor-pointer' 
+          ? 'border-[var(--color-surface-border)] bg-[var(--color-surface)] hover:border-[var(--color-surface-border)]/80 hover:shadow-xs cursor-pointer' 
           : 'border-dashed border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/10'
       }`}
       onClick={isAvailable ? onView : undefined}
     >
-      
-      {/* Content Area */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        
-        {/* Icon Container */}
-        <div className={`p-3 rounded-xl mb-3 border transition-colors ${config.bg}`}>
-          <FileText size={24} className={config.color} />
+      {/* Left: Icon & Info */}
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl border shrink-0 transition-colors ${config.bg}`}>
+          <FileText size={18} className={`sm:w-5 sm:h-5 ${config.color}`} />
         </div>
         
-        {/* Title */}
-        <h5 className="text-sm font-bold text-[var(--color-ink)] mb-1">{title}</h5>
-        
-        {/* Status Badge */}
-        <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border ${config.bg} ${config.color}`}>
-          <config.icon size={10} />
-          {config.label}
+        <div className="min-w-0 space-y-0.5 sm:space-y-1">
+          <h5 className="text-xs sm:text-sm font-bold text-[var(--color-ink)] truncate">
+            {title}
+          </h5>
+          <div className="flex items-center gap-1.5">
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] sm:text-[9px] font-bold uppercase tracking-wider border ${config.bg} ${config.color}`}>
+              <config.icon size={10} className="shrink-0" />
+              <span>{config.label}</span>
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Action Overlay - Only visible when available */}
+      {/* Right: Actions */}
       {isAvailable && (
-        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
+        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
           <button 
+            type="button"
             onClick={(e) => { e.stopPropagation(); onView(); }} 
-            className="p-2 rounded-lg bg-white/20 hover:bg-white/40 text-white transition-colors" 
+            className="p-1.5 sm:p-2 rounded-lg text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] active:scale-95 transition-all" 
             title="View Document"
           >
-            <Eye size={14} />
+            <Eye size={16} />
           </button>
           <button 
+            type="button"
             onClick={(e) => { e.stopPropagation(); onCopyLink(); }} 
-            className="p-2 rounded-lg bg-white/20 hover:bg-white/40 text-white transition-colors" 
+            className="p-1.5 sm:p-2 rounded-lg text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] active:scale-95 transition-all" 
             title="Copy Link"
           >
-            <Link size={14} />
+            <Link size={16} />
           </button>
           <button 
+            type="button"
             onClick={(e) => { e.stopPropagation(); onDownload(); }} 
-            className="p-2 rounded-lg bg-white/20 hover:bg-white/40 text-white transition-colors" 
+            className="p-1.5 sm:p-2 rounded-lg text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 active:scale-95 transition-all" 
             title="Download PDF"
           >
-            <Download size={14} />
+            <Download size={16} />
           </button>
         </div>
       )}
