@@ -344,3 +344,22 @@ body {
 /* ✅ FIXED: Removed global * transition that was slowing down the entire app.
    Transitions are now only applied via Tailwind utility classes (e.g., transition-all)
    on specific interactive elements like buttons, inputs, and cards. */
+
+
+/* 1. ALLOW SECTIONS TO FLOW NATURALLY */
+.contract-section {
+    break-inside: auto; /* Allows long lists to continue onto the next page */
+    margin-bottom: 14pt;
+}
+
+/* 2. PROTECT HEADERS (No Orphans) */
+.section-title {
+    break-after: avoid; /* Title always stays with its content */
+    page-break-after: avoid;
+}
+
+/* 3. PROTECT CRITICAL BLOCKS (No Cutoffs) */
+.signature-box, .audit-stamp, .charges-table {
+    break-inside: avoid; /* Never split these blocks */
+    page-break-inside: avoid;
+}

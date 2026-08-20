@@ -298,6 +298,13 @@ export interface PublicContractView {
   booking_id: number;
   booking_number?: string | null;
   tenant_name: string;
+
+  // ✅ NEW: Owning tenant's branding (resolved from the contract's tenant)
+  tenant_logo_url?: string | null;
+  tenant_address?: string | null;
+  tenant_phone?: string | null;
+  tenant_email?: string | null;
+
   client_name: string;
   id_number: string;
   vehicle_make: string;
