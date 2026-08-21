@@ -1,5 +1,12 @@
 import apiClient from "@/lib/api-client";
-import type { Booking, BookingCreate, BookingUpdate, PaginatedResponse } from "@/lib/types";
+import type {
+  Booking,
+  BookingCreate,
+  BookingUpdate,
+  BookingQuote,
+  PricingResult,
+  PaginatedResponse,
+} from "@/lib/types";
 
 export interface ExtendBookingPayload {
   new_end_date: string;
@@ -15,48 +22,52 @@ export interface GenerateInvoicePayload {
 export const bookingsApi = {
   get: (id: number) =>
     apiClient.get<Booking>(`/bookings/${id}`).then((r) => r.data),
-    
+
   // ✅ FIXED: Unwrap .items from PaginatedResponse
   list: (params?: { vehicle_id?: number; client_id?: number; page?: number; page_size?: number }) =>
     apiClient.get<PaginatedResponse<Booking>>("/bookings/", { params }).then((r) => r.data.items),
-    
+
   // ✅ FIXED: Unwrap .items from PaginatedResponse
   listArchived: (params?: { page?: number; page_size?: number }) =>
     apiClient.get<PaginatedResponse<Booking>>("/bookings/archived", { params }).then((r) => r.data.items),
-    
+
+  // ✅ MILESTONE 1: Live pricing preview (no DB writes) — powers the form's live breakdown
+  quote: (data: BookingQuote) =>
+    apiClient.post<PricingResult>("/bookings/quote", data).then((r) => r.data),
+
   create: (data: BookingCreate) =>
     apiClient.post<Booking>("/bookings", data).then((r) => r.data),
-    
+
   update: (id: number, data: BookingUpdate) =>
     apiClient.patch<Booking>(`/bookings/${id}`, data).then((r) => r.data),
-    
+
   delete: (id: number) =>
     apiClient.delete(`/bookings/${id}`),
-  
+
   generateInvoice: (id: number, payload?: GenerateInvoicePayload) =>
     apiClient.post<{ share_token: string; token: string; expires_at: string }>(
       `/bookings/${id}/generate-invoice`,
       payload || {}
     ).then((r) => r.data),
-  
+
   confirm: (id: number) =>
     apiClient.post<Booking>(`/bookings/${id}/confirm`).then((r) => r.data),
-    
+
   activate: (id: number) =>
     apiClient.post<Booking>(`/bookings/${id}/activate`).then((r) => r.data),
-    
+
   complete: (id: number) =>
     apiClient.post<Booking>(`/bookings/${id}/complete`).then((r) => r.data),
-    
+
   cancel: (id: number) =>
     apiClient.post<Booking>(`/bookings/${id}/cancel`).then((r) => r.data),
-    
+
   noShow: (id: number) =>
     apiClient.post<Booking>(`/bookings/${id}/no-show`).then((r) => r.data),
-    
+
   archive: (id: number) =>
     apiClient.post<Booking>(`/bookings/${id}/archive`).then((r) => r.data),
-    
+
   restore: (id: number) =>
     apiClient.post<Booking>(`/bookings/${id}/restore`).then((r) => r.data),
 

@@ -17,9 +17,9 @@ export default function NewBookingPage() {
             onClick={() => router.push('/dashboard/bookings')} 
             className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors"
           >
-            <ArrowLeft size={16} /> Back to Bookings
+            <ArrowLeft size={16} /> Back
           </button>
-          <h1 className="text-base font-bold text-[var(--color-ink)]">Create New Booking</h1>
+          <h1 className="text-base font-bold text-[var(--color-ink)]">New Booking</h1>
           <div className="w-24" />
         </div>
       </div>

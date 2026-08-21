@@ -5,36 +5,47 @@ import toast from 'react-hot-toast';
 import { bookingsApi } from '@/lib/api/bookings';
 import { clientsApi } from '@/lib/api/clients';
 import { vehiclesApi } from '@/lib/api/vehicles';
-import type { Client, Vehicle } from '@/lib/types';
+import { servicesApi } from '@/lib/api/services';
+import type { Client, Vehicle, ServiceType, PricingResult, ServiceDefinition } from '@/lib/types';
 
 export function useNewBooking() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [services, setServices] = useState<ServiceDefinition[]>([]);
   const [clientSearch, setClientSearch] = useState('');
   const [vehicleSearch, setVehicleSearch] = useState('');
   
   const [formData, setFormData] = useState({
     client_id: '',
     vehicle_id: '',
+    service_type: 'selfdrive' as ServiceType,
     start_date: '',
     end_date: '',
+    pickup_at: '',
+    scheduled_return_at: '',
     pickup_location: '',
     return_location: '',
     destination: '',
   });
 
-  // Load initial data
+  // ✅ MILESTONE 1: Live quote state
+  const [quote, setQuote] = useState<PricingResult | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+
+  // Load initial data (clients + vehicles + service catalog)
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [c, v] = await Promise.all([
+        const [c, v, s] = await Promise.all([
           clientsApi.list(),
-          vehiclesApi.list({ status: 'available' })
+          vehiclesApi.list({ status: 'available' }),
+          servicesApi.list(),
         ]);
         setClients(c);
         setVehicles(v);
+        setServices(s.services);
       } catch {
         toast.error('Failed to load initial data');
       }
@@ -67,11 +78,71 @@ export function useNewBooking() {
     ).slice(0, 10);
   }, [vehicles, vehicleSearch]);
 
+  // ✅ MILESTONE 1.1: Group services by category (for Chauffeur sub-tabs)
+  const servicesByCategory = useMemo(() => {
+    const grouped: Record<string, ServiceDefinition[]> = {};
+    services.forEach(svc => {
+      if (!grouped[svc.category]) {
+        grouped[svc.category] = [];
+      }
+      grouped[svc.category].push(svc);
+    });
+    return grouped;
+  }, [services]);
+
+  // ✅ MILESTONE 1: Debounced quote API call
+  useEffect(() => {
+    if (
+      !formData.vehicle_id ||
+      !formData.pickup_at ||
+      !formData.scheduled_return_at
+    ) {
+      setQuote(null);
+      return;
+    }
+
+    const fetchQuote = async () => {
+      setQuoteLoading(true);
+      try {
+        const result = await bookingsApi.quote({
+          vehicle_id: parseInt(formData.vehicle_id),
+          service_type: formData.service_type,
+          pickup_at: formData.pickup_at,
+          return_at: formData.scheduled_return_at,
+          // ✅ MILESTONE 1.1: Future-proof fields (undefined for now)
+          // distance_km: undefined,
+          // route_key: undefined,
+          // stops: undefined,
+        });
+        setQuote(result);
+      } catch (err: any) {
+        console.error("Quote failed:", err);
+        setQuote(null);
+      } finally {
+        setQuoteLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchQuote, 300);
+    return () => clearTimeout(timeoutId);
+  }, [
+    formData.vehicle_id,
+    formData.service_type,
+    formData.pickup_at,
+    formData.scheduled_return_at,
+  ]);
+
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const calculateTotal = () => {
+    // ✅ MILESTONE 1: Prefer quote total when available
+    if (quote?.total) {
+      return parseFloat(quote.total.toString());
+    }
+
+    // Fallback to client-side calculation
     if (!formData.start_date || !formData.end_date || !formData.vehicle_id) return 0;
     const vehicle = vehicles.find(v => v.id.toString() === formData.vehicle_id);
     if (!vehicle) return 0;
@@ -79,12 +150,9 @@ export function useNewBooking() {
     const start = new Date(formData.start_date);
     const end = new Date(formData.end_date);
     
-    // ✅ FIX: Removed the "+ 1" which was incorrectly adding an extra day.
-    // July 27 to July 28 is exactly 1 day (24 hours).
     const diffTime = end.getTime() - start.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    // Ensure at least 1 day minimum
     const days = Math.max(1, diffDays);
     
     return days * Number(vehicle.daily_rate);
@@ -100,13 +168,21 @@ export function useNewBooking() {
       return;
     }
 
+    if (!formData.pickup_at || !formData.scheduled_return_at) {
+      toast.error('Please select pickup and return times.');
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
         client_id: Number(formData.client_id),
         vehicle_id: Number(formData.vehicle_id),
-        start_date: new Date(formData.start_date).toISOString(),
-        end_date: new Date(formData.end_date).toISOString(),
+        service_type: formData.service_type,
+        start_date: formData.start_date || formData.pickup_at.split('T')[0],
+        end_date: formData.end_date || formData.scheduled_return_at.split('T')[0],
+        pickup_at: formData.pickup_at,
+        scheduled_return_at: formData.scheduled_return_at,
         pickup_location: formData.pickup_location || undefined,
         return_location: formData.return_location || undefined,
         destination: formData.destination || undefined,
@@ -131,6 +207,8 @@ export function useNewBooking() {
     vehicles: filteredVehicles,
     allClients: clients,
     allVehicles: vehicles,
+    services,  // ✅ MILESTONE 1.1: Full service catalog
+    servicesByCategory,  // ✅ MILESTONE 1.1: Grouped by category (for sub-tabs)
     formData,
     clientSearch,
     vehicleSearch,
@@ -141,5 +219,8 @@ export function useNewBooking() {
     getSelectedClient,
     getSelectedVehicle,
     handleSubmit,
+    // ✅ MILESTONE 1: Expose quote state for BookingSummary
+    quote,
+    quoteLoading,
   };
 }

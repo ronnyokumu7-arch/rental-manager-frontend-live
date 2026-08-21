@@ -7,6 +7,9 @@
   font-family: var(--font-sans) !important;
   border-radius: 0.75rem !important;
   padding: 1rem !important;
+  /* ✅ FIX: padding must sit OUTSIDE Flatpickr's fixed 307.875px week grid,
+     otherwise border-box clips the Saturday column */
+  box-sizing: content-box !important;
 }
 
 .flatpickr-months {

@@ -109,14 +109,24 @@ export default function PublicInvitePage() {
         await Promise.all(uploadPromises);
       }
 
-      // 2. Submit form with uploaded URLs
-      const payload = {
-        ...formData,
-        avatar_image: uploadedUrls.avatar || null,
-        id_image_front: uploadedUrls.id_front || null,
-        id_image_back: uploadedUrls.id_back || null,
-        dl_image_front: uploadedUrls.dl_front || null,
-      };
+// 2. Submit form with uploaded URLs
+const payload = {
+  full_name: formData.full_name,
+  email: formData.email || null,
+  phone: formData.phone,
+  id_type: formData.id_type || "national_id",
+  id_number: formData.id_number || null,
+  dl_number: formData.dl_number || null,
+  dl_expiry: formData.dl_expiry || null,
+  residential_address: formData.residential_address || null,
+  work_address: formData.work_address || null,
+  next_of_kin_name: formData.next_of_kin_name || null,
+  next_of_kin_phone: formData.next_of_kin_phone || null,
+  avatar_image: uploadedUrls.avatar || null,
+  id_image_front: uploadedUrls.id_front || null,
+  id_image_back: uploadedUrls.id_back || null,
+  dl_image_front: uploadedUrls.dl_front || null,
+};
 
       const res = await fetch(`${env.NEXT_PUBLIC_API_URL}/clients/invite/${token}`, {
         method: "POST",

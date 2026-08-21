@@ -25,8 +25,10 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   
   const [customAmount, setCustomAmount] = useState<string>("");
+  const [customRate, setCustomRate] = useState<string>("");
   const [dueDate, setDueDate] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [rateLocked, setRateLocked] = useState(false); // true = amount drives rate, false = rate drives amount
   
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
@@ -64,49 +66,86 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
   const selectedBooking = bookings.find(b => b.id === selectedBookingId);
   const existingInvoice = invoices.find(inv => inv.booking_id === selectedBookingId);
 
+  // ✅ Compute inclusive days for rate/total math
+  const inclusiveDays = useMemo(() => {
+    if (!selectedBooking?.start_date || !selectedBooking?.end_date) return 1;
+    const start = new Date(selectedBooking.start_date);
+    const end = new Date(selectedBooking.end_date);
+    return Math.max(1, Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  }, [selectedBooking]);
+
+  // ✅ Derive the effective rate for pre-fill: booking.daily_rate > total/days
+  const effectiveDailyRate = useMemo(() => {
+    if (!selectedBooking) return 0;
+    if (selectedBooking.daily_rate) return Number(selectedBooking.daily_rate);
+    if (selectedBooking.total_amount && inclusiveDays > 0) {
+      return Number(selectedBooking.total_amount) / inclusiveDays;
+    }
+    return 0;
+  }, [selectedBooking, inclusiveDays]);
+
+  // ✅ Pre-fill form when booking changes
   useEffect(() => {
     if (selectedBooking) {
-      if (existingInvoice) {
-        setCustomAmount(existingInvoice.amount_due.toString());
-        setDueDate(existingInvoice.due_date.split('T')[0]);
-        setNotes(existingInvoice.notes || "");
-      } else {
-        setCustomAmount(selectedBooking.total_amount.toString());
-        setDueDate(selectedBooking.end_date.split('T')[0]);
-        setNotes(`Auto-generated for Booking #${selectedBooking.booking_number}`);
-      }
+      const rate = effectiveDailyRate;
+      const amount = existingInvoice 
+        ? Number(existingInvoice.amount_due) 
+        : Number(selectedBooking.total_amount);
+      
+      setCustomRate(rate.toFixed(2));
+      setCustomAmount(amount.toFixed(2));
+      setDueDate((existingInvoice?.due_date || selectedBooking.end_date).split('T')[0]);
+      setNotes(existingInvoice?.notes || `Auto-generated for Booking #${selectedBooking.booking_number}`);
+      setRateLocked(false); // default: rate drives amount
     } else {
+      setCustomRate("");
       setCustomAmount("");
       setDueDate("");
       setNotes("");
     }
-  }, [selectedBookingId]);
+  }, [selectedBookingId, selectedBooking, existingInvoice, effectiveDailyRate]);
 
+  // ✅ Rate → Amount auto-recompute (when rate is the driver)
+  const handleRateChange = (value: string) => {
+    setCustomRate(value);
+    if (!rateLocked && value && inclusiveDays > 0) {
+      const computed = parseFloat(value) * inclusiveDays;
+      setCustomAmount(computed.toFixed(2));
+    }
+  };
+
+  // ✅ Amount → Rate auto-recompute (when amount is the driver)
+  const handleAmountChange = (value: string) => {
+    setCustomAmount(value);
+    if (rateLocked && value && inclusiveDays > 0) {
+      const computed = parseFloat(value) / inclusiveDays;
+      setCustomRate(computed.toFixed(2));
+    }
+  };
+
+  // ✅ Unified submit — always uses generate-invoice (handles create AND update, writes rate to booking)
   const handleSubmit = async () => {
     if (!selectedBookingId || !customAmount || !dueDate) return;
     
     setLoading(true);
     try {
-      if (existingInvoice) {
-        // Update existing invoice
-        const payload = {
-          amount_due: parseFloat(customAmount),
-          due_date: new Date(dueDate).toISOString(),
-          notes: notes,
-        };
-        await invoicesApi.update(existingInvoice.id, payload as any);
-        toast.success("Invoice customized and updated successfully!");
-      } else {
-        // ✅ CHANGED: Use the robust generateInvoice endpoint for new/orphan bookings
-        // This guarantees sequential invoice numbers and proper booking linkage
-        const payload = {
-          custom_amount: parseFloat(customAmount),
-          due_date: new Date(dueDate).toISOString(),
-          notes: notes,
-        };
-        await bookingsApi.generateInvoice(selectedBookingId, payload);
-        toast.success("Invoice generated successfully!");
+      const payload: any = {
+        custom_amount: parseFloat(customAmount),
+        due_date: new Date(dueDate).toISOString(),
+        notes: notes,
+      };
+      
+      // ✅ Only send rate if it differs from effective (prevents noise on no-op updates)
+      if (customRate && parseFloat(customRate) !== effectiveDailyRate) {
+        payload.custom_rate = parseFloat(customRate);
       }
+      
+      await bookingsApi.generateInvoice(selectedBookingId, payload);
+      toast.success(
+        existingInvoice 
+          ? "Invoice updated successfully! Regenerate the contract to reflect new rate."
+          : "Invoice generated successfully!"
+      );
       
       onCreated();
       handleClose();
@@ -133,7 +172,7 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Customize Invoice" subtitle="Override costs, add fees, or adjust due dates" size="md">
+    <Modal open={open} onClose={handleClose} title="Customize Invoice" subtitle="Override rates, amounts, or due dates" size="md">
       <div className="space-y-6">
         
         {/* Booking Selection */}
@@ -176,23 +215,34 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
           <div className="p-5 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider">Booking Details</span>
-              {existingInvoice && (
-                <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusStyle(existingInvoice.status)}`}>
-                  {existingInvoice.status}
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-[var(--color-surface)] text-[var(--color-ink-muted)]">
+                  {inclusiveDays} day{inclusiveDays > 1 ? 's' : ''}
                 </span>
-              )}
+                {existingInvoice && (
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusStyle(existingInvoice.status)}`}>
+                    {existingInvoice.status}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div>
-                <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-1">Total Amount</p>
+                <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-1">Start</p>
                 <p className="text-sm font-bold text-[var(--color-ink)]">
-                  {selectedBooking.currency_code} {Number(selectedBooking.total_amount).toLocaleString()}
+                  {new Date(selectedBooking.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-1">End Date</p>
+                <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-1">End</p>
                 <p className="text-sm font-bold text-[var(--color-ink)]">
-                  {new Date(selectedBooking.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  {new Date(selectedBooking.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider mb-1">Current Total</p>
+                <p className="text-sm font-bold text-[var(--color-ink)]">
+                  {selectedBooking.currency_code} {Number(selectedBooking.total_amount).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -202,21 +252,70 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
         {/* Customization Form */}
         {selectedBooking && (
           <div className="space-y-4">
+            {/* ✅ NEW: Driver Toggle — Rate drives Amount, or Amount drives Rate */}
             <div>
-              <label className={labelClass}>
-                Custom Amount (KES) <span className="text-[var(--color-danger)]">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-3.5 text-[var(--color-ink-subtle)] text-sm font-semibold">KES</span>
+              <label className={labelClass}>Edit Mode</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRateLocked(false)}
+                  className={`p-2.5 rounded-xl border-2 text-left text-xs font-semibold transition-all ${
+                    !rateLocked
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                      : "border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink-muted)]"
+                  }`}
+                >
+                  Rate → Total
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRateLocked(true)}
+                  className={`p-2.5 rounded-xl border-2 text-left text-xs font-semibold transition-all ${
+                    rateLocked
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                      : "border-[var(--color-surface-border)] bg-[var(--color-surface)] text-[var(--color-ink-muted)]"
+                  }`}
+                >
+                  Total → Rate
+                </button>
+              </div>
+              <p className="text-[10px] text-[var(--color-ink-muted)] mt-1.5">
+                {!rateLocked 
+                  ? "Daily rate drives the total (rate × days). Edit the rate."
+                  : "Total amount drives the rate (amount ÷ days). Edit the total."}
+              </p>
+            </div>
+
+            {/* ✅ NEW: Daily Rate Field */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>
+                  Daily Rate ({selectedBooking.currency_code}) <span className="text-[var(--color-danger)]">*</span>
+                </label>
                 <input
                   type="number"
-                  value={customAmount}
-                  onChange={(e) => setCustomAmount(e.target.value)}
-                  className={`${inputClass} pl-16`}
+                  step="0.01"
+                  value={customRate}
+                  onChange={(e) => handleRateChange(e.target.value)}
+                  disabled={rateLocked}
+                  className={`${inputClass} ${rateLocked ? "opacity-60 cursor-not-allowed" : ""}`}
                   placeholder="0.00"
                 />
               </div>
-              <p className="text-[10px] text-[var(--color-ink-muted)] mt-1.5">Use this to apply discounts or add delivery fees.</p>
+              <div>
+                <label className={labelClass}>
+                  Total Amount ({selectedBooking.currency_code}) <span className="text-[var(--color-danger)]">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={customAmount}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  disabled={!rateLocked}
+                  className={`${inputClass} ${!rateLocked ? "opacity-60 cursor-not-allowed" : ""}`}
+                  placeholder="0.00"
+                />
+              </div>
             </div>
 
             <div>
@@ -241,6 +340,16 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
                 placeholder="e.g., +KES 500 for airport pickup, 10% loyalty discount applied..."
               />
             </div>
+
+            {/* ✅ NEW: Regenerate hint */}
+            {existingInvoice && (
+              <div className="p-3 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 flex items-start gap-2">
+                <AlertCircle size={14} className="text-[var(--color-primary)] mt-0.5 flex-shrink-0" />
+                <p className="text-[10px] text-[var(--color-ink)] font-medium">
+                  After updating, <strong>regenerate the contract</strong> so it reflects the new rate and total.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -255,7 +364,7 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
           </button>
           <button 
             onClick={handleSubmit} 
-            disabled={loading || !selectedBookingId || !customAmount} 
+            disabled={loading || !selectedBookingId || !customAmount || !customRate} 
             className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}

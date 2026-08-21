@@ -188,6 +188,59 @@ export type BookingStatus =
   | "pending" | "confirmed" | "active" | "awaiting_mileage"
   | "completed" | "cancelled" | "no_show";
 
+// ✅ MILESTONE 1.1: Service type enum (backend-defined catalog)
+export type ServiceType = 
+  | "selfdrive" 
+  | "chauffeur_pro_driver" 
+  | "chauffeur_wedding"
+  // Parked (defined in backend, not yet active):
+  | "chauffeur_hourly"
+  | "corporate"
+  | "city_excursion"
+  | "airport_transfer"
+  | "chauffeur_taxi"
+  | "route_stops_service";
+
+export type BillingModel =
+  | "rolling_24h"
+  | "event_base"
+  | "hourly"
+  | "package"
+  | "fixed_route"
+  | "distance_time"
+  | "route_stops";
+
+// ✅ MILESTONE 1.1: Service catalog (from GET /services/)
+export interface ServiceConfig {
+  billing_model: BillingModel | null;
+  day_hours: number;
+  grace_minutes: number;
+  overtime_hourly_rate: number | string | null;
+  overtime_cap_at_day_rate: boolean;
+  driver_daily_fee: number | string | null;
+  driver_overtime_hourly_fee: number | string | null;
+  driver_night_accommodation_fee: number | string | null;
+  rate_extras: Record<string, any>;
+}
+
+export interface ServiceDefinition {
+  key: ServiceType;
+  display_name: string;
+  category: string;
+  billing_model: BillingModel;
+  base_hours: number;
+  requires_driver: boolean;
+  is_live: boolean;
+  description: string;
+  effective_billing_model: BillingModel;
+  config: ServiceConfig | null;
+}
+
+export interface ServicesResponse {
+  services: ServiceDefinition[];
+  categories: Record<string, ServiceDefinition[]>;
+}
+
 export interface BookingClientRelation {
   id: number;
   full_name?: string | null;
@@ -232,6 +285,14 @@ export interface Booking {
   created_at: string;
   updated_at: string;
 
+  // ✅ MILESTONE 1: Service type + exact times + pricing snapshot
+  service_type: ServiceType;
+  pickup_at?: string | null;
+  scheduled_return_at?: string | null;
+  pricing_day_hours?: number | null;
+  pricing_grace_minutes?: number | null;
+  pricing_overtime_hourly_rate?: number | string | null;
+
   // Joined Relations
   client?: BookingClientRelation | null;
   vehicle?: BookingVehicleRelation | null;
@@ -253,6 +314,11 @@ export interface BookingCreate {
   daily_rate?: number;
   total_amount: number;
   currency_code?: string;
+  
+  // ✅ MILESTONE 1: Service type + exact times
+  service_type?: ServiceType;
+  pickup_at?: string;
+  scheduled_return_at?: string;
 }
 
 export interface BookingUpdate {
@@ -266,6 +332,54 @@ export interface BookingUpdate {
   total_amount?: number;
   currency_code?: string;
   status?: BookingStatus;
+  
+  // ✅ MILESTONE 1: Service type + exact times
+  service_type?: ServiceType;
+  pickup_at?: string;
+  scheduled_return_at?: string;
+}
+
+// ✅ MILESTONE 1.1: Live pricing preview request (no DB writes)
+export interface BookingQuote {
+  vehicle_id: number;
+  service_type: ServiceType;
+  pickup_at: string;
+  return_at: string;
+  // ✅ Future-proof for distance_time, fixed_route, route_stops
+  distance_km?: number;
+  route_key?: string;
+  stops?: number;
+}
+
+// ✅ MILESTONE 1: Pricing breakdown response from /quote endpoint
+export interface PricingLine {
+  description: string;
+  quantity: string;
+  amount: number | string;
+}
+
+export interface PricingResult {
+  service_type: ServiceType;
+  service_label: string;
+  billing_model: BillingModel;  // ✅ MILESTONE 1.1: strategy used
+  pickup_at: string;
+  return_at: string;
+  daily_rate: number | string;
+  day_hours: number;
+  grace_minutes: number;
+  overtime_hourly_rate: number | string;
+  included_days: number;
+  extra_hours: number;
+  grace_used_minutes: number;
+  base_charge: number | string;
+  overtime_charge: number | string;
+  overtime_waivable: boolean;
+  driver_daily_fee: number | string;
+  driver_overtime_fee: number | string;
+  driver_accommodation_fee: number | string;
+  driver_charge: number | string;
+  total: number | string;
+  lines: PricingLine[];
 }
 
 // ─── Contracts ───────────────────────────────────────────────────────────────
