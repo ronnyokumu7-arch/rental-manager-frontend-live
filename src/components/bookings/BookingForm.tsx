@@ -130,7 +130,9 @@ const PremiumDateAndTimePicker = ({
   );
 };
 
-// ✅ MILESTONE 1.1: Catalog-driven Service Type Selector with Chauffeur sub-tabs
+// ✅ MILESTONE 1.1: Premium catalog-driven Service Selector
+// Segmented control (Self Drive | Chauffeur) + INLINE expanding sub-service panel.
+// Inline = mobile-safe: full width, no absolute dropdowns, zero truncation at 360px.
 const ServiceTypeSelector = ({
   value,
   onChange,
@@ -141,36 +143,24 @@ const ServiceTypeSelector = ({
   services: ServiceDefinition[];
 }) => {
   const [chauffeurOpen, setChauffeurOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setChauffeurOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, []);
+  const selectedService = services.find((s) => s.key === value);
+  const chauffeurServices = services.filter((s) => s.category === "chauffeur");
+  const isChauffeur = !!selectedService?.category && selectedService.category === "chauffeur";
 
-  // Find the selected service definition
-  const selectedService = services.find(s => s.key === value) || services.find(s => s.key === "selfdrive");
-
-  // Split into top-level (selfdrive) and chauffeur sub-services
-  const chauffeurServices = services.filter(s => s.category === "chauffeur");
-
-  // Icon map
   const getIcon = (key: ServiceType) => {
     if (key === "selfdrive") return Car;
-    if (key === "chauffeur_pro_driver") return UserCircle;
     if (key === "chauffeur_wedding") return Heart;
-    if (key === "chauffeur_hourly") return UserCircle;
     if (key === "corporate") return Building2;
     if (key === "airport_transfer") return Plane;
     if (key === "city_excursion") return Map;
-    return UserCircle;
+    return UserCircle; // pro_driver, hourly, taxi
   };
 
-  const SelectedIcon = getIcon(value);
-  const isChauffeur = value.startsWith("chauffeur");
+  const chauffeurShortLabel = () => {
+    if (!isChauffeur || !selectedService) return "Chauffeur";
+    return selectedService.display_name.replace("Chauffeur · ", "");
+  };
 
   return (
     <div>
@@ -178,88 +168,84 @@ const ServiceTypeSelector = ({
         Service Type <span className="text-[var(--color-danger)]">*</span>
       </label>
 
-      {/* Top-level buttons */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* Self Drive */}
+      {/* ✅ Premium segmented control */}
+      <div className="grid grid-cols-2 gap-1 rounded-xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] p-1">
         <button
           type="button"
-          onClick={() => onChange("selfdrive")}
-          className={`flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 transition-all active:scale-[0.98] ${
-            value === "selfdrive"
-              ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-              : "border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/50"
+          onClick={() => { onChange("selfdrive"); setChauffeurOpen(false); }}
+          className={`flex items-center justify-center gap-1.5 px-1 py-2.5 rounded-lg text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all active:scale-[0.98] ${
+            !isChauffeur
+              ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm ring-1 ring-[var(--color-primary)]/25"
+              : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
           }`}
         >
-          <Car size={18} className={value === "selfdrive" ? "text-[var(--color-primary)]" : "text-[var(--color-ink-muted)]"} />
-          <span className={`text-sm font-bold ${value === "selfdrive" ? "text-[var(--color-primary)]" : "text-[var(--color-ink)]"}`}>
-            Self Drive
-          </span>
+          <Car size={14} />
+          Self Drive
         </button>
 
-        {/* Chauffeur dropdown */}
-        <div ref={ref} className="relative">
-          <button
-            type="button"
-            onClick={() => setChauffeurOpen((o) => !o)}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 transition-all active:scale-[0.98] ${
-              isChauffeur
-                ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                : "border-[var(--color-surface-border)] hover:border-[var(--color-primary)]/50"
-            }`}
-          >
-            <SelectedIcon size={18} className={isChauffeur ? "text-[var(--color-primary)]" : "text-[var(--color-ink-muted)]"} />
-            <span className={`text-sm font-bold ${isChauffeur ? "text-[var(--color-primary)]" : "text-[var(--color-ink)]"}`}>
-              {isChauffeur ? selectedService?.display_name : "Chauffeur"}
-            </span>
-            <ChevronDown size={14} className={isChauffeur ? "text-[var(--color-primary)]" : "text-[var(--color-ink-muted)]"} />
-          </button>
-
-          {/* Dropdown menu */}
-          {chauffeurOpen && (
-            <div className="absolute z-50 mt-1 left-0 right-0 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] shadow-xl p-1 space-y-1">
-              {chauffeurServices.map((svc) => {
-                const Icon = getIcon(svc.key);
-                const active = value === svc.key;
-                return (
-                  <button
-                    key={svc.key}
-                    type="button"
-                    onClick={() => {
-                      if (svc.is_live) {
-                        onChange(svc.key);
-                        setChauffeurOpen(false);
-                      }
-                    }}
-                    disabled={!svc.is_live}
-                    className={`w-full flex items-start gap-2 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                      active
-                        ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                        : svc.is_live
-                        ? "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]"
-                        : "text-[var(--color-ink-muted)] cursor-not-allowed opacity-60"
-                    }`}
-                  >
-                    <Icon size={16} className="shrink-0 mt-0.5" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold truncate">{svc.display_name}</span>
-                        {!svc.is_live && (
-                          <span className="text-[9px] font-bold uppercase tracking-wide bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] px-1.5 py-0.5 rounded">
-                            Coming soon
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-[var(--color-ink-muted)] mt-0.5 line-clamp-2">
-                        {svc.description}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => setChauffeurOpen((o) => !o)}
+          aria-expanded={chauffeurOpen}
+          className={`flex items-center justify-center gap-1.5 px-1 py-2.5 rounded-lg text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all active:scale-[0.98] ${
+            isChauffeur
+              ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm ring-1 ring-[var(--color-primary)]/25"
+              : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+          }`}
+        >
+          <UserCircle size={14} />
+          {chauffeurShortLabel()}
+          <ChevronDown
+            size={12}
+            className={`transition-transform ${chauffeurOpen ? "rotate-180" : ""}`}
+          />
+        </button>
       </div>
+
+      {/* ✅ Inline expanding panel — full width, thumb-friendly, never truncates */}
+      {chauffeurOpen && (
+        <div className="mt-2 rounded-xl border border-[var(--color-surface-border)] bg-[var(--color-surface)] p-1 space-y-1">
+          {chauffeurServices.map((svc) => {
+            const Icon = getIcon(svc.key);
+            const active = value === svc.key;
+            return (
+              <button
+                key={svc.key}
+                type="button"
+                disabled={!svc.is_live}
+                onClick={() => { onChange(svc.key); setChauffeurOpen(false); }}
+                className={`w-full flex items-start gap-2.5 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                  active
+                    ? "bg-[var(--color-primary)]/10"
+                    : svc.is_live
+                    ? "hover:bg-[var(--color-surface-hover)] active:bg-[var(--color-surface-hover)]"
+                    : "opacity-60 cursor-not-allowed"
+                }`}
+              >
+                <Icon
+                  size={16}
+                  className={`shrink-0 mt-0.5 ${active ? "text-[var(--color-primary)]" : "text-[var(--color-ink-muted)]"}`}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-xs font-bold ${active ? "text-[var(--color-primary)]" : "text-[var(--color-ink)]"}`}>
+                      {svc.display_name}
+                    </span>
+                    {!svc.is_live && (
+                      <span className="text-[8px] font-bold uppercase tracking-wide bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] px-1.5 py-0.5 rounded whitespace-nowrap">
+                        Coming soon
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-[var(--color-ink-muted)] mt-0.5">
+                    {svc.description}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Dynamic caption — one line, updates with selection */}
       {selectedService && (
@@ -347,7 +333,7 @@ export default function BookingForm() {
             <h3 className="text-sm font-bold text-[var(--color-ink)]">Rental Period</h3>
           </div>
 
-          {/* ✅ MILESTONE 1.1: Service selector now consumes catalog */}
+          {/* ✅ MILESTONE 1.1: Service selector consumes catalog */}
           <div className="mb-3">
             <ServiceTypeSelector
               value={(formData.service_type as ServiceType) || "selfdrive"}
