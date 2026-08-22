@@ -1,4 +1,5 @@
-// src/hooks/bookings/useNewBooking.ts
+"use client";
+
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -6,7 +7,8 @@ import { bookingsApi } from '@/lib/api/bookings';
 import { clientsApi } from '@/lib/api/clients';
 import { vehiclesApi } from '@/lib/api/vehicles';
 import { servicesApi } from '@/lib/api/services';
-import type { Client, Vehicle, ServiceType, PricingResult, ServiceDefinition } from '@/lib/types';
+import { driversApi } from '@/lib/api/drivers';
+import type { Client, Vehicle, ServiceType, PricingResult, ServiceDefinition, DriverListItem } from '@/lib/types';
 
 export function useNewBooking() {
   const router = useRouter();
@@ -14,12 +16,15 @@ export function useNewBooking() {
   const [clients, setClients] = useState<Client[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [services, setServices] = useState<ServiceDefinition[]>([]);
+  const [drivers, setDrivers] = useState<DriverListItem[]>([]);
   const [clientSearch, setClientSearch] = useState('');
   const [vehicleSearch, setVehicleSearch] = useState('');
+  const [driverSearch, setDriverSearch] = useState('');
   
   const [formData, setFormData] = useState({
     client_id: '',
     vehicle_id: '',
+    driver_id: '',
     service_type: 'selfdrive' as ServiceType,
     start_date: '',
     end_date: '',
@@ -34,18 +39,20 @@ export function useNewBooking() {
   const [quote, setQuote] = useState<PricingResult | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
 
-  // Load initial data (clients + vehicles + service catalog)
+  // Load initial data (clients + vehicles + services + drivers)
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [c, v, s] = await Promise.all([
+        const [c, v, s, d] = await Promise.all([
           clientsApi.list(),
           vehiclesApi.list({ status: 'available' }),
           servicesApi.list(),
+          driversApi.list({ include_archived: false }),
         ]);
         setClients(c);
         setVehicles(v);
         setServices(s.services);
+        setDrivers(d);
       } catch {
         toast.error('Failed to load initial data');
       }
@@ -55,7 +62,7 @@ export function useNewBooking() {
 
   // Filter clients based on search
   const filteredClients = useMemo(() => {
-    if (!clientSearch.trim()) return clients.slice(0, 10); // Show first 10
+    if (!clientSearch.trim()) return clients.slice(0, 10);
     
     const search = clientSearch.toLowerCase();
     return clients.filter(client => 
@@ -63,7 +70,7 @@ export function useNewBooking() {
       client.id_number?.toLowerCase().includes(search) ||
       client.dl_number?.toLowerCase().includes(search) ||
       client.phone.toLowerCase().includes(search)
-    ).slice(0, 10); // Limit to 10 results
+    ).slice(0, 10);
   }, [clients, clientSearch]);
 
   // Filter vehicles based on search
@@ -77,6 +84,22 @@ export function useNewBooking() {
       vehicle.plate_number.toLowerCase().includes(search)
     ).slice(0, 10);
   }, [vehicles, vehicleSearch]);
+
+  // ✅ MILESTONE 2: Filter drivers based on search (available + on_trip only for assignment)
+  const filteredDrivers = useMemo(() => {
+    const assignable = drivers.filter(d => 
+      !d.is_archived && (d.status === 'available' || d.status === 'on_trip')
+    );
+    if (!driverSearch.trim()) return assignable.slice(0, 10);
+    
+    const search = driverSearch.toLowerCase();
+    return assignable.filter(driver =>
+      driver.full_name.toLowerCase().includes(search) ||
+      driver.phone.toLowerCase().includes(search) ||
+      driver.id_number_masked?.toLowerCase().includes(search) ||
+      driver.dl_number_masked?.toLowerCase().includes(search)
+    ).slice(0, 10);
+  }, [drivers, driverSearch]);
 
   // ✅ MILESTONE 1.1: Group services by category (for Chauffeur sub-tabs)
   const servicesByCategory = useMemo(() => {
@@ -109,10 +132,6 @@ export function useNewBooking() {
           service_type: formData.service_type,
           pickup_at: formData.pickup_at,
           return_at: formData.scheduled_return_at,
-          // ✅ MILESTONE 1.1: Future-proof fields (undefined for now)
-          // distance_km: undefined,
-          // route_key: undefined,
-          // stops: undefined,
         });
         setQuote(result);
       } catch (err: any) {
@@ -160,6 +179,7 @@ export function useNewBooking() {
 
   const getSelectedClient = () => clients.find(c => c.id.toString() === formData.client_id);
   const getSelectedVehicle = () => vehicles.find(v => v.id.toString() === formData.vehicle_id);
+  const getSelectedDriver = () => drivers.find(d => d.id.toString() === formData.driver_id);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,7 +195,7 @@ export function useNewBooking() {
 
     setLoading(true);
     try {
-      const payload = {
+      const payload: any = {
         client_id: Number(formData.client_id),
         vehicle_id: Number(formData.vehicle_id),
         service_type: formData.service_type,
@@ -191,6 +211,11 @@ export function useNewBooking() {
         status: 'pending'
       };
 
+      // ✅ MILESTONE 2: Include driver_id if selected
+      if (formData.driver_id) {
+        payload.driver_id = Number(formData.driver_id);
+      }
+
       await bookingsApi.create(payload);
       toast.success('Booking created successfully!');
       router.push('/dashboard/bookings');
@@ -205,21 +230,25 @@ export function useNewBooking() {
     loading,
     clients: filteredClients,
     vehicles: filteredVehicles,
+    drivers: filteredDrivers,
     allClients: clients,
     allVehicles: vehicles,
-    services,  // ✅ MILESTONE 1.1: Full service catalog
-    servicesByCategory,  // ✅ MILESTONE 1.1: Grouped by category (for sub-tabs)
+    allDrivers: drivers,
+    services,
+    servicesByCategory,
     formData,
     clientSearch,
     vehicleSearch,
+    driverSearch,
     setClientSearch,
     setVehicleSearch,
+    setDriverSearch,
     updateField,
     calculateTotal,
     getSelectedClient,
     getSelectedVehicle,
+    getSelectedDriver,
     handleSubmit,
-    // ✅ MILESTONE 1: Expose quote state for BookingSummary
     quote,
     quoteLoading,
   };

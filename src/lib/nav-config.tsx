@@ -2,7 +2,7 @@
 
 import {
   LayoutDashboard, Building2, CreditCard, BarChart3, Settings,
-  CalendarDays, Contact, Users, Car, Wallet, Server, LifeBuoy, ListChecks,
+  CalendarDays, Contact, Users, Car, Wallet, Server, LifeBuoy, ListChecks, UserCircle,
 } from "lucide-react";
 
 export interface NavChild {
@@ -76,9 +76,14 @@ const PremiumLifeBuoyIcon = ({ size = 20, strokeWidth = 1.8, className = "" }: a
   <LifeBuoy size={size} strokeWidth={strokeWidth} className={`text-[var(--color-primary)] transition-transform duration-200 group-hover/nav:scale-110 ${className}`} />
 );
 
-// ✅ NEW: Premium Tasks Icon
+// ✅ Tasks Icon
 const PremiumTasksIcon = ({ size = 20, strokeWidth = 1.8, className = "" }: any) => (
   <ListChecks size={size} strokeWidth={strokeWidth} className={`text-[var(--color-primary)] transition-transform duration-200 group-hover/nav:scale-110 ${className}`} />
+);
+
+// ✅ MILESTONE 2: Drivers Icon (uses UserCircle, color-cycled for visual distinction)
+const PremiumDriversIcon = ({ size = 20, strokeWidth = 1.8, className = "" }: any) => (
+  <UserCircle size={size} strokeWidth={strokeWidth} className={`text-[var(--color-primary)] transition-transform duration-200 group-hover/nav:scale-110 ${className}`} />
 );
 
 // ─── SUPER ADMIN NAVIGATION ───────────────────────────────────────────────────
@@ -98,9 +103,10 @@ export const tenantAdminNav: NavItem[] = [
   { label: "Bookings", href: "/dashboard/bookings", icon: PremiumCalendarIcon },
   { label: "Clients", href: "/dashboard/clients", icon: PremiumContactIcon },
   { label: "Fleet", href: "/dashboard/fleet", icon: PremiumCarIcon },
+  { label: "Drivers", href: "/dashboard/drivers", icon: PremiumDriversIcon }, // ✅ MILESTONE 2
   { label: "Users", href: "/dashboard/users", icon: PremiumUsersIcon },
   { label: "Financials", href: "/dashboard/financials", icon: PremiumWalletIcon },
   { label: "Reports", href: "/dashboard/reports", icon: PremiumBarChartIcon },
-  { label: "Tasks", href: "/dashboard/tasks", icon: PremiumTasksIcon }, // ✅ ADDED
+  { label: "Tasks", href: "/dashboard/tasks", icon: PremiumTasksIcon },
   { label: "Settings", href: "/dashboard/settings", icon: PremiumSettingsIcon },
 ];

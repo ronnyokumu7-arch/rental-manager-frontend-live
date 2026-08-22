@@ -183,6 +183,97 @@ export interface VehicleUpdate {
   notes?: string | null;
 }
 
+// ─── Drivers ────────────────────────────────────────────────────────────────
+export type DriverEmploymentType = "in_house" | "contracted";
+export type DriverStatus = "available" | "on_trip" | "on_leave" | "suspended";
+export type DriverPayMode = "commission" | "fixed_per_job" | "payroll";
+
+export interface DriverBase {
+  full_name: string;
+  phone: string;
+  email?: string | null;
+  id_number: string;
+  dl_number: string;
+  dl_expiry?: string | null;
+}
+
+export interface DriverCreate extends DriverBase {
+  employment_type?: DriverEmploymentType;
+  status?: DriverStatus;
+  pay_mode?: DriverPayMode;
+  daily_fee?: number | string | null;
+  overtime_hourly_fee?: number | string | null;
+  night_accommodation_fee?: number | string | null;
+  delivery_commission?: number | string | null;
+  profile_photo_key?: string | null;
+  id_front_key?: string | null;
+  id_back_key?: string | null;
+  dl_photo_key?: string | null;
+}
+
+export interface DriverUpdate {
+  full_name?: string;
+  phone?: string;
+  email?: string | null;
+  id_number?: string;
+  dl_number?: string;
+  dl_expiry?: string | null;
+  employment_type?: DriverEmploymentType;
+  status?: DriverStatus;
+  pay_mode?: DriverPayMode;
+  daily_fee?: number | string | null;
+  overtime_hourly_fee?: number | string | null;
+  night_accommodation_fee?: number | string | null;
+  delivery_commission?: number | string | null;
+  profile_photo_key?: string | null;
+  id_front_key?: string | null;
+  id_back_key?: string | null;
+  dl_photo_key?: string | null;
+}
+
+export interface Driver {
+  id: number;
+  tenant_id: number;
+  full_name: string;
+  phone: string;
+  email?: string | null;
+  id_number: string;
+  dl_number: string;
+  dl_expiry?: string | null;
+  profile_photo_key?: string | null;
+  id_front_key?: string | null;
+  id_back_key?: string | null;
+  dl_photo_key?: string | null;
+  employment_type: DriverEmploymentType;
+  status: DriverStatus;
+  pay_mode: DriverPayMode;
+  daily_fee?: number | string | null;
+  overtime_hourly_fee?: number | string | null;
+  night_accommodation_fee?: number | string | null;
+  delivery_commission?: number | string | null;
+  user_id?: number | null;
+  is_archived: boolean;
+  archived_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DriverListItem {
+  id: number;
+  full_name: string;
+  phone: string;
+  status: DriverStatus;
+  employment_type: DriverEmploymentType;
+  pay_mode: DriverPayMode;
+  dl_expiry?: string | null;
+  daily_fee?: number | string | null;
+  delivery_commission?: number | string | null;
+  is_archived: boolean;
+  created_at: string;
+  id_number_masked?: string | null;
+  dl_number_masked?: string | null;
+}
+
 // ─── Bookings ────────────────────────────────────────────────────────────────
 export type BookingStatus = 
   | "pending" | "confirmed" | "active" | "awaiting_mileage"
