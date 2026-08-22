@@ -59,8 +59,6 @@ export default function BookingsList({
           <BookingsListMobile
             bookings={paginatedBookings}
             clientMap={clientMap} vehicleMap={vehicleMap}
-            currentPage={currentPage} totalPages={totalPages}
-            setCurrentPage={setCurrentPage}
             actionsCtx={actionsCtx}
           />
           <BookingsListDesktop

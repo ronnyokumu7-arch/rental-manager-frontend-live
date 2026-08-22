@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Calendar, Tag, Clock, Ban, CheckCircle2,
   User as UserIcon, Users, UserX, Wrench, Building2, Briefcase, DollarSign, Shield, Car, Archive,
-  Search, Flag, Plus, Pencil
+  Search, Flag, Plus, Pencil, ChevronRight
 } from "lucide-react";
 import FilterDropdown from "@/components/ui/FilterDropdown";
 import DataTable, { RowAction } from "@/components/ui/DataTable";
@@ -105,9 +105,9 @@ export default function TasksTab({
   tasks, users, loading, metrics,
   search, setSearch, priorityFilter, setPriorityFilter, categoryFilter, setCategoryFilter,
   currentPage, setCurrentPage, pageSize, totalPages, filteredTasks,
-  openDropdownId: _openDropdownId, // ✅ Not used - handled by reusable components
-  dropdownPos: _dropdownPos, // ✅ Not used - handled by reusable components
-  onToggleDropdown: _onToggleDropdown, // ✅ Not used - handled by reusable components
+  openDropdownId: _openDropdownId,
+  dropdownPos: _dropdownPos,
+  onToggleDropdown: _onToggleDropdown,
   onAssign: _onAssign,
   onClaim, onStatusChange, onArchive,
   onOpenCreateModal,
@@ -256,40 +256,58 @@ export default function TasksTab({
 
       {/* Content Area */}
       <>
-        {/* ✅ MOBILE: Reusable CardGrid */}
+        {/* ✅ MOBILE: Premium Task CardGrid */}
         <div className="block md:hidden">
-          <CardGrid<Task> // ✅ FIXED: Explicitly pass Task generic type
+          <CardGrid
             data={filteredTasks}
             getCardId={(task) => task.id}
+            compact={true}
+            cardClassName="!p-2.5 hover:!border-[var(--color-primary)]/30 hover:shadow-md transition-all duration-200"
+            containerClassName="px-2 pb-2"
+            maxHeight="calc(100vh - 160px)"
             
-            // Header: Icon + Title + Priority
             renderCardHeader={({ item }) => {
               const CategoryIcon = CATEGORY_ICONS[item.category] || Tag;
+              const priorityColor = PRIORITY_COLORS[item.priority] || "bg-slate-400";
+              
               return (
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-10 h-10 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
-                    <CategoryIcon size={18} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/dashboard/tasks/${item.id}`);
-                      }}
-                      className="text-sm font-bold text-[var(--color-ink)] truncate cursor-pointer hover:text-[var(--color-primary)] transition-colors leading-tight"
-                    >
-                      {item.title}
-                    </h4>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[item.priority] || "bg-slate-400"}`} />
-                      <span className="text-xs font-medium text-[var(--color-ink-muted)] capitalize">{item.priority}</span>
+                <div 
+                  className="flex items-center justify-between w-full cursor-pointer"
+                  onClick={() => router.push(`/dashboard/tasks/${item.id}`)}
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 flex items-center justify-center">
+                        <CategoryIcon size={14} className="text-[var(--color-primary)]" />
+                      </div>
+                      <div className="absolute -top-0.5 -right-0.5">
+                        <div className={`w-2 h-2 rounded-full ${priorityColor} ring-1 ring-[var(--color-surface)]`} />
+                      </div>
+                    </div>
+                    
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-[var(--color-ink)] truncate">
+                          {item.title}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-0.5 mt-0.5">
+                        <span className="text-[9px] text-[var(--color-ink-muted)] font-medium capitalize">
+                          {item.priority}
+                        </span>
+                        <span className="text-[8px] text-[var(--color-ink-subtle)]">•</span>
+                        <span className="text-[9px] text-[var(--color-ink-muted)] truncate">
+                          {item.category}
+                        </span>
+                      </div>
                     </div>
                   </div>
+                  
+                  <ChevronRight size={14} className="text-[var(--color-ink-subtle)] flex-shrink-0 ml-1" />
                 </div>
               );
             }}
             
-            // ✅ FIXED: Merged renderCardPreview and renderCardDetails into renderCardBody
             renderCardBody={({ item }) => {
               const assigneeName = getAssigneeName(item.user_id, users);
               const dateInfo = formatDate(item.due_date);
@@ -297,62 +315,81 @@ export default function TasksTab({
               const style = STATUS_STYLES[item.status] || STATUS_STYLES.pending;
               
               return (
-                <div className="space-y-2.5 text-xs">
-                  {/* Assignee */}
+                <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50">
                   <div className="flex items-center gap-2">
-                    {assigneeName ? (
-                      <>
-                        <div className="w-6 h-6 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-[10px] font-bold text-[var(--color-primary)] flex-shrink-0">
-                          {getAssigneeInitials(item.user_id, users)}
+                    {/* Assignee */}
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      {assigneeName ? (
+                        <>
+                          <div className="w-5 h-5 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center text-[8px] font-bold text-[var(--color-primary)] flex-shrink-0">
+                            {getAssigneeInitials(item.user_id, users)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight">
+                              {assigneeName}
+                            </p>
+                            <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                              Assignee
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-semibold text-[var(--color-ink-muted)] truncate leading-tight">
+                            Unassigned
+                          </p>
+                          <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                            No assignee
+                          </span>
                         </div>
-                        <span className="font-medium text-[var(--color-ink)] truncate">{assigneeName}</span>
-                      </>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-[var(--color-surface-hover)] text-[var(--color-ink-muted)] border border-[var(--color-surface-border)]">
-                        <UserX size={10} /> Unassigned
-                      </span>
-                    )}
+                      )}
+                    </div>
+
+                    {/* Due Date */}
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <Calendar size={10} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className={`text-[11px] font-semibold truncate leading-tight ${
+                          dateInfo.isOverdue ? 'text-rose-500' : 'text-[var(--color-ink)]'
+                        }`}>
+                          {dateInfo.text}
+                        </p>
+                        <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                          {dateInfo.isOverdue ? '⚠️ Overdue' : 'Due Date'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Due Date */}
-                  <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
-                    <Calendar size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                    <span className={`font-medium ${dateInfo.isOverdue ? "text-rose-500 font-bold" : ""}`}>
-                      {dateInfo.text}
-                    </span>
-                    {dateInfo.isOverdue && (
-                      <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-[9px] font-extrabold text-rose-500">OVERDUE</span>
-                    )}
-                  </div>
-
-                  {/* Divider */}
-                  <div className="border-t border-[var(--color-surface-border)]/60 pt-2 mt-2" />
-
-                  {/* Status Badge */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">Status:</span>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style.bg} ${style.text}`}>
-                      {item.status === 'in_progress' && <Clock size={10} />}
-                      {item.status === 'blocked' && <Ban size={10} />}
+                  {/* Status + Actions */}
+                  <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50 flex items-center justify-between">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase ${style.bg} ${style.text}`}>
+                      {item.status === 'in_progress' && <Clock size={8} />}
+                      {item.status === 'blocked' && <Ban size={8} />}
                       {STATUS_LABELS[item.status] || item.status}
                     </span>
-                  </div>
-                  
-                  {/* Quick Action */}
-                  <div className="pt-2 border-t border-[var(--color-surface-border)]/40">
+                    
                     {isUnassigned ? (
                       <button
-                        onClick={(e) => { e.stopPropagation(); onClaim(item.id); }}
-                        className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          onClaim(item.id); 
+                        }}
+                        className="text-[10px] font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
                       >
-                        Claim Task
+                        <UserIcon size={11} />
+                        Claim
                       </button>
                     ) : item.status !== "completed" ? (
                       <button
-                        onClick={(e) => { e.stopPropagation(); onStatusChange(item.id, "completed"); }}
-                        className="text-xs font-semibold text-emerald-600 hover:underline"
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          onStatusChange(item.id, "completed"); 
+                        }}
+                        className="text-[10px] font-semibold text-emerald-600 hover:underline flex items-center gap-1"
                       >
-                        Mark Completed
+                        <CheckCircle2 size={11} />
+                        Complete
                       </button>
                     ) : null}
                   </div>
@@ -360,15 +397,7 @@ export default function TasksTab({
               );
             }}
             
-            // ✅ Row actions (3-dots menu) - correctly targeted
             rowActions={getTaskActions}
-            
-            // Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredTasks.length}
-            pageSize={3} // Mobile: 2.5-3 cards visible
-            onPageChange={setCurrentPage}
           />
         </div>
 
@@ -471,7 +500,6 @@ export default function TasksTab({
                 },
               },
             ]}
-            // ✅ Row actions (3-dots menu) - correctly targeted
             rowActions={getTaskActions}
             getRowId={(task) => task.id}
             onRowClick={(task) => router.push(`/dashboard/tasks/${task.id}`)}

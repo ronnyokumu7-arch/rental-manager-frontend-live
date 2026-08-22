@@ -16,23 +16,25 @@ import {
   Loader2,
   Search,
   ArrowRight,
-  Link2, // ✅ NEW: Icon for Invites tab
+  Link2,
+  ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 import { useClientsList } from "@/hooks/clients/useClientsList";
 import FilterDropdown from "@/components/ui/FilterDropdown";
 import DataTable, { RowAction } from "@/components/ui/DataTable";
 import AddClientButton from "@/components/client/AddClientButton";
-import ClientInvitesPanel from "@/components/client/ClientInvitesPanel"; // ✅ NEW: Invites management panel
-import SecureImage from "@/components/ui/SecureImage"; // ✅ NEW
+import ClientInvitesPanel from "@/components/client/ClientInvitesPanel";
+import SecureImage from "@/components/ui/SecureImage";
 import CardGrid from "@/components/ui/CardGrid";
 import type { Client } from "@/lib/types";
 
-type ClientSegment = "individual" | "corporate" | "invites"; // ✅ UPDATED: Added "invites"
+type ClientSegment = "individual" | "corporate" | "invites";
 
 const TABS = [
   { id: "individual", label: "Individual", icon: UserIcon },
   { id: "corporate", label: "Corporate", icon: Building2 },
-  { id: "invites", label: "Invites", icon: Link2 }, // ✅ NEW: Invites tab
+  { id: "invites", label: "Invites", icon: Link2 },
 ];
 
 export default function ClientsPage() {
@@ -84,7 +86,6 @@ export default function ClientsPage() {
         icon: <Building2 size={20} />,
       };
     }
-    // ✅ NEW: Invites tab info
     return {
       title: "Client Invites",
       description: "Generate single-use onboarding links and manage pending invitations.",
@@ -92,7 +93,6 @@ export default function ClientsPage() {
     };
   }, [activeTab]);
 
-  // ✅ Reusable row actions for both table and cards
   const getClientActions = (client: Client): RowAction<Client>[] => [
     {
       label: "View Full Profile",
@@ -120,13 +120,11 @@ export default function ClientsPage() {
       separator: true,
       onClick: () => handleArchive(client.id),
     },
-    ].filter((action) => !!action.label) as RowAction<Client>[];
+  ].filter((action) => !!action.label) as RowAction<Client>[];
 
-  // ✅ NEW: Invites tab render
   if (activeTab === "invites") {
     return (
       <div className="space-y-6">
-        {/* Header & Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
@@ -160,8 +158,6 @@ export default function ClientsPage() {
             })}
           </div>
         </div>
-
-        {/* ✅ Invites Panel */}
         <ClientInvitesPanel />
       </div>
     );
@@ -170,7 +166,6 @@ export default function ClientsPage() {
   if (activeTab === "individual") {
     return (
       <div className="space-y-6">
-        {/* Header & Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">
@@ -205,13 +200,10 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        {/* Main Card Container */}
         <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden animate-in fade-in duration-300">
           
-          {/* Toolbar: Metrics + Search + Filter + CTA */}
           <div className="p-4 border-b border-[var(--color-surface-border)] bg-[var(--color-surface-hover)]/50 flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between">
             
-            {/* Metrics Counter (matches Clients page pattern) */}
             <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-surface-border)] shadow-sm overflow-x-auto custom-scrollbar">
               <div className="flex items-center gap-2 whitespace-nowrap">
                 <span className="text-xs font-medium text-[var(--color-ink-muted)]">Clients</span>
@@ -229,10 +221,8 @@ export default function ClientsPage() {
               </div>
             </div>
 
-            {/* Controls: Search + Filter + CTA */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto">
               <div className="flex items-center gap-2 flex-1 sm:w-80">
-                {/* Search Input */}
                 <div className="relative flex-1">
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-subtle)] pointer-events-none" />
                   <input
@@ -244,7 +234,6 @@ export default function ClientsPage() {
                   />
                 </div>
 
-                {/* ✅ Reusable FilterDropdown */}
                 <FilterDropdown
                   filterId="client-status"
                   label="Status"
@@ -260,12 +249,10 @@ export default function ClientsPage() {
                 />
               </div>
 
-              {/* Add Client Dropdown */}
               <AddClientButton />
             </div>
           </div>
 
-          {/* ✅ PENDING REVIEW BANNERS */}
           {!loading && pendingClients > 0 && statusFilter !== "pending" && (
             <button
               type="button"
@@ -294,13 +281,11 @@ export default function ClientsPage() {
             </div>
           )}
 
-          {/* ✅ Loading State */}
           {loading ? (
             <div className="p-12 text-center text-[var(--color-ink-muted)] flex items-center justify-center gap-2">
               <Loader2 className="w-5 h-5 animate-spin" /> Loading clients...
             </div>
           ) : filteredClients.length === 0 ? (
-            /* ✅ Empty State */
             <div className="p-12 text-center">
               <div className="w-16 h-16 rounded-2xl bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center mx-auto mb-4">
                 <Users size={24} className="text-[var(--color-ink-subtle)]" />
@@ -310,171 +295,142 @@ export default function ClientsPage() {
             </div>
           ) : (
             <>
-{/* ✅ MOBILE: Reusable CardGrid (simplified, non-collapsible) */}
-<div className="block md:hidden">
-  <CardGrid
-    data={paginatedClients}
-    getCardId={(client) => client.id}
-    
-// Header: Avatar + Name (ALL CAPS) + Email + Verified Badge/Status Dot
-renderCardHeader={({ item }) => {
-  const statusStyles: Record<string, { bg: string }> = {
-    pending: { bg: "bg-amber-500" },
-    suspended: { bg: "bg-red-500" },
-    inactive: { bg: "bg-gray-500" },
-  };
-  const statusStyle = statusStyles[item.status] || { bg: "bg-gray-400" };
-  
-  return (
-    <div className="flex items-center justify-between gap-3 min-w-0 w-full">
-      {/* Left: Avatar + Name + Email */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-{/* Avatar */}
-<div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0 overflow-hidden">
-  <SecureImage
-    src={item.avatar_image}
-    alt={item.full_name}
-    className="w-full h-full object-cover"
-    fallback={<UserIcon size={18} />}
-  />
-</div>
-        
-        {/* Name + Email */}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <h4 
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/dashboard/clients/${item.id}`);
-              }}
-              className="text-sm font-bold text-[var(--color-ink)] truncate cursor-pointer hover:text-[var(--color-primary)] transition-colors uppercase"
-            >
-              {item.full_name}
-            </h4>
-            
-{/* ✅ Premium Verified Badge (for active clients) */}
-{item.status === "active" && (
-  <div className="flex-shrink-0" title="Verified Client">
-    <svg 
-      width="16" 
-      height="16" 
-      viewBox="0 0 24 24" 
-      fill="none"
-    >
-      {/* Shield shape */}
-      <path 
-        d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" 
-        fill="currentColor" 
-        opacity="0.15"
-        className="text-[var(--color-primary)]"
-      />
-      <path 
-        d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" 
-        stroke="currentColor" 
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-[var(--color-primary)]"
-      />
-      {/* Checkmark */}
-      <path 
-        d="M9 12L11 14L15 10" 
-        stroke="currentColor" 
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-[var(--color-primary)]"
-      />
-    </svg>
-  </div>
-)}
-          </div>
-          
-          {item.email ? (
-            <div className="flex items-center gap-1 mt-0.5">
-              <Mail size={11} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-              <span className="text-xs text-[var(--color-ink)] truncate">{item.email}</span>
-            </div>
-          ) : (
-            <p className="text-xs text-[var(--color-ink-subtle)] italic mt-0.5">No email</p>
-          )}
-        </div>
-      </div>
-      
-      {/* Right: Status Dot (for non-active clients) */}
-      {item.status !== "active" && (
-        <div className="flex-shrink-0 flex items-center gap-2">
-          <span 
-            className={`w-2.5 h-2.5 rounded-full ${statusStyle.bg} ring-2 ring-[var(--color-surface)]`}
-            title={item.status}
-          />
-        </div>
-      )}
-    </div>
-  );
-}}
-    
-    // Body: Divider + Phone, ID, DL pills
-    renderCardBody={({ item }) => {
-      // Check DL expiry - adjust this logic based on your actual data structure
-      const dlExpiryDate = (item as any).dl_expiry_date;
-      const isDLValid = dlExpiryDate ? new Date(dlExpiryDate) > new Date() : false;
-      const dlStatusColor = isDLValid ? "text-emerald-500" : "text-rose-500";
-      const dlStatusText = dlExpiryDate ? (isDLValid ? "VALID" : "EXPIRED") : "N/A";
-      
-      return (
-        <>
-          {/* Divider */}
-          <div className="border-t border-[var(--color-surface-border)]/60 pt-3 mt-3" />
-          
-          {/* Pills Container */}
-          <div className="flex flex-wrap gap-2">
-            {/* Phone Pill */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
-              <Phone size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-              <span className="text-xs text-[var(--color-ink)] truncate max-w-[120px]">
-                {item.phone || "No phone"}
-              </span>
-            </div>
-            
-            {/* ID Pill */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
-              <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">ID</span>
-              <span className="text-xs font-mono text-[var(--color-ink)]">
-                {item.id_number || "N/A"}
-              </span>
-            </div>
-            
-            {/* DL Pill with Status */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
-              <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">DL</span>
-              <span className="text-xs font-mono text-[var(--color-ink)]">
-                {item.dl_number?.replace(/^DL[-\s]?/i, '') || "N/A"}
-              </span>
-              {dlExpiryDate && (
-                <span className={`text-[10px] font-bold ${dlStatusColor}`}>
-                  {dlStatusText}
-                </span>
-              )}
-            </div>
-          </div>
-        </>
-      );
-    }}
-    
-    // ✅ Row actions (3-dots menu) - correctly targeted
-    rowActions={getClientActions}
-    
-    // Pagination
-    currentPage={currentPage}
-    totalPages={totalPages}
-    totalItems={filteredClients.length}
-    pageSize={3} // Mobile: 2.5-3 cards visible
-    onPageChange={setCurrentPage}
-  />
-</div>
+              {/* ✅ MOBILE: Premium Client CardGrid */}
+              <div className="block md:hidden">
+                <CardGrid
+                  data={paginatedClients}
+                  getCardId={(client) => client.id}
+                  compact={true}
+                  cardClassName="!p-2.5 hover:!border-[var(--color-primary)]/30 hover:shadow-md transition-all duration-200"
+                  containerClassName="px-2 pb-2"
+                  maxHeight="calc(100vh - 160px)"
+                  
+                  renderCardHeader={({ item }) => {
+                    const statusStyles: Record<string, { bg: string; label: string; dot: string }> = {
+                      pending: { bg: "bg-amber-500/10", label: "Pending", dot: "bg-amber-500" },
+                      suspended: { bg: "bg-red-500/10", label: "Suspended", dot: "bg-red-500" },
+                      inactive: { bg: "bg-gray-500/10", label: "Inactive", dot: "bg-gray-500" },
+                      active: { bg: "bg-emerald-500/10", label: "Active", dot: "bg-emerald-500" },
+                    };
+                    const style = statusStyles[item.status] || statusStyles.inactive;
+                    
+                    return (
+                      <div 
+                        className="flex items-center justify-between w-full cursor-pointer"
+                        onClick={() => router.push(`/dashboard/clients/${item.id}`)}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div className="relative flex-shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 flex items-center justify-center overflow-hidden">
+                              <SecureImage
+                                src={item.avatar_image}
+                                alt={item.full_name}
+                                className="w-full h-full object-cover"
+                                fallback={<UserIcon size={14} className="text-[var(--color-primary)]" />}
+                              />
+                            </div>
+                            <div className="absolute -top-0.5 -right-0.5">
+                              <div className={`w-2 h-2 rounded-full ${style.dot} ring-1 ring-[var(--color-surface)]`} />
+                            </div>
+                          </div>
+                          
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-[var(--color-ink)] truncate">
+                                {item.full_name}
+                              </span>
+                              {item.status === "active" && (
+                                <ShieldCheck size={12} className="text-emerald-500 flex-shrink-0" />
+                              )}
+                            </div>
+                            {item.email ? (
+                              <div className="flex items-center gap-0.5 mt-0.5">
+                                <Mail size={9} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                                <span className="text-[9px] text-[var(--color-ink-muted)] truncate">
+                                  {item.email}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-[var(--color-ink-subtle)] italic">No email</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <ChevronRight size={14} className="text-[var(--color-ink-subtle)] flex-shrink-0 ml-1" />
+                      </div>
+                    );
+                  }}
+                  
+                  renderCardBody={({ item }) => {
+                    const dlExpiryDate = (item as any).dl_expiry_date;
+                    const isDLValid = dlExpiryDate ? new Date(dlExpiryDate) > new Date() : false;
+                    
+                    return (
+                      <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50">
+                        <div className="flex items-center gap-2">
+                          {/* Phone */}
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <Phone size={10} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight">
+                                {item.phone || "No phone"}
+                              </p>
+                              <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                                Contact
+                              </span>
+                            </div>
+                          </div>
 
-              {/* ✅ DESKTOP: Reusable DataTable */}
+                          {/* ID */}
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <span className="text-[10px] font-bold text-[var(--color-ink-muted)] flex-shrink-0">ID</span>
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight font-mono">
+                                {item.id_number || "N/A"}
+                              </p>
+                              <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                                National ID
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* DL + Status */}
+                        <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">DL</span>
+                            <span className="text-[11px] font-semibold font-mono text-[var(--color-ink)]">
+                              {item.dl_number?.replace(/^DL[-\s]?/i, '') || "N/A"}
+                            </span>
+                            {dlExpiryDate && (
+                              <span className={`text-[8px] font-bold ${isDLValid ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                {isDLValid ? '✓ VALID' : '✗ EXPIRED'}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Status badge */}
+                          <span className={`text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                            item.status === 'active' ? 'bg-emerald-500/10 text-emerald-600' :
+                            item.status === 'pending' ? 'bg-amber-500/10 text-amber-600' :
+                            item.status === 'suspended' ? 'bg-red-500/10 text-red-600' :
+                            'bg-gray-500/10 text-gray-600'
+                          }`}>
+                            {item.status === 'active' ? '● Active' :
+                             item.status === 'pending' ? '⏳ Pending' :
+                             item.status === 'suspended' ? '⊗ Suspended' :
+                             '○ Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                  
+                  rowActions={getClientActions}
+                />
+              </div>
+
+              {/* ✅ DESKTOP: DataTable */}
               <div className="hidden md:block">
                 <DataTable
                   data={paginatedClients}
@@ -486,14 +442,14 @@ renderCardHeader={({ item }) => {
                         const client = row.original;
                         return (
                           <div className="flex items-center gap-3 min-w-0">
-<div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] shrink-0 overflow-hidden">
-  <SecureImage
-    src={client.avatar_image}
-    alt={client.full_name}
-    className="w-full h-full object-cover"
-    fallback={<UserIcon size={16} />}
-  />
-</div>
+                            <div className="w-9 h-9 rounded-full bg-[var(--color-surface-hover)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] shrink-0 overflow-hidden">
+                              <SecureImage
+                                src={client.avatar_image}
+                                alt={client.full_name}
+                                className="w-full h-full object-cover"
+                                fallback={<UserIcon size={16} />}
+                              />
+                            </div>
                             <div className="min-w-0 flex flex-col">
                               <div className="flex items-center gap-1 min-w-0">
                                 <button
@@ -607,7 +563,6 @@ renderCardHeader={({ item }) => {
   // Corporate tab placeholder
   return (
     <div className="space-y-6">
-      {/* Header & Tabs (same as above) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-ink)] flex items-center gap-3">

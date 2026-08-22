@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Receipt, CreditCard, Banknote, Upload, FileText, RotateCcw, ExternalLink, Download, CalendarDays, User } from "lucide-react";
+import { Receipt, CreditCard, Banknote, Upload, FileText, RotateCcw, ExternalLink, Download, CalendarDays, User, ChevronRight } from "lucide-react";
 import DataTable, { RowAction } from "@/components/ui/DataTable";
 import CardGrid from "@/components/ui/CardGrid";
 import type { Payment, PaymentMethod, PaymentStatus } from "@/lib/types";
@@ -104,90 +104,113 @@ export default function PaymentsTable({
 
   return (
     <div className="w-full">
-      {/* ✅ MOBILE: Reusable CardGrid */}
+      {/* ✅ MOBILE: Premium Payment CardGrid */}
       <div className="block md:hidden">
         <CardGrid<Payment>
           data={data}
           getCardId={(payment) => payment.id}
+          compact={true}
+          cardClassName="!p-2.5 hover:!border-[var(--color-primary)]/30 hover:shadow-md transition-all duration-200"
+          containerClassName="px-2 pb-2"
+          maxHeight="calc(100vh - 160px)"
           
-          // Header: Icon + Invoice Ref + User icon + Client Name (full, sentence case) + Status dot
           renderCardHeader={({ item }) => {
             const invoiceRef = (item as any).invoice?.invoice_number || (item as any).invoice_number || `Invoice #${item.invoice_id || "N/A"}`;
             const clientName = (item as any).client?.full_name || (item as any).client_name || "Unknown Client";
             const dotColor = getStatusDotColor(item.status);
             
             return (
-              <div className="flex items-center justify-between w-full min-w-0">
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
-                    <Receipt size={18} />
+              <div 
+                className="flex items-center justify-between w-full cursor-pointer"
+                onClick={() => {
+                  const bookingId = (item as any).booking_id || (item as any).invoice?.booking_id;
+                  if (bookingId) {
+                    router.push(`/dashboard/bookings/${bookingId}`);
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 flex items-center justify-center">
+                      <Receipt size={14} className="text-[var(--color-primary)]" />
+                    </div>
+                    <div className="absolute -top-0.5 -right-0.5">
+                      <div className={`w-2 h-2 rounded-full ${dotColor} ring-1 ring-[var(--color-surface)]`} />
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h4 className="text-sm font-bold text-[var(--color-ink)] truncate leading-tight">
-                      {invoiceRef}
-                    </h4>
-                    {/* ✅ Client name: correct location (header subtitle), full, sentence case */}
-                    <p className="flex items-center gap-1 text-xs text-[var(--color-ink-muted)] mt-0.5 font-medium min-w-0">
-                      <User size={10} className="flex-shrink-0 text-[var(--color-ink-subtle)]" />
-                      <span className="truncate">{clientName}</span>
-                    </p>
+                  
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-[var(--color-ink)] truncate">
+                        {invoiceRef}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-0.5 mt-0.5">
+                      <User size={9} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                      <span className="text-[9px] text-[var(--color-ink-muted)] truncate">
+                        {clientName}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 
-                {/* ✅ Status dot only (no caption), right next to ⋮ menu */}
-                <div className="relative flex-shrink-0 ml-2">
-                  <span
-                    className={`block w-2.5 h-2.5 rounded-full ${dotColor}`}
-                    title={statusLabels[item.status]}
-                  />
-                </div>
+                <ChevronRight size={14} className="text-[var(--color-ink-subtle)] flex-shrink-0 ml-1" />
               </div>
             );
           }}
           
-          // Body: captions + inline icons, method pill + RECEIPT
           renderCardBody={({ item }) => {
             const date = item.paid_at ? new Date(item.paid_at) : new Date(item.created_at);
             const methodStyle = getMethodStyle(item.method);
             const MethodIcon = getMethodIcon(item.method);
             
             return (
-              <div className="space-y-2.5">
-                {/* Captions on top, icons inline with the values */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Total Amount</p>
-                    <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-                      <Banknote size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                      <span className="text-sm font-bold text-[var(--color-ink)] tabular-nums truncate">
+              <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50">
+                <div className="flex items-center gap-2">
+                  {/* Amount */}
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <Banknote size={10} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight tabular-nums">
                         {item.currency_code || "KES"} {Number(item.amount).toLocaleString()}
+                      </p>
+                      <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                        Amount
                       </span>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Date Received</p>
-                    <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-                      <CalendarDays size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                      <span className="text-xs font-medium text-[var(--color-ink-muted)] tabular-nums">
+
+                  {/* Date */}
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <CalendarDays size={10} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight">
                         {formatDate(date)}
+                      </p>
+                      <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                        Received
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Method pill (no caption) + RECEIPT-only quick action */}
-                <div className="flex items-center justify-between pt-2 border-t border-[var(--color-surface-border)]/40">
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${methodStyle.bg} ${methodStyle.text}`}>
-                    <MethodIcon size={10} className="flex-shrink-0" />
+                {/* Method + Actions */}
+                <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50 flex items-center justify-between">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase ${methodStyle.bg} ${methodStyle.text}`}>
+                    <MethodIcon size={8} className="flex-shrink-0" />
                     {item.method}
                   </span>
                   
                   {onDownloadPdf && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); onDownloadPdf(item.id); }}
-                      className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        onDownloadPdf(item.id); 
+                      }}
+                      className="text-[10px] font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
                     >
-                      <Download size={13} />
+                      <Download size={11} />
+                      PDF
                     </button>
                   )}
                 </div>
@@ -196,11 +219,6 @@ export default function PaymentsTable({
           }}
           
           rowActions={getPaymentActions}
-          currentPage={1}
-          totalPages={1}
-          totalItems={data.length}
-          pageSize={3}
-          onPageChange={() => {}}
         />
       </div>
 

@@ -13,6 +13,7 @@ import {
   User,
   PenLine,
   CheckCircle2,
+  ChevronRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import DataTable, { RowAction } from "@/components/ui/DataTable";
@@ -142,79 +143,119 @@ export default function ContractsTable({
 
   return (
     <div className="w-full">
-      {/* ✅ MOBILE: Reusable CardGrid */}
+      {/* ✅ MOBILE: Premium Contract CardGrid */}
       <div className="block md:hidden">
         <CardGrid
           data={mobileItems}
           getCardId={(c) => c.id}
+          compact={true}
+          cardClassName="!p-2.5 hover:!border-[var(--color-primary)]/30 hover:shadow-md transition-all duration-200"
+          containerClassName="px-2 pb-2"
+          maxHeight="calc(100vh - 160px)"
           
-          // Header: Icon + Contract Number + User icon + Client Name
-          renderCardHeader={({ item }) => (
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
-                <FileText size={18} />
+          renderCardHeader={({ item }) => {
+            return (
+              <div 
+                className="flex items-center justify-between w-full cursor-pointer"
+                onClick={() => {
+                  if (item.booking_id) {
+                    router.push(`/dashboard/bookings/${item.booking_id}`);
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 flex items-center justify-center">
+                      <FileText size={14} className="text-[var(--color-primary)]" />
+                    </div>
+                    <div className="absolute -top-0.5 -right-0.5">
+                      <div className={`w-2 h-2 rounded-full ${
+                        item.status === 'signed' ? 'bg-emerald-500' :
+                        item.status === 'sent' ? 'bg-blue-500' :
+                        item.status === 'draft' ? 'bg-amber-500' :
+                        'bg-red-500'
+                      } ring-1 ring-[var(--color-surface)]`} />
+                    </div>
+                  </div>
+                  
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-[var(--color-ink)] truncate">
+                        {item.contract_number || `C20260${item.id}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-0.5 mt-0.5">
+                      <User size={9} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                      <span className="text-[9px] text-[var(--color-ink-muted)] truncate">
+                        {item.client_name || "Unassigned Client"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <ChevronRight size={14} className="text-[var(--color-ink-subtle)] flex-shrink-0 ml-1" />
               </div>
-              <div className="min-w-0">
-                <h4 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (item.booking_id) {
-                      router.push(`/dashboard/bookings/${item.booking_id}`);
-                    }
-                  }}
-                  className="text-sm font-bold text-[var(--color-ink)] truncate cursor-pointer hover:text-[var(--color-primary)] transition-colors leading-tight"
-                >
-                  {item.contract_number || `C20260${item.id}`}
-                </h4>
-                {/* ✅ User icon beside client name */}
-                <p className="flex items-center gap-1 text-xs text-[var(--color-ink-muted)] mt-0.5 font-medium min-w-0">
-                  <User size={10} className="flex-shrink-0 text-[var(--color-ink-subtle)]" />
-                  <span className="truncate">{item.client_name || "Unassigned Client"}</span>
-                </p>
-              </div>
-            </div>
-          )}
+            );
+          }}
           
-          // Body: captions + inline icons, status pill, PDF-only action
           renderCardBody={({ item }) => {
-            const style = statusStyles[item.status] || statusStyles.draft;
-            const StatusIcon = statusIcons[item.status] || FileText;
             const isVoid = item.status === "void";
             
             return (
-              <div className="space-y-3">
-                {/* Booking Ref + Date (Calendar icon inline) */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Booking Ref</p>
-                    <p className="text-xs font-bold text-[var(--color-ink)] mt-0.5 font-mono truncate">
-                      {item.booking_number ? `#${item.booking_number}` : "—"}
-                    </p>
+              <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50">
+                <div className="flex items-center gap-2">
+                  {/* Booking Reference */}
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <span className="text-[10px] font-bold text-[var(--color-ink-muted)] flex-shrink-0">BK</span>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight font-mono">
+                        {item.booking_number ? `#${item.booking_number}` : "—"}
+                      </p>
+                      <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                        Booking Ref
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-[var(--color-ink-muted)]">Date Signed</p>
-                    <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-                      <CalendarDays size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                      <span className="text-xs text-[var(--color-ink-muted)] truncate">
+
+                  {/* Date */}
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <CalendarDays size={10} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight">
                         {item.signed_at ? formatDateShort(item.signed_at) : formatDateShort(item.created_at)}
+                      </p>
+                      <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                        {item.signed_at ? 'Signed' : 'Created'}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* ✅ Status pill with matching icon (dot eliminated) + PDF-only */}
-                <div className="flex items-center justify-between pt-2 border-t border-[var(--color-surface-border)]/40">
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style.bg} ${style.text}`}>
-                    <StatusIcon size={10} className="flex-shrink-0" />
+                {/* Status + Actions */}
+                <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50 flex items-center justify-between">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase ${
+                    item.status === 'signed' ? 'bg-[var(--color-success-bg)] text-[var(--color-success-text)]' :
+                    item.status === 'sent' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                    item.status === 'draft' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                    'bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]'
+                  }`}>
+                    {item.status === 'signed' && <CheckCircle2 size={8} className="flex-shrink-0" />}
+                    {item.status === 'sent' && <Send size={8} className="flex-shrink-0" />}
+                    {item.status === 'draft' && <PenLine size={8} className="flex-shrink-0" />}
+                    {item.status === 'void' && <Ban size={8} className="flex-shrink-0" />}
                     {statusLabels[item.status]}
                   </span>
                   
                   {!isVoid && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); onDownload(item.id); }}
-                      className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        onDownload(item.id); 
+                      }}
+                      className="text-[10px] font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
                     >
-                      <Download size={13} />
+                      <Download size={11} />
+                      PDF
                     </button>
                   )}
                 </div>
@@ -222,15 +263,7 @@ export default function ContractsTable({
             );
           }}
           
-          // ✅ Row actions (3-dots menu) - correctly targeted via portal
           rowActions={getContractActions}
-          
-          // Pagination - using same pageSize as desktop for consistency
-          currentPage={1}
-          totalPages={1}
-          totalItems={mobileItems.length}
-          pageSize={3}
-          onPageChange={() => {}} // No pagination on mobile for now
         />
       </div>
 
@@ -315,7 +348,6 @@ export default function ContractsTable({
               },
             },
           ]}
-          // ✅ Row actions (3-dots menu) - correctly targeted via portal
           rowActions={getContractActions}
           getRowId={(c) => c.id}
           onRowClick={(c) => {
@@ -325,7 +357,6 @@ export default function ContractsTable({
           }}
           loading={false}
           emptyMessage="No contracts found"
-          // Pagination props - handled by parent ContractsTab
           currentPage={1}
           totalPages={1}
           totalItems={data.length}

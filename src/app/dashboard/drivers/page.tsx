@@ -13,6 +13,7 @@ import {
   RotateCcw,
   UserCircle,
   Filter,
+  ChevronRight,
 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import FilterDropdown from "@/components/ui/FilterDropdown";
@@ -295,11 +296,16 @@ export default function DriversPage() {
           </div>
         ) : (
           <>
-            {/* ✅ MOBILE: Reusable CardGrid */}
+            {/* ✅ MOBILE: Premium Driver CardGrid */}
             <div className="block md:hidden">
               <CardGrid
                 data={paginatedDrivers}
                 getCardId={(d) => d.id}
+                compact={true}
+                cardClassName="!p-2.5 hover:!border-[var(--color-primary)]/30 hover:shadow-md transition-all duration-200"
+                containerClassName="px-2 pb-2"
+                maxHeight="calc(100vh - 160px)"
+                
                 renderCardHeader={({ item }) => {
                   const statusDot: Record<DriverStatus, string> = {
                     available: "bg-emerald-500",
@@ -308,56 +314,99 @@ export default function DriversPage() {
                     suspended: "bg-red-500",
                   };
                   return (
-                    <div className="flex items-center justify-between gap-3 min-w-0 w-full">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
-                          <UserCircle size={18} />
+                    <div 
+                      className="flex items-center justify-between w-full cursor-pointer"
+                      onClick={() => openEdit(item.id)}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 flex items-center justify-center">
+                            <UserCircle size={14} className="text-[var(--color-primary)]" />
+                          </div>
+                          <div className="absolute -top-0.5 -right-0.5">
+                            <div className={`w-2 h-2 rounded-full ${statusDot[item.status]} ring-1 ring-[var(--color-surface)]`} />
+                          </div>
                         </div>
+                        
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-sm font-bold text-[var(--color-ink)] truncate uppercase">
-                            {item.full_name}
-                          </h4>
-                          <p className="text-xs text-[var(--color-ink-subtle)] mt-0.5">
-                            {PAY_LABELS[item.pay_mode]}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-[var(--color-ink)] truncate uppercase">
+                              {item.full_name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-0.5 mt-0.5">
+                            <span className="text-[9px] text-[var(--color-ink-muted)] font-medium">
+                              {PAY_LABELS[item.pay_mode]}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full ${statusDot[item.status]} ring-2 ring-[var(--color-surface)] flex-shrink-0`}
-                        title={STATUS_LABELS[item.status]}
-                      />
+                      
+                      <ChevronRight size={14} className="text-[var(--color-ink-subtle)] flex-shrink-0 ml-1" />
                     </div>
                   );
                 }}
+                
                 renderCardBody={({ item }) => {
                   const dl = dlState(item.dl_expiry);
                   return (
-                    <>
-                      <div className="border-t border-[var(--color-surface-border)]/60 pt-3 mt-3" />
-                      <div className="flex flex-wrap gap-2">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
-                          <Phone size={12} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                          <span className="text-xs text-[var(--color-ink)] truncate max-w-[120px]">{item.phone}</span>
+                    <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50">
+                      <div className="flex items-center gap-2">
+                        {/* Phone */}
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <Phone size={10} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight">
+                              {item.phone}
+                            </p>
+                            <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                              Contact
+                            </span>
+                          </div>
                         </div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
-                          <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">ID</span>
-                          <span className="text-xs font-mono text-[var(--color-ink)]">{item.id_number_masked || "N/A"}</span>
-                        </div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-surface-border)]">
-                          <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">DL</span>
-                          <span className="text-xs font-mono text-[var(--color-ink)]">{item.dl_number_masked || "N/A"}</span>
-                          <span className={`text-[10px] ${dl.cls}`}>{dl.label}</span>
+
+                        {/* ID */}
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <span className="text-[10px] font-bold text-[var(--color-ink-muted)] flex-shrink-0">ID</span>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight font-mono">
+                              {item.id_number_masked || "N/A"}
+                            </p>
+                            <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                              National ID
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </>
+
+                      {/* DL + Status */}
+                      <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">DL</span>
+                          <span className="text-[11px] font-semibold font-mono text-[var(--color-ink)]">
+                            {item.dl_number_masked || "N/A"}
+                          </span>
+                          <span className={`text-[8px] font-bold ${dl.cls}`}>{dl.label}</span>
+                        </div>
+                        
+                        {/* Status badge */}
+                        <span className={`text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                          item.status === 'available' ? 'bg-emerald-500/10 text-emerald-600' :
+                          item.status === 'on_trip' ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary-text)]' :
+                          item.status === 'on_leave' ? 'bg-amber-500/10 text-amber-600' :
+                          'bg-red-500/10 text-red-600'
+                        }`}>
+                          {item.status === 'available' ? '● Available' :
+                           item.status === 'on_trip' ? '🚗 On Trip' :
+                           item.status === 'on_leave' ? '⏳ On Leave' :
+                           '⊗ Suspended'}
+                        </span>
+                      </div>
+                    </div>
                   );
                 }}
+                
                 rowActions={getDriverActions}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={drivers.length}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
               />
             </div>
 

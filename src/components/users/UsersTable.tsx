@@ -4,7 +4,8 @@
 import { useRouter } from "next/navigation";
 import { 
   Users, User as UserIcon, Mail, Phone, Building2, Shield, ShieldAlert, 
-  Briefcase, KeyRound, Loader2, CheckCircle, Trash2, Send, Star
+  Briefcase, KeyRound, Loader2, CheckCircle, Trash2, Send, Star,
+  ChevronRight
 } from "lucide-react";
 import DataTable, { RowAction } from "@/components/ui/DataTable";
 import CardGrid from "@/components/ui/CardGrid";
@@ -81,7 +82,7 @@ export default function UsersTable({
         icon: CheckCircle,
         variant: "default",
         disabled: true,
-        onClick: () => {}, // ✅ FIXED: Added empty onClick for disabled action
+        onClick: () => {},
       });
     } else {
       actions.push({
@@ -100,7 +101,7 @@ export default function UsersTable({
           icon: CheckCircle,
           variant: "default",
           disabled: true,
-          onClick: () => {}, // ✅ FIXED: Added empty onClick for disabled action
+          onClick: () => {},
         });
       } else {
         actions.push({
@@ -150,13 +151,16 @@ export default function UsersTable({
 
   return (
     <>
-      {/* ✅ MOBILE: Reusable CardGrid */}
+      {/* ✅ MOBILE: Premium User CardGrid */}
       <div className="block md:hidden">
-        <CardGrid<User> // ✅ FIXED: Explicitly pass User generic type
+        <CardGrid
           data={mobileList}
           getCardId={(user) => user.id}
+          compact={true}
+          cardClassName="!p-2.5 hover:!border-[var(--color-primary)]/30 hover:shadow-md transition-all duration-200"
+          containerClassName="px-2 pb-2"
+          maxHeight="calc(100vh - 160px)"
           
-          // Header: Avatar + Name + Role/Department
           renderCardHeader={({ item }) => {
             const isAgencyOwner = item.is_tenant_owner === true;
             const emailVerified = item.email_verified === true;
@@ -164,44 +168,51 @@ export default function UsersTable({
             const bothVerified = emailVerified && phoneVerified;
             const partiallyVerified = emailVerified || phoneVerified;
             
-            const shieldColor = isAgencyOwner || bothVerified 
-              ? "hidden" 
-              : partiallyVerified 
-                ? "text-amber-500" 
-                : "text-[var(--color-ink-muted)]";
-            
             return (
-              <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <div className="w-10 h-10 rounded-full bg-[var(--color-surface)] border border-[var(--color-surface-border)] flex items-center justify-center text-[var(--color-ink-subtle)] flex-shrink-0">
-                  <UserIcon size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <h4 className="text-sm font-bold text-[var(--color-ink)] leading-snug break-words truncate">
-                      {item.full_name}
-                    </h4>
-                    {isAgencyOwner && (
-                      <span title="Agency Owner" className="flex-shrink-0">
-                        <Star size={14} className="text-amber-500 fill-amber-500/20" />
+              <div 
+                className="flex items-center justify-between w-full cursor-pointer"
+                onClick={() => router.push(`/dashboard/users/${item.id}`)}
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 flex items-center justify-center">
+                      <UserIcon size={14} className="text-[var(--color-primary)]" />
+                    </div>
+                    <div className="absolute -top-0.5 -right-0.5">
+                      {isAgencyOwner ? (
+                        <div className="w-3 h-3 rounded-full bg-amber-500/20 flex items-center justify-center ring-1 ring-[var(--color-surface)]">
+                          <Star size={8} className="text-amber-500 fill-amber-500" />
+                        </div>
+                      ) : bothVerified ? (
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-[var(--color-surface)]" />
+                      ) : partiallyVerified ? (
+                        <div className="w-2 h-2 rounded-full bg-amber-500 ring-1 ring-[var(--color-surface)]" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-gray-400 ring-1 ring-[var(--color-surface)]" />
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-[var(--color-ink)] truncate">
+                        {item.full_name}
                       </span>
-                    )}
-                    {!isAgencyOwner && !bothVerified && (
-                      <div className={`relative flex-shrink-0 ${shieldColor}`}>
-                        <Shield size={14} />
-                        <span className="absolute inset-0 flex items-center justify-center text-[8px] font-bold leading-none -mt-0.5">!</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-primary-text)] mt-0.5">
-                    <Building2 size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                    <span className="break-words">{item.department || "Unassigned"}</span>
+                    </div>
+                    <div className="flex items-center gap-0.5 mt-0.5">
+                      <Building2 size={9} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                      <span className="text-[9px] text-[var(--color-ink-muted)] truncate">
+                        {item.department || "Unassigned"}
+                      </span>
+                    </div>
                   </div>
                 </div>
+                
+                <ChevronRight size={14} className="text-[var(--color-ink-subtle)] flex-shrink-0 ml-1" />
               </div>
             );
           }}
           
-          // ✅ FIXED: Merged renderCardPreview and renderCardDetails into renderCardBody
           renderCardBody={({ item }) => {
             const emailVerified = item.email_verified === true;
             const phoneVerified = item.phone_verified === true;
@@ -242,81 +253,65 @@ export default function UsersTable({
             const isSuspended = item.is_suspended && bothVerified;
             
             return (
-              <div className="space-y-2.5 text-xs">
-                {/* Job Title */}
-                <div className="flex items-center gap-1.5 text-[var(--color-ink-muted)]">
-                  <Briefcase size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                  <span className="break-words font-medium">{item.job_title || "No title"}</span>
+              <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50">
+                <div className="flex items-center gap-2">
+                  {/* Email */}
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <Mail size={10} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight">
+                        {item.email}
+                      </p>
+                      <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                        {emailVerified ? '✓ Verified' : 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <Phone size={10} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold text-[var(--color-ink)] truncate leading-tight">
+                        {item.phone_number || "No phone"}
+                      </p>
+                      <span className="text-[8px] text-[var(--color-ink-muted)] font-medium">
+                        {phoneVerified ? '✓ Verified' : 'Pending'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Email */}
-                <a 
-                  href={`mailto:${item.email}`} 
-                  onClick={(e) => e.stopPropagation()} 
-                  className="flex items-center gap-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors min-w-0"
-                >
-                  <Mail size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                  <span className="break-all font-medium">{item.email}</span>
-                  {emailVerified && (
-                    <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0 ml-0.5" />
-                  )}
-                </a>
-
-                {/* Phone */}
-                <a 
-                  href={`tel:${item.phone_number}`} 
-                  onClick={(e) => e.stopPropagation()} 
-                  className="flex items-center gap-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-primary)] transition-colors min-w-0"
-                >
-                  <Phone size={13} className="text-[var(--color-ink-subtle)] flex-shrink-0" />
-                  <span className="break-words font-medium">{item.phone_number || "No phone"}</span>
-                  {phoneVerified && (
-                    <CheckCircle size={12} className="text-[var(--color-success-text)] flex-shrink-0 ml-0.5" />
-                  )}
-                </a>
-
-                {/* Divider */}
-                <div className="border-t border-[var(--color-surface-border)]/60 pt-2 mt-2" />
-
-                {/* Status Badge */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-[var(--color-ink-muted)]">Status:</span>
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${statusBg} ${statusText}`}>
-                    <StatusIcon size={10} />
+                {/* Status + Actions */}
+                <div className="mt-1.5 pt-1.5 border-t border-[var(--color-surface-border)]/50 flex items-center justify-between">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase ${statusBg} ${statusText}`}>
+                    <StatusIcon size={8} className="flex-shrink-0" />
                     {statusLabel}
                   </span>
-                </div>
-                
-                {/* Quick Action */}
-                {showMainAction && (
-                  <div className="pt-2 border-t border-[var(--color-surface-border)]/40">
+                  
+                  {showMainAction && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); onSuspend(item); }}
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        onSuspend(item); 
+                      }}
                       disabled={actionLoadingId === item.id}
-                      className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all disabled:opacity-50 ${
+                      className={`text-[10px] font-semibold flex items-center gap-1 transition-all disabled:opacity-50 ${
                         isSuspended 
-                          ? "text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20" 
-                          : "text-amber-600 bg-amber-500/10 hover:bg-amber-500/20"
+                          ? "text-emerald-600" 
+                          : "text-amber-600"
                       }`}
                     >
-                      {actionLoadingId === item.id ? <Loader2 size={12} className="animate-spin" /> : <ShieldAlert size={12} />}
-                      <span>{isSuspended ? "Reactivate" : "Suspend"}</span>
+                      {actionLoadingId === item.id ? <Loader2 size={11} className="animate-spin" /> : <ShieldAlert size={11} />}
+                      {isSuspended ? "Reactivate" : "Suspend"}
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             );
           }}
           
-          // ✅ Row actions (3-dots menu) - correctly targeted via portal in CardGrid
           rowActions={getUserActions}
-          
-          // Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          pageSize={3}
-          onPageChange={setCurrentPage}
         />
       </div>
 
@@ -455,7 +450,6 @@ export default function UsersTable({
               },
             },
           ]}
-          // ✅ Row actions (3-dots menu) - correctly targeted via portal in DataTable
           rowActions={getUserActions}
           getRowId={(user) => user.id}
           loading={loading}

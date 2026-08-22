@@ -2,10 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { Car, Plus, BarChart3, Wrench } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useFleetList } from "@/hooks/fleet/useFleetList";
 import FleetList from "@/components/fleet/FleetList";
 import QuickGarageModal from "@/components/ui/QuickGarageModal";
+import { bookingsApi } from "@/lib/api/bookings";
+import type { Booking } from "@/lib/types";
 
 type TabMode = "fleet" | "performance" | "garage";
 
@@ -25,8 +27,41 @@ const TABS: TabItem[] = [
 export default function FleetPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabMode>("fleet");
+  const [activeRentals, setActiveRentals] = useState<Record<number, Booking>>({});
 
   const fleetData = useFleetList();
+
+  // Fetch active rentals for trip progress bar
+  useEffect(() => {
+    async function fetchActiveRentals() {
+      try {
+        // Fetch all bookings (you might want to add pagination params)
+        const allBookings = await bookingsApi.list({ 
+          page: 1, 
+          page_size: 100 
+        });
+        
+        // Filter to active or confirmed bookings
+        const active = allBookings.filter(
+          b => b.status === 'active' || b.status === 'confirmed'
+        );
+        
+        // Create map: vehicle_id -> booking
+        const rentalMap: Record<number, Booking> = {};
+        active.forEach(booking => {
+          if (booking.vehicle_id) {
+            rentalMap[booking.vehicle_id] = booking;
+          }
+        });
+        
+        setActiveRentals(rentalMap);
+      } catch (error) {
+        console.error('Failed to fetch active rentals:', error);
+      }
+    }
+
+    fetchActiveRentals();
+  }, []);
 
   // Dynamic Header Info
   const currentTabInfo = useMemo(() => {
@@ -94,9 +129,12 @@ export default function FleetPage() {
 
       {/* Segment View Engine */}
       {activeTab === "fleet" ? (
-        // ✅ WRAPPED FleetList in same card container as Clients page
+        // ✅ WRAPPED FleetList with activeRentals prop
         <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-surface-border)] shadow-[var(--shadow-card)] overflow-hidden animate-in fade-in duration-300">
-          <FleetList {...fleetData} />
+          <FleetList 
+            {...fleetData} 
+            activeRentals={activeRentals}
+          />
         </div>
       ) : activeTab === "performance" ? (
         // ✅ MATCHED empty state pattern from Clients page exactly

@@ -4,10 +4,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MoreHorizontal, X, LogOut } from "lucide-react";
+import { MoreHorizontal, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { NavItem } from "@/lib/nav-config";
-import { useAuth } from "@/context/auth-context";
 
 interface BottomNavProps {
   navItems: NavItem[];
@@ -17,7 +16,6 @@ export default function BottomNav({ navItems }: BottomNavProps) {
   const pathname = usePathname();
   const [showMoreDrawer, setShowMoreDrawer] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { logout } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -111,7 +109,7 @@ export default function BottomNav({ navItems }: BottomNavProps) {
       </nav>
 
       {/* 
-        ✅ "MORE" DRAWER - Tile Grid + Logout
+        ✅ "MORE" DRAWER - Tile Grid (Logout removed)
       */}
       {mounted && showMoreDrawer && (
         <div
@@ -157,21 +155,6 @@ export default function BottomNav({ navItems }: BottomNavProps) {
                   </Link>
                 );
               })}
-            </div>
-
-            {/* ✅ Logout - inside the More drawer */}
-            <div className="px-4 pb-4">
-              <div className="h-px bg-[var(--color-surface-border)] mb-3" />
-              <button
-                onClick={() => {
-                  setShowMoreDrawer(false);
-                  logout();
-                }}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[var(--color-danger-text)] hover:bg-[var(--color-danger-bg)] transition-colors"
-              >
-                <LogOut size={18} strokeWidth={2} />
-                <span className="text-sm font-semibold">Logout</span>
-              </button>
             </div>
           </div>
         </div>
