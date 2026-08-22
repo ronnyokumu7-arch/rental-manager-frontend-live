@@ -66,23 +66,29 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
   const selectedBooking = bookings.find(b => b.id === selectedBookingId);
   const existingInvoice = invoices.find(inv => inv.booking_id === selectedBookingId);
 
-  // ✅ Compute inclusive days for rate/total math
-  const inclusiveDays = useMemo(() => {
-    if (!selectedBooking?.start_date || !selectedBooking?.end_date) return 1;
-    const start = new Date(selectedBooking.start_date);
-    const end = new Date(selectedBooking.end_date);
-    return Math.max(1, Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  // ✅ ENGINE RULE (matches backend): exact hours / 24 → ceil → min 1.
+  // Uses pickup_at / scheduled_return_at when available, falls back to dates.
+  // No "+1" — the legacy inclusive-day bug is gone here too.
+  const billableDays = useMemo(() => {
+    if (!selectedBooking) return 1;
+    const startStr = selectedBooking.pickup_at || selectedBooking.start_date;
+    const endStr = selectedBooking.scheduled_return_at || selectedBooking.end_date;
+    if (!startStr || !endStr) return 1;
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    return Math.max(1, Math.ceil(hours / 24));
   }, [selectedBooking]);
 
   // ✅ Derive the effective rate for pre-fill: booking.daily_rate > total/days
   const effectiveDailyRate = useMemo(() => {
     if (!selectedBooking) return 0;
     if (selectedBooking.daily_rate) return Number(selectedBooking.daily_rate);
-    if (selectedBooking.total_amount && inclusiveDays > 0) {
-      return Number(selectedBooking.total_amount) / inclusiveDays;
+    if (selectedBooking.total_amount && billableDays > 0) {
+      return Number(selectedBooking.total_amount) / billableDays;
     }
     return 0;
-  }, [selectedBooking, inclusiveDays]);
+  }, [selectedBooking, billableDays]);
 
   // ✅ Pre-fill form when booking changes
   useEffect(() => {
@@ -108,8 +114,8 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
   // ✅ Rate → Amount auto-recompute (when rate is the driver)
   const handleRateChange = (value: string) => {
     setCustomRate(value);
-    if (!rateLocked && value && inclusiveDays > 0) {
-      const computed = parseFloat(value) * inclusiveDays;
+    if (!rateLocked && value && billableDays > 0) {
+      const computed = parseFloat(value) * billableDays;
       setCustomAmount(computed.toFixed(2));
     }
   };
@@ -117,8 +123,8 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
   // ✅ Amount → Rate auto-recompute (when amount is the driver)
   const handleAmountChange = (value: string) => {
     setCustomAmount(value);
-    if (rateLocked && value && inclusiveDays > 0) {
-      const computed = parseFloat(value) / inclusiveDays;
+    if (rateLocked && value && billableDays > 0) {
+      const computed = parseFloat(value) / billableDays;
       setCustomRate(computed.toFixed(2));
     }
   };
@@ -217,7 +223,7 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
               <span className="text-[10px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wider">Booking Details</span>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-[var(--color-surface)] text-[var(--color-ink-muted)]">
-                  {inclusiveDays} day{inclusiveDays > 1 ? 's' : ''}
+                  {billableDays} day{billableDays > 1 ? 's' : ''}
                 </span>
                 {existingInvoice && (
                   <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusStyle(existingInvoice.status)}`}>
@@ -252,7 +258,7 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
         {/* Customization Form */}
         {selectedBooking && (
           <div className="space-y-4">
-            {/* ✅ NEW: Driver Toggle — Rate drives Amount, or Amount drives Rate */}
+            {/* ✅ Driver Toggle — Rate drives Amount, or Amount drives Rate */}
             <div>
               <label className={labelClass}>Edit Mode</label>
               <div className="grid grid-cols-2 gap-2">
@@ -286,7 +292,7 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
               </p>
             </div>
 
-            {/* ✅ NEW: Daily Rate Field */}
+            {/* ✅ Daily Rate Field */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>
@@ -341,7 +347,7 @@ export default function CreateInvoiceModal({ open, onClose, onCreated }: CreateI
               />
             </div>
 
-            {/* ✅ NEW: Regenerate hint */}
+            {/* ✅ Regenerate hint */}
             {existingInvoice && (
               <div className="p-3 rounded-xl bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 flex items-start gap-2">
                 <AlertCircle size={14} className="text-[var(--color-primary)] mt-0.5 flex-shrink-0" />

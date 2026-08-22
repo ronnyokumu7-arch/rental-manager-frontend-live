@@ -284,8 +284,7 @@ export default function BookingForm() {
   const totalAmount = calculateTotal();
 
   return (
-    // ✅ MOBILE: extra bottom padding so the sticky bar never covers content
-    <form onSubmit={handleSubmit} className="max-w-6xl mx-auto p-4 sm:p-6 pb-24 lg:pb-6 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
+    <form onSubmit={handleSubmit} className="max-w-6xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
       
       {/* LEFT COLUMN: Booking Details */}
       <div className="space-y-3">
@@ -406,7 +405,7 @@ export default function BookingForm() {
 
       </div>
 
-      {/* RIGHT COLUMN: Summary + CTA (desktop) */}
+      {/* RIGHT COLUMN: Summary + CTA — renders on mobile too, exactly as v1 shipped */}
       <aside className="lg:sticky lg:top-4 space-y-3">
         
         <BookingSummary
@@ -420,8 +419,8 @@ export default function BookingForm() {
           quoteLoading={quoteLoading}
         />
 
-        {/* CTA Card — desktop only (mobile uses the sticky bar) */}
-        <div className="hidden lg:block bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] p-4">
+        {/* CTA Card — visible on ALL breakpoints, in normal page flow */}
+        <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] p-4">
           <button 
             type="submit" 
             disabled={loading} 
@@ -445,35 +444,6 @@ export default function BookingForm() {
         </div>
 
       </aside>
-
-      {/* ✅ MOBILE: sticky bottom action bar (total always visible + submit in thumb reach) */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[var(--color-surface)]/95 backdrop-blur-sm border-t border-[var(--color-surface-border)] px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-        <div className="flex items-center gap-3">
-          <div className="min-w-0 shrink-0">
-            <div className="text-[9px] uppercase tracking-wider text-[var(--color-ink-muted)] font-bold">Total</div>
-            <div className="text-lg font-extrabold text-[var(--color-ink)] tabular-nums truncate">
-              KES {totalAmount.toLocaleString()}
-            </div>
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white bg-[var(--color-primary)] active:scale-[0.98] shadow-lg shadow-[var(--color-primary)]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <CheckCircle size={16} />
-                Create Booking
-              </>
-            )}
-          </button>
-        </div>
-      </div>
     </form>
   );
 }
