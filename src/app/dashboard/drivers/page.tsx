@@ -405,7 +405,7 @@ export default function DriversPage() {
                     ),
                   },
                   {
-                    header: "Driver's License",
+                    header: "Driving License",
                     accessorKey: "dl_number_masked",
                     cell: ({ row }) => {
                       const dl = dlState(row.original.dl_expiry);

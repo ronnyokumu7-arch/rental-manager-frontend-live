@@ -51,7 +51,7 @@ export default function PaymentMethodsSettings() {
     }
   };
 
-  // ✅ GUARD: If there's no tenant context, fail gracefully (no crash)
+  // ✅ GUARD: If there&apos;s no tenant context, fail gracefully (no crash)
   if (!tenantId) {
     return (
       <div className="bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-2xl shadow-[var(--shadow-card)] p-8 text-center">

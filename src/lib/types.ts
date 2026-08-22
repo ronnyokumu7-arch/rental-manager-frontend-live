@@ -384,9 +384,13 @@ export interface Booking {
   pricing_grace_minutes?: number | null;
   pricing_overtime_hourly_rate?: number | string | null;
 
+  // ✅ MILESTONE 2: Driver assignment (scalar FK)
+  driver_id?: number | null;
+
   // Joined Relations
   client?: BookingClientRelation | null;
   vehicle?: BookingVehicleRelation | null;
+  driver?: Driver | null;  // ✅ MILESTONE 2: nested DriverOut (full detail for detail views)
   
   // ✅ Nested relations often returned by backend
   contract?: Contract | null;
@@ -410,6 +414,9 @@ export interface BookingCreate {
   service_type?: ServiceType;
   pickup_at?: string;
   scheduled_return_at?: string;
+
+  // ✅ MILESTONE 2: Optional driver assignment
+  driver_id?: number | null;
 }
 
 export interface BookingUpdate {
@@ -428,6 +435,9 @@ export interface BookingUpdate {
   service_type?: ServiceType;
   pickup_at?: string;
   scheduled_return_at?: string;
+
+  // ✅ MILESTONE 2: Optional driver reassignment / unassignment (null clears)
+  driver_id?: number | null;
 }
 
 // ✅ MILESTONE 1.1: Live pricing preview request (no DB writes)
@@ -504,7 +514,7 @@ export interface PublicContractView {
   booking_number?: string | null;
   tenant_name: string;
 
-  // ✅ NEW: Owning tenant's branding (resolved from the contract's tenant)
+  // ✅ NEW: Owning Tenant&apos;s branding (resolved from the contract's tenant)
   tenant_logo_url?: string | null;
   tenant_address?: string | null;
   tenant_phone?: string | null;

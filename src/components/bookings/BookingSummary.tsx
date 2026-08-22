@@ -1,12 +1,13 @@
 // src/components/bookings/BookingSummary.tsx
 "use client";
 
-import { User, Car, CalendarDays, DollarSign, Phone, Loader2, ShieldCheck } from 'lucide-react';
-import type { Client, Vehicle, ServiceType, PricingResult } from '@/lib/types';
+import { User, UserCircle, Car, CalendarDays, DollarSign, Phone, Loader2, ShieldCheck, CreditCard } from 'lucide-react';
+import type { Client, Vehicle, DriverListItem, ServiceType, PricingResult } from '@/lib/types';
 
 interface BookingSummaryProps {
   client: Client | undefined;
   vehicle: Vehicle | undefined;
+  driver?: DriverListItem | undefined; // ✅ MILESTONE 2: optional driver
   startDate: string;
   endDate: string;
   totalAmount: number;
@@ -38,9 +39,29 @@ const fmtDateTime = (v: string) => {
   });
 };
 
+// ✅ DL health indicator for the summary (matches DriverSearch pattern)
+const dlHealth = (expiry?: string | null) => {
+  if (!expiry) return null;
+  const days = Math.ceil((new Date(expiry).getTime() - Date.now()) / 86400000);
+  if (days < 0) return { label: "DL EXPIRED", cls: "text-[var(--color-danger)] font-bold" };
+  if (days <= 30) return { label: `${days}d left`, cls: "text-[var(--color-warning-text)] font-bold" };
+  return { label: "DL valid", cls: "text-[var(--color-success-text)]" };
+};
+
+const DRIVER_STATUS_STYLES: Record<string, { bg: string; text: string }> = {
+  available: { bg: "bg-[var(--color-success-bg)]", text: "text-[var(--color-success-text)]" },
+  on_trip: { bg: "bg-[var(--color-primary-muted)]", text: "text-[var(--color-primary-text)]" },
+};
+
+const DRIVER_STATUS_LABELS: Record<string, string> = {
+  available: "Available",
+  on_trip: "On Trip",
+};
+
 export default function BookingSummary({
   client,
   vehicle,
+  driver,
   startDate,
   endDate,
   totalAmount,
@@ -58,6 +79,8 @@ export default function BookingSummary({
 
   // ✅ Engine is source of truth when quote is available
   const days = quote ? quote.included_days : getDays();
+
+  const driverStatusStyle = driver ? (DRIVER_STATUS_STYLES[driver.status] || DRIVER_STATUS_STYLES.available) : null;
 
   return (
     <div className="bg-gradient-to-br from-[var(--color-surface)] to-[var(--color-surface-hover)] rounded-xl border border-[var(--color-surface-border)] p-4">
@@ -106,6 +129,42 @@ export default function BookingSummary({
           <div className="text-xs text-[var(--color-ink-muted)]">No vehicle selected</div>
         )}
       </div>
+
+      {/* ✅ MILESTONE 2: Driver Info — only renders when a driver is selected */}
+      {driver && (
+        <div className="mb-3 pb-3 border-b border-[var(--color-surface-border)]">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <UserCircle size={14} className="text-[var(--color-primary)]" />
+              <span className="text-xs font-semibold text-[var(--color-ink)]">Driver</span>
+            </div>
+            {driverStatusStyle && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${driverStatusStyle.bg} ${driverStatusStyle.text}`}>
+                {DRIVER_STATUS_LABELS[driver.status] || driver.status}
+              </span>
+            )}
+          </div>
+          <div className="text-sm font-medium text-[var(--color-ink)] mb-1">{driver.full_name}</div>
+          <div className="flex items-center gap-3 text-xs text-[var(--color-ink-muted)] flex-wrap">
+            <div className="flex items-center gap-1">
+              <Phone size={10} />
+              <span>{driver.phone}</span>
+            </div>
+            {driver.id_number_masked && (
+              <div className="flex items-center gap-1">
+                <CreditCard size={10} />
+                <span className="font-mono">{driver.id_number_masked}</span>
+              </div>
+            )}
+            {(() => {
+              const health = dlHealth(driver.dl_expiry);
+              return health ? (
+                <span className={`text-[10px] ${health.cls}`}>{health.label}</span>
+              ) : null;
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Dates + Times */}
       <div className="mb-3 pb-3 border-b border-[var(--color-surface-border)]">

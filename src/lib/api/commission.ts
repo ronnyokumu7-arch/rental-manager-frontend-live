@@ -107,7 +107,7 @@ export const commissionApi = {
   submitPayment: (payload: { amount: number; reference: string; notes?: string }) =>
     apiClient.post<CommissionPayment>("/commission/payments", payload),
 
-  /** Tenant's commission payment history. */
+  /** Tenant&apos;s commission payment history. */
   getPayments: (limit: number = 20) =>
     apiClient.get<CommissionPayment[]>("/commission/payments", { params: { limit } }),
 };

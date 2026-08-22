@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, MapPin, User, Loader2, CheckCircle } from 'lucide-react';
+import { CalendarDays, MapPin, User, Loader2, CheckCircle, Info } from 'lucide-react';
 import { useNewBooking } from '@/hooks/bookings/useNewBooking';
 import ClientSearch from '../ClientSearch';
 import VehicleSearch from '../VehicleSearch';
@@ -30,23 +30,28 @@ export default function BookingForm() {
     calculateTotal,
     getSelectedClient,
     getSelectedVehicle,
+    getSelectedDriver,
     handleSubmit,
-    // ✅ MILESTONE 1: quote state from hook
     quote,
     quoteLoading,
   } = useNewBooking();
 
   const selectedClient = getSelectedClient();
   const selectedVehicle = getSelectedVehicle();
+  const selectedDriver = getSelectedDriver();
   const totalAmount = calculateTotal();
+
+  // ✅ MILESTONE 2: Driver field is service-aware (catalog-driven)
+  const selectedServiceDef = services.find(
+    (s) => s.key === ((formData.service_type as ServiceType) || "selfdrive")
+  );
+  const requiresDriver = !!selectedServiceDef?.requires_driver;
 
   return (
     <form onSubmit={handleSubmit} className="max-w-6xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
       
-      {/* LEFT COLUMN: Booking Details */}
       <div className="space-y-3">
         
-        {/* Section 1: Client & Vehicle & Driver */}
         <section className={sectionClass}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-6 h-6 rounded-md bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center">
@@ -62,7 +67,7 @@ export default function BookingForm() {
               searchQuery={clientSearch}
               onSearchChange={setClientSearch}
               onSelect={(client) => {
-                updateField('client_id', client.id.toString());
+                updateField('client_id', client?.id ? client.id.toString() : '');
                 setClientSearch('');
               }}
             />
@@ -73,26 +78,32 @@ export default function BookingForm() {
               searchQuery={vehicleSearch}
               onSearchChange={setVehicleSearch}
               onSelect={(vehicle) => {
-                updateField('vehicle_id', vehicle.id.toString());
+                updateField('vehicle_id', vehicle?.id ? vehicle.id.toString() : '');
                 setVehicleSearch('');
               }}
             />
 
-            {/* ✅ MILESTONE 2: Driver assignment */}
-            <DriverSearch
-              selectedDriverId={formData.driver_id}
-              drivers={drivers}
-              searchQuery={driverSearch}
-              onSearchChange={setDriverSearch}
-              onSelect={(driver) => {
-                updateField('driver_id', driver.id.toString());
-                setDriverSearch('');
-              }}
-            />
+            {/* ✅ MILESTONE 2: Driver selector only for driver-requiring services */}
+            {requiresDriver ? (
+              <DriverSearch
+                selectedDriverId={formData.driver_id}
+                drivers={drivers}
+                searchQuery={driverSearch}
+                onSearchChange={setDriverSearch}
+                onSelect={(driver) => {
+                  updateField('driver_id', driver?.id ? driver.id.toString() : '');
+                  setDriverSearch('');
+                }}
+              />
+            ) : (
+              <p className="text-[10px] text-[var(--color-ink-muted)] flex items-start gap-1.5">
+                <Info size={11} className="text-[var(--color-primary)] shrink-0 mt-[1px]" />
+                Self-drive — the client drives. No staff driver required.
+              </p>
+            )}
           </div>
         </section>
 
-        {/* Section 2: Service + Dates + Times */}
         <section className={sectionClass}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
@@ -101,11 +112,17 @@ export default function BookingForm() {
             <h3 className="text-sm font-bold text-[var(--color-ink)]">Rental Period</h3>
           </div>
 
-          {/* ✅ MILESTONE 1.1: Service selector consumes catalog */}
           <div className="mb-3">
             <ServiceTypeSelector
               value={(formData.service_type as ServiceType) || "selfdrive"}
-              onChange={(type) => updateField('service_type', type)}
+              onChange={(type) => {
+                updateField('service_type', type);
+                // ✅ Auto-clear driver when switching to a non-driver service
+                const svc = services.find((s) => s.key === type);
+                if (!svc?.requires_driver && formData.driver_id) {
+                  updateField('driver_id', '');
+                }
+              }}
               services={services}
             />
           </div>
@@ -117,8 +134,6 @@ export default function BookingForm() {
               onChange={(datetime) => {
                 updateField('pickup_at', datetime);
                 updateField('start_date', datetime.split('T')[0]);
-
-                // Auto-clear return if it's now before/equal pickup
                 if (formData.scheduled_return_at && new Date(datetime) >= new Date(formData.scheduled_return_at)) {
                   updateField('scheduled_return_at', '');
                   updateField('end_date', '');
@@ -139,7 +154,6 @@ export default function BookingForm() {
           </div>
         </section>
 
-        {/* Section 3: Locations */}
         <section className={sectionClass}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-6 h-6 rounded-md bg-purple-500/10 text-purple-500 flex items-center justify-center">
@@ -174,12 +188,12 @@ export default function BookingForm() {
 
       </div>
 
-      {/* RIGHT COLUMN: Summary + CTA — renders on mobile too, exactly as v1 shipped */}
       <aside className="lg:sticky lg:top-4 space-y-3">
         
         <BookingSummary
           client={selectedClient}
           vehicle={selectedVehicle}
+          driver={requiresDriver ? selectedDriver : undefined}
           startDate={formData.pickup_at || formData.start_date}
           endDate={formData.scheduled_return_at || formData.end_date}
           totalAmount={totalAmount}
@@ -188,7 +202,6 @@ export default function BookingForm() {
           quoteLoading={quoteLoading}
         />
 
-        {/* CTA Card — visible on ALL breakpoints, in normal page flow */}
         <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-surface-border)] p-4">
           <button 
             type="submit" 

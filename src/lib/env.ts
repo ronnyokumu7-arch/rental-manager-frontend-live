@@ -2,7 +2,7 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  // Validates that it's a proper URL, falls back to localhost if missing
+  // Validates that it&apos;s a proper URL, falls back to localhost if missing
   NEXT_PUBLIC_API_URL: z
     .string()
     .url()

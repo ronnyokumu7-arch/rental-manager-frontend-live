@@ -215,7 +215,7 @@ export default function RosterTab() {
     setActionLoadingId(userId);
     try {
       await usersApi.sendResetLink(userId, { send_to_email: true, send_to_phone: false });
-      toast.success("Reset link sent to user's email");
+      toast.success("Reset link sent to User&apos;s email");
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to send reset link"));
     } finally {

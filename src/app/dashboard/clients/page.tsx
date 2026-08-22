@@ -552,7 +552,7 @@ renderCardHeader={({ item }) => {
                         ),
                     },
                     {
-                      header: "Driver's License",
+                      header: "Driving License",
                       accessorKey: "dl_number",
                       cell: ({ row }) =>
                         row.original.dl_number ? (

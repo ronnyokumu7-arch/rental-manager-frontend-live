@@ -39,7 +39,7 @@ export default function ClientCockpitGrid({ client }: { client: Client }) {
         <div className="flex items-center gap-2 mb-3">
           <div className="w-6 h-6 rounded-md bg-amber-50 flex items-center justify-center"><CreditCard size={12} className="text-amber-600" /></div>
           {/* FIX: Escaped the apostrophe to prevent build errors */}
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Driver&apos;s License</h3>
+          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Driver's License</h3>
         </div>
         <div className="space-y-3">
           <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">

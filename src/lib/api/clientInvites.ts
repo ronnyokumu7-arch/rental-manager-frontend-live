@@ -24,7 +24,7 @@ export const clientInvitesApi = {
       expected_phone: expectedPhone || null,
     }),
 
-  /** List this tenant's invites (newest first) */
+  /** List this Tenant&apos;s invites (newest first) */
   list: (limit: number = 50) =>
     apiClient.get<ClientInvite[]>("/clients/invites", { params: { limit } }),
 

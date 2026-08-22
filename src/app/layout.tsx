@@ -7,7 +7,8 @@ import { AuthProvider } from "@/context/auth-context";
 import { Toaster } from "react-hot-toast";
 import '@/styles/flatpickr-theme.css';
 import Providers from "@/components/Providers";
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // 1. Sans-Serif (Primary UI / paragraphs)
 const sansFont = Inter({
@@ -61,8 +62,11 @@ export default function RootLayout({
         selection:text-[var(--color-primary-text)]
         scroll-smooth
       ">
-        {/* ✅ Vercel Analytics — lightweight script injector, no UI */}
+        {/* ✅ Vercel Analytics — page views, visitors, devices, referrers */}
         <Analytics />
+        
+        {/* ✅ Speed Insights — real-user performance metrics (LCP, CLS, FID) */}
+        <SpeedInsights />
         
         <Providers>
           <AuthProvider>

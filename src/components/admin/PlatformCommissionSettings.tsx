@@ -153,7 +153,7 @@ export default function PlatformCommissionSettings() {
         <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/20 flex items-start gap-2">
           <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
           <p className="text-[11px] text-[var(--color-ink-muted)]">
-            Changes go live instantly on every tenant's <span className="font-bold">/commission/pay</span> page.
+            Changes go live instantly on every Tenant&apos;s <span className="font-bold">/commission/pay</span> page.
             You reconcile payments by matching the M-Pesa confirmation codes in the Commission tab.
           </p>
         </div>

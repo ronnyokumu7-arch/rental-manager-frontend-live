@@ -83,7 +83,7 @@ function SummaryTab({ tenantName }: { tenantName: string }) {
             "I will use this car for legal purposes only",
             "I am between 23 and 70 years old",
             "I am physically fit to drive safely",
-            "My driver's license is valid and held for 2+ years",
+            "My Driver's license is valid and held for 2+ years",
             "I have no serious driving offenses in the last 5 years"
           ].map((item, i) => (
             <li key={i} className="flex items-start gap-2">
@@ -131,7 +131,7 @@ function TermsTab() {
       <ArticleItem 
         number={5}
         title="Insurance & Accidents"
-        content="Report any accident, theft, or damage to us within 24 hours AND to police if there's injury or theft. Get a police report. Do not admit fault or settle with others without us."
+        content="Report any accident, theft, or damage to us within 24 hours AND to police if there&apos;s injury or theft. Get a police report. Do not admit fault or settle with others without us."
       />
     </div>
   );

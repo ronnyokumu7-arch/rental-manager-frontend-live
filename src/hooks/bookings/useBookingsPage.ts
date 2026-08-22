@@ -53,7 +53,7 @@ export function useBookingsPage() {
         end_date: `${payload.endDate}T23:59:59Z`,
         total_amount: days * dailyRate,
         currency_code: "KES",
-        // Note: Removed 'notes' as it's not in the BookingCreate interface. 
+        // Note: Removed 'notes' as it&apos;s not in the BookingCreate interface. 
         // If your backend accepts it, add `notes?: string` to BookingCreate in src/lib/types.ts
       };
 

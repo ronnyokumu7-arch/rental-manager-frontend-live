@@ -17,6 +17,7 @@ import BookingHeaderWidget from "@/components/bookings/BookingHeaderWidget";
 import VehicleShowcaseWidget from "@/components/bookings/VehicleShowcaseWidget";
 import ClientProfileWidget from "@/components/bookings/ClientProfileWidget";
 import FinancialsWidget from "@/components/bookings/FinancialsWidget";
+import DriverProfileWidget from "@/components/bookings/DriverProfileWidget";
 
 export default function BookingDetailPage() {
   const params = useParams();
@@ -119,6 +120,9 @@ export default function BookingDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Widget 2: Client Profile (Top) */}
           <ClientProfileWidget booking={booking} />
+
+          {/* Widget 3: Driver Profile (NEW) */}
+          <DriverProfileWidget booking={booking} />
 
           {/* Widget 3: Trip Timeline (Middle) */}
           <TripTimelineWidget booking={booking} />

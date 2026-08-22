@@ -55,7 +55,7 @@ export function useClientProfile() {
       const validInvoices = allInvoices.status === "fulfilled" ? allInvoices.value : [];
       const validContracts = allContracts.status === "fulfilled" ? allContracts.value : [];
 
-      // Filter to only show invoices/contracts for this client's bookings
+      // Filter to only show invoices/contracts for this Client&apos;s bookings
       const clientInvoices = validInvoices.filter((inv) => clientBookingIds.includes(inv.booking_id!));
       const clientContracts = validContracts.filter((c) => c.booking_id && clientBookingIds.includes(c.booking_id));
 

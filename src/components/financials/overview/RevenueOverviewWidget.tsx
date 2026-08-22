@@ -13,7 +13,7 @@ export default function RevenueOverviewWidget({ data }: Props) {
   const formatCurrency = (amount: number) => {
     const rounded = Math.round(amount * 100) / 100;
     if (rounded === Math.floor(rounded)) {
-      // It's a whole number, no decimals needed
+      // It&apos;s a whole number, no decimals needed
       return `KES ${rounded.toLocaleString()}`;
     } else {
       // Has cents, show exactly 2 decimals

@@ -110,7 +110,7 @@ function InviteContent() {
       return;
     }
     if (preview.is_driver && (!formData.dl_number || !dlFrontFile)) {
-      toast.error("Driver's License number and DL image are required for Drivers.");
+      toast.error("Driving License number and DL image are required for Drivers.");
       return;
     }
 

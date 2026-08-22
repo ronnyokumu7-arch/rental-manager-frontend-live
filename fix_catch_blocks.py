@@ -32,7 +32,7 @@ for filepath in files:
         catch_sig = match.group(1)
         body = match.group(2)
         
-        # If it's "} catch {" add (_error)
+        # If it&apos;s "} catch {" add (_error)
         if catch_sig.strip() == "} catch {":
             catch_sig = "} catch (_error) {"
             # Now rename 'error' to '_error' in the body
