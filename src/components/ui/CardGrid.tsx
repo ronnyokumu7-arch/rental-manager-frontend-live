@@ -2,7 +2,7 @@
 "use client";
 
 import { Fragment, useState, useEffect, useRef, useCallback } from "react";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, X } from "lucide-react";
 import { createPortal } from "react-dom";
 
 export interface RowAction<T> {
@@ -63,11 +63,18 @@ export default function CardGrid<T>({
   const [openActionId, setOpenActionId] = useState<string | number | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const actionButtonRef = useRef<HTMLButtonElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Close dropdown on outside click
@@ -175,12 +182,19 @@ export default function CardGrid<T>({
       return;
     }
 
+    // On mobile, we don't need to calculate position - just open the bottom sheet
+    if (isMobile) {
+      setOpenActionId(id);
+      setDropdownPos(null);
+      return;
+    }
+
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const position = calculateDropdownPosition(rect);
     
     setOpenActionId(id);
     setDropdownPos(position);
-  }, [getCardId, openActionId, calculateDropdownPosition]);
+  }, [getCardId, openActionId, calculateDropdownPosition, isMobile]);
 
   const handleCardClick = useCallback((item: T) => {
     if (onCardClick) {
@@ -228,6 +242,48 @@ export default function CardGrid<T>({
       </div>
     </div>
   );
+
+  // Render action items
+  const renderActionItems = (item: T, isMobileView: boolean = false) => {
+    const actions = typeof rowActions === "function" ? rowActions(item) : rowActions || [];
+    
+    return actions.map((action, index) => (
+      <Fragment key={`${action.label}-${index}`}>
+        {action.separator && index > 0 && (
+          <div className="h-px bg-[var(--color-surface-border)] my-1" role="separator" />
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            setOpenActionId(null);
+            setDropdownPos(null);
+            
+            if (typeof action.onClick === "function") {
+              action.onClick(item);
+            }
+          }}
+          disabled={action.disabled}
+          className={`
+            w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl transition-colors
+            touch-manipulation min-h-[48px]
+            ${action.disabled
+              ? "text-[var(--color-ink-subtle)] cursor-not-allowed"
+              : action.variant === "danger"
+              ? "text-[var(--color-danger-text)] hover:bg-[var(--color-danger-bg)] active:bg-[var(--color-danger-bg)]/80"
+              : action.variant === "primary"
+              ? "text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 active:bg-[var(--color-primary)]/20"
+              : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] active:bg-[var(--color-surface-hover)]/80"
+            }
+          `}
+          role="menuitem"
+          aria-disabled={action.disabled}
+        >
+          {action.icon && <action.icon size={isMobileView ? 20 : 16} className="flex-shrink-0" />}
+          <span className="truncate">{action.label}</span>
+        </button>
+      </Fragment>
+    ));
+  };
 
   if (loading) {
     return renderSkeletons();
@@ -338,97 +394,111 @@ export default function CardGrid<T>({
         </div>
       </div>
 
-      {/* Portal-rendered Row Actions Dropdown */}
-      {mounted && openActionId !== null && dropdownPos && createPortal(
-        <>
-          <div 
-            className="fixed inset-0 z-[9998]" 
-            onClick={() => {
-              setOpenActionId(null);
-              setDropdownPos(null);
-            }}
-            onTouchStart={() => {
-              setOpenActionId(null);
-              setDropdownPos(null);
-            }}
-          />
-          
-          <div
-            ref={dropdownRef}
-            data-dropdown-menu={openActionId}
-            className="fixed z-[9999] min-w-[180px] max-w-[280px] bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-            style={{ 
-              top: dropdownPos.top, 
-              right: dropdownPos.right,
-              maxHeight: '60vh',
-              overflowY: 'auto'
-            }}
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            role="menu"
-            aria-label="Action menu"
-          >
-            {(() => {
-              const item = data.find((d) => getCardId(d) === openActionId);
-              if (!item) return null;
+      {/* Portal-rendered Action Menu - Bottom Sheet on Mobile, Dropdown on Desktop */}
+      {mounted && openActionId !== null && (() => {
+        const item = data.find((d) => getCardId(d) === openActionId);
+        if (!item) return null;
+        
+        const actions = typeof rowActions === "function" ? rowActions(item) : rowActions || [];
+        if (actions.length === 0) return null;
+        
+        // Mobile: Bottom Sheet (similar to BottomNav's "More" drawer)
+        if (isMobile) {
+          return createPortal(
+            <>
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm"
+                onClick={() => {
+                  setOpenActionId(null);
+                  setDropdownPos(null);
+                }}
+                onTouchStart={() => {
+                  setOpenActionId(null);
+                  setDropdownPos(null);
+                }}
+              />
               
-              const actions = typeof rowActions === "function" ? rowActions(item) : rowActions || [];
-              
-              return actions.map((action, index) => (
-                <Fragment key={`${action.label}-${index}`}>
-                  {action.separator && index > 0 && (
-                    <div className="h-px bg-[var(--color-surface-border)] my-1" role="separator" />
-                  )}
+              {/* Bottom Sheet */}
+              <div
+                className="fixed bottom-0 left-0 right-0 z-[9999] bg-[var(--color-surface)] rounded-t-2xl border-t border-[var(--color-surface-border)] pb-[env(safe-area-inset-bottom,16px)] animate-in slide-in-from-bottom duration-300"
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-label="Action menu"
+              >
+                {/* Handle bar */}
+                <div className="flex justify-center pt-2 pb-1">
+                  <div className="w-12 h-1 rounded-full bg-[var(--color-surface-border)]" />
+                </div>
+                
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-surface-border)]">
+                  <span className="text-sm font-semibold text-[var(--color-ink)]">Actions</span>
                   <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      
+                    onClick={() => {
                       setOpenActionId(null);
                       setDropdownPos(null);
-                      
-                      if (typeof action.onClick === "function") {
-                        action.onClick(item);
-                      }
                     }}
-                    onTouchEnd={(e) => {
-                      if (e.cancelable) {
-                        e.preventDefault();
-                      }
-                      setOpenActionId(null);
-                      setDropdownPos(null);
-                      
-                      if (typeof action.onClick === "function") {
-                        action.onClick(item);
-                      }
-                    }}
-                    disabled={action.disabled}
-                    className={`
-                      w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium transition-colors
-                      touch-manipulation min-h-[44px]
-                      ${action.disabled
-                        ? "text-[var(--color-ink-subtle)] cursor-not-allowed"
-                        : action.variant === "danger"
-                        ? "text-[var(--color-danger-text)] hover:bg-[var(--color-danger-bg)] active:bg-[var(--color-danger-bg)]/80"
-                        : action.variant === "primary"
-                        ? "text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 active:bg-[var(--color-primary)]/20"
-                        : "text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] active:bg-[var(--color-surface-hover)]/80"
-                      }
-                    `}
-                    role="menuitem"
-                    aria-disabled={action.disabled}
+                    className="p-1.5 rounded-lg hover:bg-[var(--color-surface-hover)] transition-colors"
+                    aria-label="Close"
                   >
-                    {action.icon && <action.icon size={16} className="flex-shrink-0" />}
-                    <span className="truncate">{action.label}</span>
+                    <X size={18} className="text-[var(--color-ink-muted)]" />
                   </button>
-                </Fragment>
-              ));
-            })()}
-          </div>
-        </>,
-        document.body
-      )}
+                </div>
+                
+                {/* Actions List */}
+                <div className="p-2 max-h-[50vh] overflow-y-auto">
+                  {renderActionItems(item, true)}
+                </div>
+              </div>
+            </>,
+            document.body
+          );
+        }
+        
+        // Desktop: Dropdown Menu
+        if (dropdownPos) {
+          return createPortal(
+            <>
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-0 z-[9998]" 
+                onClick={() => {
+                  setOpenActionId(null);
+                  setDropdownPos(null);
+                }}
+                onTouchStart={() => {
+                  setOpenActionId(null);
+                  setDropdownPos(null);
+                }}
+              />
+              
+              {/* Dropdown Menu */}
+              <div
+                ref={dropdownRef}
+                data-dropdown-menu={openActionId}
+                className="fixed z-[9999] min-w-[180px] max-w-[280px] bg-[var(--color-surface)] border border-[var(--color-surface-border)] rounded-xl shadow-[var(--shadow-dropdown)] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                style={{ 
+                  top: dropdownPos.top, 
+                  right: dropdownPos.right,
+                  maxHeight: '60vh',
+                  overflowY: 'auto'
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                role="menu"
+                aria-label="Action menu"
+              >
+                {renderActionItems(item, false)}
+              </div>
+            </>,
+            document.body
+          );
+        }
+        
+        return null;
+      })()}
     </>
   );
 }
