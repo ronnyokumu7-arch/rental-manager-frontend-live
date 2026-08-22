@@ -1,10 +1,12 @@
-# Allow all crawlers
+# public/robots.txt
 User-agent: *
 Allow: /
 
-# Block API routes from indexing
+# Block sensitive routes
+Disallow: /dashboard/
 Disallow: /api/
-Disallow: /_next/
+Disallow: /super-admin/
+Disallow: /invoice/
 
-# Sitemap location
-Sitemap: https://www.royride.com/sitemap.xml
+# Sitemap (add when you have one)
+# Sitemap: https://www.royride.com/sitemap.xml

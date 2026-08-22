@@ -117,10 +117,10 @@ export default function DriversPage() {
         dl_expiry: selectedDriver.dl_expiry ? selectedDriver.dl_expiry.split("T")[0] : "",
         status: selectedDriver.status,
         pay_mode: selectedDriver.pay_mode,
-        daily_fee: selectedDriver.daily_fee != null ? String(selectedDriver.daily_fee) : "",
-        overtime_hourly_fee: selectedDriver.overtime_hourly_fee != null ? String(selectedDriver.overtime_hourly_fee) : "",
-        night_accommodation_fee: selectedDriver.night_accommodation_fee != null ? String(selectedDriver.night_accommodation_fee) : "",
-        delivery_commission: selectedDriver.delivery_commission != null ? String(selectedDriver.delivery_commission) : "",
+        daily_fee: selectedDriver.daily_fee !== null ? String(selectedDriver.daily_fee) : "",
+        overtime_hourly_fee: selectedDriver.overtime_hourly_fee !== null ? String(selectedDriver.overtime_hourly_fee) : "",
+        night_accommodation_fee: selectedDriver.night_accommodation_fee !== null ? String(selectedDriver.night_accommodation_fee) : "",
+        delivery_commission: selectedDriver.delivery_commission !== null ? String(selectedDriver.delivery_commission) : "",
       });
     }
   }, [editingId, selectedDriver]);

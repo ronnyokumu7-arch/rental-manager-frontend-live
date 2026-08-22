@@ -5,9 +5,40 @@ import type { NextRequest } from "next/server";
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
 const AUTH_ROUTES = ["/dashboard", "/super-admin"];
 
+// ✅ ATTACK PATTERNS — blocked at the edge, never reach serverless functions.
+// Catches WordPress probes, PHP shells, scanner signatures.
+const ATTACK_PATTERNS: RegExp[] = [
+  /wp-.*\.php$/i,           // wp-configs.php, wp-login.php, wp-trackback.php
+  /xmlrpc\.php$/i,          // WordPress XML-RPC
+  /adminer\.php$/i,         // DB admin tools
+  /phpmyadmin/i,            // phpMyAdmin probes
+  /\.php$/i,                // Any PHP file (this is a Next.js app)
+  /shell\.php$/i,           // Common shells
+  /c99\.php$/i,             // C99 shell
+  /r57\.php$/i,             // R57 shell
+  /\.env$/i,                // Env file probes
+  /\.git/i,                 // Git directory probes
+  /\.svn/i,                 // SVN probes
+  /composer\.json$/i,       // Composer config
+  /\.bak$/i,                // Backup probes
+  /\.old$/i,                // Old file probes
+  /\.sql$/i,                // SQL dump probes
+  /\.DS_Store$/i,           // macOS metadata
+  /Thumbs\.db$/i,           // Windows thumbnail cache
+  /this_is_a_new_hello_world/i, // Known scanner signature
+  /222\.php$/i,             // Known scanner signature
+];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
+  // ✅ EDGE BLOCK: attack patterns → fast 404, never hits app
+  for (const pattern of ATTACK_PATTERNS) {
+    if (pattern.test(pathname)) {
+      return new NextResponse(null, { status: 404 });
+    }
+  }
+
   // Skip middleware for static files
   if (
     pathname.startsWith("/_next") ||
